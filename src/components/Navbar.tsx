@@ -19,6 +19,11 @@ export default function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Redirect delivery personnel to their dashboard
   useEffect(() => {
@@ -124,7 +129,9 @@ export default function Navbar() {
             </Link>
 
             {/* User / Auth */}
-            {user ? (
+            {!mounted ? (
+              <div style={{ width: 120, height: 38, background: "rgba(0,0,0,0.05)", borderRadius: "10px" }} />
+            ) : user ? (
               <div style={{ position: "relative" }}>
                 <button id="profile-button" onClick={() => setProfileOpen(!profileOpen)} style={{
                   display: "flex", alignItems: "center", gap: "6px",
@@ -157,8 +164,8 @@ export default function Navbar() {
                       minWidth: 200, zIndex: 100, overflow: "hidden",
                     }}>
                       <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
-                        <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{profile?.name}</div>
-                        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{profile?.college}</div>
+                        <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{profile?.name || "User"}</div>
+                        <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{profile?.college || "Welcome"}</div>
                       </div>
                       {[
                         { href: "/orders", icon: <ShoppingCart size={15} />, label: "My Orders" },

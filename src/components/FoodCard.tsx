@@ -40,6 +40,7 @@ export default function FoodCard({ item, compact = false }: FoodCardProps) {
   const [imgError, setImgError] = useState(false);
   const [open, setOpen] = useState(false);
   const [suggestions, setSuggestions] = useState<MenuItem[]>([]);
+  const [instructions, setInstructions] = useState("");
 
   // Fetch suggestions when modal opens
   if (open && suggestions.length === 0) {
@@ -55,8 +56,9 @@ export default function FoodCard({ item, compact = false }: FoodCardProps) {
 
   const handleAddToCart = (e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
-    addToCart(item);
+    addToCart(item, instructions);
     toast.success(`${item.name} added to cart!`);
+    setInstructions("");
   };
 
   const bgColor = CATEGORY_COLORS[item.category] || "#E6F0FF";
@@ -119,7 +121,7 @@ export default function FoodCard({ item, compact = false }: FoodCardProps) {
 
             {cartItem ? (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }} onClick={e => e.stopPropagation()}>
-                <button onClick={() => updateQuantity(item.id, cartItem.quantity - 1)} style={{
+                <button onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)} style={{
                   width: 30, height: 30, borderRadius: "8px", border: "1.5px solid var(--border)", background: "white",
                   display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "var(--primary)", fontWeight: 700,
                 }}><Minus size={14}/></button>
@@ -182,6 +184,25 @@ export default function FoodCard({ item, compact = false }: FoodCardProps) {
                   <div style={{ fontSize: "0.75rem", color: "var(--text-muted)", fontWeight: 700, textTransform: "uppercase" }}>Prep Time</div>
                   <div style={{ fontWeight: 800, marginTop: "4px", color: "var(--text-dark)" }}>~10 mins</div>
                 </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div style={{ marginBottom: "24px" }}>
+                <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 800, textTransform: "uppercase", color: "var(--text-muted)", marginBottom: "8px", letterSpacing: "1px" }}>
+                  Special Instructions
+                </label>
+                <textarea
+                  value={instructions}
+                  onChange={e => setInstructions(e.target.value)}
+                  placeholder="e.g., extra cheese, less spicy, no onions..."
+                  style={{
+                    width: "100%", padding: "12px", borderRadius: "10px", border: "2px solid #E2E8F0",
+                    background: "#F8FAFC", fontSize: "0.95rem", fontFamily: "inherit", color: "var(--text-dark)",
+                    minHeight: "80px", resize: "none", outline: "none"
+                  }}
+                  onFocus={e => (e.currentTarget.style.borderColor = "var(--primary)")}
+                  onBlur={e => (e.currentTarget.style.borderColor = "#E2E8F0")}
+                />
               </div>
 
               <button

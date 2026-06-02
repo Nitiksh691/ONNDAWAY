@@ -1,39 +1,61 @@
 "use client";
-import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight, Coffee, Navigation, Clock, Search, MapPin } from "lucide-react";
+import Image from "next/image";
+import { ArrowRight, Search, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { useApp } from "@/lib/context";
 import OnboardingModal from "@/components/OnboardingModal";
 import AuthModal from "@/components/AuthModal";
 
+type BannerSlide = {
+  id: string;
+  text: string;
+  subText?: string;
+  image: string;
+  link: string;
+  active: boolean;
+};
+
 export default function HomePage() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
-  const [bannerItems, setBannerItems] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [adminBanner, setAdminBanner] = useState<{ text: string, link: string, active: boolean } | null>(null);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
+  const [bannerEnabled, setBannerEnabled] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { cartCount, cartTotal } = useApp();
+  const { cartCount, cartTotal, profile } = useApp();
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Load banner slides & menu
   useEffect(() => {
     try {
-      const b = localStorage.getItem("otw_demo_banner");
-      if (b) setAdminBanner(JSON.parse(b));
-    } catch (e) {}
+      const enabled = localStorage.getItem("otw_banner_enabled");
+      if (enabled !== null) setBannerEnabled(enabled === "true");
+
+      const raw = localStorage.getItem("otw_banner_slides");
+      if (raw) {
+        const parsed: BannerSlide[] = JSON.parse(raw);
+        setBannerSlides(parsed.filter(s => s.active && s.image));
+      }
+    } catch (e) { }
+
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get("category");
+    if (cat) setSelectedCategory(cat);
 
     fetch("/api/menu")
       .then(r => r.json())
       .then(data => {
         if (Array.isArray(data)) {
-          const available = data.filter(i => i.available);
+          const available = data.filter((i: any) => i.available);
           setMenuItems(available);
-          setBannerItems(available.filter(i => i.isBanner));
-          
-          const cats = ["all", ...Array.from(new Set(available.map(i => i.category)))];
+          const cats = ["all", ...Array.from(new Set(available.map((i: any) => i.category as string)))];
           setCategories(cats);
         }
       })
@@ -41,131 +63,274 @@ export default function HomePage() {
       .finally(() => setLoadingMenu(false));
   }, []);
 
+  // Autoplay slider
+  const startAutoplay = useCallback(() => {
+    if (autoplayRef.current) clearInterval(autoplayRef.current);
+    autoplayRef.current = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % Math.max(bannerSlides.length, 1));
+    }, 5000);
+  }, [bannerSlides.length]);
+
+  useEffect(() => {
+    if (bannerSlides.length > 1) startAutoplay();
+    return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
+  }, [bannerSlides.length, startAutoplay]);
+
+  const goToSlide = useCallback((idx: number) => {
+    setCurrentSlide(idx);
+    startAutoplay(); // reset autoplay timer on manual navigation
+  }, [startAutoplay]);
+
   const deferredSearch = useDeferredValue(searchQuery);
   const filteredItems = useMemo(() => menuItems.filter(i => {
     const matchesCategory = selectedCategory === "all" || i.category === selectedCategory;
-    const matchesSearch = i.name.toLowerCase().includes(deferredSearch.toLowerCase()) || 
-                          (i.description && i.description.toLowerCase().includes(deferredSearch.toLowerCase()));
+    const matchesSearch = i.name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+      (i.description && i.description.toLowerCase().includes(deferredSearch.toLowerCase()));
     return matchesCategory && matchesSearch;
   }), [menuItems, selectedCategory, deferredSearch]);
 
-  const popularItems = menuItems.filter(i => i.isPopular).slice(0, 4);
+  const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 6), [menuItems]);
+
+  const hasBanner = bannerEnabled && bannerSlides.length > 0;
+  const userName = profile?.name?.split(" ")[0] || null;
+
+  const CAT_EMOJI: Record<string, string> = { all: "🍽️", coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤", desserts: "🍰" };
 
   return (
     <>
       <OnboardingModal onLoginClick={() => setShowAuthModal(true)} />
       {showAuthModal && (
-        <AuthModal 
-          onClose={() => setShowAuthModal(false)} 
-          onSuccess={(uid) => {
-            localStorage.setItem("otw_user_id", uid);
-            window.location.reload();
-          }} 
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
+          onSuccess={(uid) => { localStorage.setItem("otw_user_id", uid); window.location.reload(); }}
         />
       )}
 
-      {/* Dynamic Admin Banner */}
-      {adminBanner?.active && (
-        <div style={{ background: "#0055ff", color: "white", textAlign: "center", padding: "12px", fontSize: "0.9rem", fontWeight: 700 }}>
-          {adminBanner.link ? (
-            <Link href={adminBanner.link} style={{ color: "white", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-              {adminBanner.text} <ArrowRight size={16} />
-            </Link>
-          ) : (
-            <span>{adminBanner.text}</span>
-          )}
+
+
+      {/* ─── BANNER SLIDER ─── */}
+      {hasBanner && (
+        <div style={{ background: "var(--bg-cream)", padding: "24px 0 16px" }}>
+          <div className="otw-container">
+            <div ref={sliderRef} style={{
+              position: "relative", borderRadius: "24px", overflow: "hidden",
+              aspectRatio: "21/9", minHeight: "220px", maxHeight: "480px",
+              background: "#111", boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
+            }}>
+              {/* Slides */}
+              {bannerSlides.map((slide, idx) => (
+                <div key={slide.id} style={{
+                  position: "absolute", inset: 0,
+                  opacity: idx === currentSlide ? 1 : 0,
+                  transform: idx === currentSlide ? "scale(1)" : "scale(1.04)",
+                  transition: "opacity 0.7s ease, transform 0.7s ease",
+                  zIndex: idx === currentSlide ? 1 : 0,
+                }}>
+                  <Image
+                    src={slide.image} alt={slide.text || "Banner"} fill
+                    sizes="(max-width: 768px) 100vw, 1200px"
+                    style={{ objectFit: "cover" }}
+                    priority={idx === 0}
+                  />
+                  {/* Dark gradient overlay */}
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 1,
+                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.05) 100%)"
+                  }} />
+
+                  {/* Text content */}
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2,
+                    padding: "clamp(24px, 5vw, 48px)", display: "flex", flexDirection: "column", gap: "10px"
+                  }}>
+                    {slide.text && (
+                      <h3 style={{
+                        fontFamily: "'Outfit', sans-serif", fontWeight: 900,
+                        fontSize: "clamp(1.4rem, 5vw, 3.2rem)", lineHeight: 1.05,
+                        color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em",
+                        textShadow: "0 4px 16px rgba(0,0,0,0.8)",
+                        maxWidth: "80%", wordBreak: "break-word", overflowWrap: "anywhere"
+                      }}>
+                        {slide.text}
+                      </h3>
+                    )}
+                    {slide.subText && (
+                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.9rem, 2.2vw, 1.15rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                        {slide.subText}
+                      </p>
+                    )}
+                    {slide.link && (
+                      <Link href={slide.link} style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "8px",
+                        background: "var(--primary)", color: "#fff", padding: "12px 28px",
+                        borderRadius: "99px", fontWeight: 800, fontSize: "0.95rem",
+                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px",
+                        width: "fit-content", boxShadow: "0 8px 24px rgba(1,53,251,0.5)",
+                        transition: "transform 0.2s",
+                      }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                      >
+                        SHOP NOW <ArrowRight size={16} />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Navigation arrows (desktop) */}
+              {bannerSlides.length > 1 && (
+                <>
+                  <button onClick={() => goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length)}
+                    aria-label="Previous slide"
+                    className="desktop-only"
+                    style={{
+                      position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 40, height: 40, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button onClick={() => goToSlide((currentSlide + 1) % bannerSlides.length)}
+                    aria-label="Next slide"
+                    className="desktop-only"
+                    style={{
+                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 40, height: 40, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+
+              {/* Dots */}
+              {bannerSlides.length > 1 && (
+                <div style={{
+                  position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", zIndex: 3,
+                  display: "flex", gap: "6px"
+                }}>
+                  {bannerSlides.map((_, idx) => (
+                    <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
+                      style={{
+                        width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none",
+                        background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
+                        cursor: "pointer", transition: "all 0.3s ease", padding: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
 
-      {/* Marquee Banner */}
+      {/* ─── HERO (only when NO banners) ─── */}
+      {!hasBanner && (
+        <section style={{ background: "var(--primary)", padding: "60px 24px 48px", color: "white", position: "relative", overflow: "hidden" }}>
+          <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -80, right: -60 }} />
+          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.03)", bottom: -40, left: "10%" }} />
+          <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
+            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.4rem, 7vw, 4.5rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.02em" }}>
+              LIFE BEGINS <br /> AFTER <span style={{ color: "#93C5FD" }}>FLAVOR</span>.
+            </h1>
+            <p style={{ fontSize: "1.05rem", maxWidth: "500px", opacity: 0.85, marginBottom: "32px", fontWeight: 500, lineHeight: 1.6 }}>
+              Curated coffee, snacks, and meals — delivered straight to you in minutes.
+            </p>
+          </div>
+        </section>
+      )}
+
+      {/* ─── MARQUEE ─── */}
       <div className="marquee">
         <span>⚡ FRESH COFFEE ⚡ FAST DELIVERY ⚡ GREAT DEALS ⚡ NO LOGIN NEEDED ⚡ ORDER NOW ⚡ ONN DA WAY ⚡</span>
         <span>⚡ FRESH COFFEE ⚡ FAST DELIVERY ⚡ GREAT DEALS ⚡ NO LOGIN NEEDED ⚡ ORDER NOW ⚡ ONN DA WAY ⚡</span>
       </div>
 
-      {/* Hero Header */}
-      <section style={{ background: "var(--primary)", padding: "80px 24px 60px", color: "white", position: "relative", overflow: "hidden" }}>
-        {/* Decorative circles */}
-        <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -80, right: -60 }} />
-        <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.03)", bottom: -40, left: "10%" }} />
-        <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-          <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.8rem, 8vw, 5rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "20px", letterSpacing: "-0.02em" }}>
-            LIFE BEGINS <br/> AFTER <span style={{ color: "#93C5FD" }}>FLAVOR</span>.
-          </h1>
-          <p style={{ fontSize: "1.15rem", maxWidth: "550px", opacity: 0.85, marginBottom: "36px", fontWeight: 500, lineHeight: 1.6 }}>
-            Curated coffee, snacks, and meals — delivered straight to you in minutes.
-          </p>
-          <div style={{ position: "relative", width: "100%", maxWidth: "500px" }}>
-            <Search size={20} style={{ position: "absolute", left: 18, top: "50%", transform: "translateY(-50%)", color: "#0135FB" }} />
-            <input 
-              type="text" 
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search for coffee, meals, snacks..." 
-              style={{ width: "100%", padding: "18px 24px 18px 50px", borderRadius: "99px", border: "3px solid white", fontSize: "1rem", fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: "none", boxShadow: "0 6px 0 rgba(0,0,0,0.15)", color: "#0A0F2E", background: "white" }}
-            />
-          </div>
+      {/* ─── SEARCH BAR ─── */}
+      <div style={{ background: "#fff", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 63, zIndex: 41 }}>
+        <div style={{ position: "relative", maxWidth: "600px", margin: "0 auto" }}>
+          <Search size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search for coffee, meals, snacks..."
+            style={{
+              width: "100%", padding: "12px 16px 12px 42px", borderRadius: "10px",
+              border: "2px solid #e5e7eb", fontSize: "0.9rem", fontFamily: "'Outfit', sans-serif",
+              fontWeight: 600, outline: "none", background: "#f9fafb", color: "#0A0F2E",
+              transition: "border-color 0.2s, box-shadow 0.2s",
+            }}
+            onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
+            onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
+          />
         </div>
-      </section>
+      </div>
 
-      {/* Categories Sticky Bar */}
+      {/* ─── CATEGORY PILLS ─── */}
       <div className="category-scroll">
         {categories.map(cat => (
-          <button 
-            key={cat} 
+          <button
+            key={cat}
             className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
             onClick={() => setSelectedCategory(cat)}
           >
-            {cat === "all" ? "All Items" : cat}
+            {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
           </button>
         ))}
       </div>
 
-      <section style={{ padding: "40px 0", background: "var(--bg-cream)", minHeight: "60vh" }}>
+      {/* ─── MENU CONTENT ─── */}
+      <section style={{ padding: "24px 0 40px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
-          
-          {/* Featured Bento Area (Only show when "all" is selected) */}
+
+          {/* Popular horizontal scroller (only when "all") */}
           {selectedCategory === "all" && popularItems.length > 0 && (
-            <div className="featured-bento">
-              {/* Big Featured Item */}
-              {popularItems[0] && (
-                <div className="otw-card" style={{ display: "flex", flexDirection: "column", position: "relative", background: "var(--accent)" }}>
-                  <div style={{ position: "absolute", top: 16, left: 16, background: "var(--primary)", color: "white", padding: "6px 12px", borderRadius: "8px", fontWeight: 800, fontFamily: "'Outfit', sans-serif", fontSize: "0.85rem", zIndex: 10 }}>
-                    #1 POPULAR
-                  </div>
-                  <div style={{ flex: 1, padding: "32px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
-                    <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "2.5rem", fontWeight: 900, lineHeight: 1.1, color: "var(--primary)", marginBottom: "16px", textTransform: "uppercase" }}>
-                      {popularItems[0].name}
-                    </h2>
-                    <p style={{ color: "var(--text-dark)", opacity: 0.8, marginBottom: "24px", fontSize: "1.1rem" }}>
-                      {popularItems[0].description}
-                    </p>
-                    <div style={{ display: "flex", alignItems: "center", gap: "24px" }}>
-                      <span style={{ fontSize: "2rem", fontWeight: 900, color: "var(--primary)" }}>₹{popularItems[0].price}</span>
-                      {/* Assuming FoodCard logic handles cart, but we might need a custom Add button here. For now, we'll link to it or rely on the user clicking the generic card. I will just render FoodCard styled differently or build a custom add button. */}
-                    </div>
-                  </div>
+            <section style={{ marginBottom: "32px" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", padding: "0 4px" }}>
+                <div>
+                  <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                    🔥 Popular Right Now
+                  </h2>
                 </div>
-              )}
-              {/* Secondary Featured Items */}
-              <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-                {popularItems.slice(1, 3).map((item, i) => (
-                  <div key={item.id} className="otw-card" style={{ flex: 1, display: "flex", padding: "16px", background: i===0?"#DCFCE7":"#DBEAFE" }}>
-                     <div style={{ flex: 1 }}>
-                        <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", fontWeight: 800, color: "var(--text-dark)" }}>{item.name}</h3>
-                        <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "var(--primary)", marginTop: "8px" }}>₹{item.price}</div>
-                     </div>
+              </div>
+              <div style={{
+                display: "flex", gap: "14px", overflowX: "auto",
+                paddingBottom: "8px", WebkitOverflowScrolling: "touch",
+                scrollbarWidth: "none", scrollSnapType: "x mandatory",
+              }}>
+                {popularItems.map(item => (
+                  <div key={item.id} style={{ minWidth: "220px", maxWidth: "240px", flexShrink: 0, scrollSnapAlign: "start" }}>
+                    <FoodCard item={item} compact />
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           )}
 
-          {/* Standard Grid */}
+          {/* Main grid */}
+          <div style={{ marginBottom: "12px", padding: "0 4px" }}>
+            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+              {selectedCategory === "all" ? "📋 Full Menu" : `${CAT_EMOJI[selectedCategory] || "📦"} ${selectedCategory}`}
+            </h2>
+          </div>
+
           <div className="bento-grid">
             {loadingMenu ? (
-              Array.from({ length: 8 }).map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 280 }} />
+              Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{ height: 260, borderRadius: "12px" }} />
               ))
             ) : (
               filteredItems.map(item => (
@@ -174,24 +339,44 @@ export default function HomePage() {
             )}
             {!loadingMenu && filteredItems.length === 0 && (
               <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px" }}>
-                <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.5rem", color: "var(--text-muted)" }}>No items found in this category.</h3>
+                <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
+                <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
+                <p style={{ color: "var(--text-muted)", marginTop: "4px", fontSize: "0.9rem" }}>Try a different category or search.</p>
               </div>
             )}
           </div>
         </div>
       </section>
 
-      <Footer/>
+      <Footer />
 
-      {/* Mobile Sticky CTA */}
+      {/* ─── MOBILE STICKY CART BAR ─── */}
       {cartCount > 0 && (
-        <div className="mobile-only" style={{ position: "fixed", bottom: 0, left: 0, right: 0, background: "white", padding: "16px 24px", borderTop: "1px solid #E5E7EB", zIndex: 50, alignItems: "center", justifyContent: "space-between", boxShadow: "0 -4px 12px rgba(0,0,0,0.05)" }}>
-          <div>
-            <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--text-dark)" }}>{cartCount} item{cartCount > 1 ? 's' : ''}</div>
-            <div style={{ color: "var(--primary)", fontWeight: 900, fontSize: "1.2rem" }}>₹{cartTotal}</div>
+        <div className="mobile-only" style={{
+          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
+          background: "var(--primary)", padding: "12px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          boxShadow: "0 -4px 20px rgba(0,0,0,0.2)",
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{
+              width: 40, height: 40, borderRadius: "10px", background: "rgba(255,255,255,0.15)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <ShoppingBag size={20} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>{cartCount} item{cartCount > 1 ? 's' : ''}</div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, fontSize: "0.8rem" }}>₹{cartTotal}</div>
+            </div>
           </div>
-          <Link href="/cart" className="otw-btn otw-btn-primary" style={{ padding: "12px 24px" }}>
-            Checkout <ArrowRight size={18} />
+          <Link href="/cart" style={{
+            background: "#fff", color: "var(--primary)", padding: "10px 20px",
+            borderRadius: "10px", fontWeight: 800, fontSize: "0.9rem",
+            textDecoration: "none", display: "flex", alignItems: "center", gap: "6px",
+            textTransform: "uppercase", letterSpacing: "0.5px",
+          }}>
+            Checkout <ArrowRight size={16} />
           </Link>
         </div>
       )}

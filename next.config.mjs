@@ -9,7 +9,7 @@ const nextConfig = {
     ],
   },
   // Allows HMR to work on the user's mobile device
-  allowedDevOrigins: ['192.168.0.118:3000', 'localhost:3000']
+  allowedDevOrigins: ['192.168.0.118:3000', '192.168.0.118', 'localhost:3000', '192.168.0.114:3000', '192.168.0.114']
 };
 
 export default nextConfig;

@@ -62,7 +62,7 @@ export default function AnalyticsPage() {
       {/* Top Stats */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "24px", marginBottom: "40px" }}>
         {STAT_CARDS.map((stat, i) => (
-          <div key={i} className="otw-card" style={{ padding: "24px", display: "flex", alignItems: "center", gap: "20px" }}>
+          <div key={i} style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px", display: "flex", alignItems: "center", gap: "20px" }}>
             <div style={{ width: 60, height: 60, borderRadius: "16px", background: stat.bg, color: stat.color, display: "flex", alignItems: "center", justifyContent: "center" }}>
               {stat.icon}
             </div>
@@ -76,7 +76,7 @@ export default function AnalyticsPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "24px", alignItems: "start" }}>
         {/* Order Status Breakdown */}
-        <div className="otw-card" style={{ padding: "24px" }}>
+        <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
             <Target size={20} color="var(--primary)"/> Order Status
           </h3>
@@ -91,7 +91,7 @@ export default function AnalyticsPage() {
         </div>
 
         {/* Best Sellers */}
-        <div className="otw-card" style={{ padding: "24px" }}>
+        <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
             <Calendar size={20} color="var(--primary)"/> Top 5 Products
           </h3>

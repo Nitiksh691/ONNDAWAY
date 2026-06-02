@@ -29,8 +29,10 @@ export interface MenuItem {
 }
 
 export interface CartItem {
+  cartItemId: string; // Unique ID for each cart item instance
   item: MenuItem;
   quantity: number;
+  specialInstructions?: string;
 }
 
 export type OrderStatus = "placed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
@@ -52,6 +54,8 @@ export interface Order {
   deliveryPersonName?: string;
   deliveryOtp?: string;
   messages?: { sender: "user" | "delivery"; text: string; timestamp: string }[];
+  rating?: number;
+  review?: string;
   createdAt: string;
   updatedAt: string;
 }

@@ -323,15 +323,20 @@ export default function CartPage() {
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#fff", textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.item.name}</div>
                     <div style={{ fontWeight: 600, color: "#a0a0a0", fontSize: "0.85rem", marginTop: "4px" }}>{c.item.category || "Item"}</div>
+                    {c.specialInstructions && (
+                      <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#f59e0b", background: "rgba(245, 158, 11, 0.1)", padding: "6px 10px", borderRadius: "6px", display: "inline-block", fontWeight: 600 }}>
+                        <span style={{ color: "#d97706", marginRight: "4px" }}>Note:</span> {c.specialInstructions}
+                      </div>
+                    )}
                     <div style={{ fontWeight: 800, fontSize: "1.1rem", marginTop: "8px" }}>₹{c.item.price}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px", border: "1px solid #3f3f46", borderRadius: "6px", padding: "4px" }}>
-                      <button onClick={() => updateQuantity(c.item.id, c.quantity - 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={16}/></button>
+                      <button onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity - 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={16}/></button>
                       <span style={{ fontWeight: 700, width: "20px", textAlign: "center", fontSize: "1rem" }}>{c.quantity}</span>
-                      <button onClick={() => updateQuantity(c.item.id, c.quantity + 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={16}/></button>
+                      <button onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity + 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={16}/></button>
                     </div>
-                    <button onClick={() => removeFromCart(c.item.id)} style={{ width: 40, height: 40, borderRadius: "6px", border: "1px solid #3f3f46", background: "transparent", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseOver={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"} onMouseOut={(e) => e.currentTarget.style.background = "transparent"}><Trash2 size={18}/></button>
+                    <button onClick={() => removeFromCart(c.cartItemId || c.item.id)} style={{ width: 40, height: 40, borderRadius: "6px", border: "1px solid #3f3f46", background: "transparent", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseOver={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"} onMouseOut={(e) => e.currentTarget.style.background = "transparent"}><Trash2 size={18}/></button>
                   </div>
                 </div>
               ))}

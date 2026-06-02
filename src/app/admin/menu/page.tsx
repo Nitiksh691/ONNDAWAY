@@ -129,20 +129,19 @@ export default function AdminMenuPage() {
           <h1 style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-dark)", marginBottom: "8px" }}>Menu Management</h1>
           <p style={{ color: "var(--text-muted)" }}>Add, edit, or remove items from the campus menu.</p>
         </div>
-        <button onClick={() => handleOpenEdit(null)} className="otw-btn otw-btn-primary">
+        <button onClick={() => handleOpenEdit(null)} style={{ background: "#0055ff", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
           <Plus size={18}/> Add New Item
         </button>
       </div>
 
-      <div className="otw-card" style={{ padding: "24px" }}>
+      <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
         
         <div style={{ position: "relative", marginBottom: "24px", maxWidth: "400px" }}>
           <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
           <input 
             type="text" 
             placeholder="Search menu items..." 
-            className="otw-input" 
-            style={{ paddingLeft: "48px" }}
+            style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -164,7 +163,7 @@ export default function AdminMenuPage() {
                 <tr key={item.id} style={{ borderBottom: "1px solid var(--border)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background="var(--accent)"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
                   <td style={{ padding: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                      <div style={{ width: 48, height: 48, borderRadius: "10px", background: "#F1F5F9", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <div style={{ width: 48, height: 48, borderRadius: "10px", background: "#27272a", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
                         {item.image ? <Image src={item.image} alt={item.name} fill style={{ objectFit: "cover" }} /> : <ImageIcon size={20} color="var(--text-muted)"/>}
                       </div>
                       <div>
@@ -174,7 +173,7 @@ export default function AdminMenuPage() {
                     </div>
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <span style={{ background: "#F1F5F9", padding: "4px 10px", borderRadius: "999px", fontSize: "0.8rem", fontWeight: 600, textTransform: "capitalize" }}>{item.category}</span>
+                    <span style={{ background: "#27272a", padding: "4px 10px", borderRadius: "999px", fontSize: "0.8rem", fontWeight: 600, textTransform: "capitalize" }}>{item.category}</span>
                     {item.section && <div style={{ fontSize: "0.7rem", color: "var(--primary)", marginTop: "4px", fontWeight: 700 }}>{item.section}</div>}
                   </td>
                   <td style={{ padding: "16px", fontWeight: 700, color: "var(--primary)" }}>
@@ -194,8 +193,8 @@ export default function AdminMenuPage() {
                   </td>
                   <td style={{ padding: "16px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                      <button onClick={() => handleOpenEdit(item)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid var(--border)", background: "white", color: "var(--text-mid)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14}/></button>
-                      <button onClick={() => handleDelete(item.id)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #FCA5A5", background: "#FEE2E2", color: "var(--error)", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14}/></button>
+                      <button onClick={() => handleOpenEdit(item)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #3f3f46", background: "#27272a", color: "#e4e4e7", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14}/></button>
+                      <button onClick={() => handleDelete(item.id)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14}/></button>
                     </div>
                   </td>
                 </tr>
@@ -209,14 +208,14 @@ export default function AdminMenuPage() {
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(8px)", zIndex: 1000 }} />
-          <Dialog.Content className="otw-card" style={{
+          <Dialog.Content style={{ background: "#18181b",
             position: "fixed", top: "45%", left: "50%", transform: "translate(-50%, -50%)",
             width: "95%", maxWidth: "650px", padding: "0", zIndex: 1001, 
             maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden",
-            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
-            border: "3px solid var(--primary)"
+            boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+            border: "3px solid var(--primary)", borderRadius: "16px"
           }}>
-            <div style={{ padding: "2px 3px", borderBottom: "1px solid var(--border)", background: "#F8FAFF", display: "flex" }}>
+            <div style={{ padding: "16px 20px", borderBottom: "1px solid var(--border)", background: "#27272a", display: "flex" }}>
               <Dialog.Title style={{ fontSize: "1.5rem", fontWeight: 900, color: "var(--text-dark)", margin: 0 }}>
                 {editingItem ? "Edit Menu Item" : "Create New Item"}
               </Dialog.Title>
@@ -225,21 +224,21 @@ export default function AdminMenuPage() {
             <div style={{ padding: "32px", overflowY: "auto", flex: 1, minHeight: 0, overscrollBehavior: "contain" }}>
               <form id="menu-form" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
               <div>
-                <label className="otw-label">Item Name</label>
-                <input type="text" className="otw-input" value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
+                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Name</label>
+                <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
               </div>
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
                 <div>
-                  <label className="otw-label">Current Price (₹)</label>
-                  <input type="number" className="otw-input" value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} required min="0" />
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Current Price (₹)</label>
+                  <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} required min="0" />
                 </div>
                 <div>
-                  <label className="otw-label">Original Price (₹) - Optional</label>
-                  <input type="number" className="otw-input" placeholder="For discounts" value={form.originalPrice || ""} onChange={e => setForm({...form, originalPrice: e.target.value ? Number(e.target.value) : undefined})} min="0" />
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Original Price (₹) - Optional</label>
+                  <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="For discounts" value={form.originalPrice || ""} onChange={e => setForm({...form, originalPrice: e.target.value ? Number(e.target.value) : undefined})} min="0" />
                 </div>
                 <div>
-                  <label className="otw-label">Category</label>
-                  <select className="otw-input" value={form.category} onChange={e => setForm({...form, category: e.target.value as any})} required>
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Category</label>
+                  <select className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.category} onChange={e => setForm({...form, category: e.target.value as any})} required>
                     <option value="coffee">Coffee</option>
                     <option value="snacks">Snacks</option>
                     <option value="meals">Meals</option>
@@ -249,20 +248,20 @@ export default function AdminMenuPage() {
                 </div>
               </div>
               <div>
-                <label className="otw-label">Homepage Custom Section (Optional)</label>
-                <input type="text" className="otw-input" placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({...form, section: e.target.value})} />
+                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
+                <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({...form, section: e.target.value})} />
                 <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together on the homepage.</p>
               </div>
               <div>
-                <label className="otw-label">Description</label>
-                <textarea className="otw-input" style={{ minHeight: "80px", resize: "vertical" }} value={form.description} onChange={e => setForm({...form, description: e.target.value})} required />
+                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Description</label>
+                <textarea className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: "80px", resize: "vertical" }} value={form.description} onChange={e => setForm({...form, description: e.target.value})} required />
               </div>
               <div>
-                <label className="otw-label">Item Image</label>
+                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Image</label>
                 <label style={{
                   display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
                   border: "2px dashed var(--border)", borderRadius: "16px", padding: "40px 20px",
-                  background: "#F8FAFF", cursor: "pointer", transition: "all 0.2s",
+                  background: "#111", cursor: "pointer", transition: "all 0.2s",
                   position: "relative", overflow: "hidden"
                 }} onMouseEnter={e => e.currentTarget.style.borderColor="var(--primary)"} onMouseLeave={e => e.currentTarget.style.borderColor="var(--border)"}>
                   <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
@@ -282,7 +281,7 @@ export default function AdminMenuPage() {
                     </>
                   ) : (
                     <>
-                      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "white", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.05)" }}>
+                      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.05)" }}>
                         <ImageIcon size={28} color="var(--primary)" />
                       </div>
                       <div style={{ fontWeight: 800, color: "var(--text-dark)", fontSize: "1.1rem", marginBottom: "4px" }}>Click to upload image</div>
@@ -293,7 +292,7 @@ export default function AdminMenuPage() {
               </div>
 
               <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#F1F5F9", borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#111", borderRadius: "12px" }}>
                   <input type="checkbox" id="avail" checked={form.available} onChange={e => setForm({...form, available: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "var(--primary)" }} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <label htmlFor="avail" style={{ fontWeight: 700, cursor: "pointer", color: "var(--text-dark)" }}>Item is currently available</label>
@@ -301,7 +300,7 @@ export default function AdminMenuPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#FFF4ED", border: "1px solid #FFEDD5", borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#2a160c", border: "1px solid #4a2111", borderRadius: "12px" }}>
                   <input type="checkbox" id="popular" checked={form.isPopular || false} onChange={e => setForm({...form, isPopular: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#EA580C" }} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <label htmlFor="popular" style={{ fontWeight: 700, cursor: "pointer", color: "#9A3412" }}>🔥 Mark as Popular</label>
@@ -309,7 +308,7 @@ export default function AdminMenuPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#F0FDF4", border: "1px solid #DCFCE7", borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d2b18", border: "1px solid #164f2b", borderRadius: "12px" }}>
                   <input type="checkbox" id="recommended" checked={form.isRecommended || false} onChange={e => setForm({...form, isRecommended: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#16A34A" }} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <label htmlFor="recommended" style={{ fontWeight: 700, cursor: "pointer", color: "#166534" }}>🎯 Mark as Recommended</label>
@@ -317,7 +316,7 @@ export default function AdminMenuPage() {
                   </div>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#F8FAFF", border: "1px solid #DBEAFE", borderRadius: "12px" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d1b2a", border: "1px solid #1a365d", borderRadius: "12px" }}>
                   <input type="checkbox" id="banner" checked={form.isBanner || false} onChange={e => setForm({...form, isBanner: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#2563EB" }} />
                   <div style={{ display: "flex", flexDirection: "column" }}>
                     <label htmlFor="banner" style={{ fontWeight: 700, cursor: "pointer", color: "#1E3A8A" }}>🎇 Feature in Top Banner</label>
@@ -328,9 +327,9 @@ export default function AdminMenuPage() {
 
               <div style={{ paddingTop: "24px", borderTop: "1px solid var(--border)", marginTop: "12px", display: "flex", gap: "16px", justifyContent: "flex-end" }}>
                 <Dialog.Close asChild>
-                  <button type="button" className="otw-btn otw-btn-outline" style={{ minWidth: "120px" }}>Cancel</button>
+                  <button type="button" style={{ background: "transparent", color: "#e4e4e7", border: "1px solid #3f3f46", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "120px" }}>Cancel</button>
                 </Dialog.Close>
-                <button type="submit" className="otw-btn otw-btn-primary" style={{ minWidth: "160px" }}>
+                <button type="submit" style={{ background: "#0055ff", color: "#fff", border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "160px" }}>
                   {editingItem ? "Save Changes" : "Create Item"}
                 </button>
               </div>

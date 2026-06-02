@@ -44,6 +44,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const [order, setOrder] = useState<Order | null>(null);
   const [fetching, setFetching] = useState(true);
   const [rating, setRating] = useState(0);
+  const [reviewText, setReviewText] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
@@ -96,6 +97,31 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
       setSendingMsg(false);
     }
   };
+
+  const submitReview = async () => {
+    if (!rating) {
+      toast.error("Please select a rating first.");
+      return;
+    }
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ rating, review: reviewText }),
+      });
+      if (res.ok) {
+        setRatingSubmitted(true);
+        toast.success("Thanks for rating! ⭐", { style: { background: "#18181b", color: "#fff" } });
+        // Update local order object so the UI reflects it immediately
+        setOrder(prev => prev ? { ...prev, rating, review: reviewText } : prev);
+      } else {
+        toast.error("Failed to submit review");
+      }
+    } catch {
+      toast.error("Failed to submit review");
+    }
+  };
+
 
   if (loading || fetching || !order) {
     return (
@@ -359,22 +385,29 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
             {/* ── Rating (delivered) ── */}
             {isDelivered && (
               <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "28px", textAlign: "center", animation: "fade-up 0.6s ease" }}>
-                {ratingSubmitted ? (
+                {(order.rating || ratingSubmitted) ? (
                   <div>
                     <div style={{ fontSize: "2.5rem", marginBottom: "8px" }}>🙏</div>
                     <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#4ade80" }}>Thanks for your feedback!</div>
-                    <div style={{ color: "#6b7280", marginTop: "6px", fontSize: "0.9rem" }}>Your rating has been recorded.</div>
+                    <div style={{ color: "#e4e4e7", marginTop: "12px", fontSize: "1.4rem" }}>
+                      {Array(order.rating || rating).fill("⭐").join("")}
+                    </div>
+                    {(order.review || reviewText) && (
+                      <div style={{ background: "#27272a", padding: "12px", borderRadius: "8px", marginTop: "12px", fontSize: "0.9rem", color: "#a0a0a0", fontStyle: "italic" }}>
+                        "{order.review || reviewText}"
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <>
-                    <div style={{ fontSize: "1.8rem", marginBottom: "8px" }}>How was your order?</div>
-                    <p style={{ color: "#6b7280", fontSize: "0.9rem", marginBottom: "20px" }}>Rate your experience with ONN DA WAY</p>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "12px" }}>
+                    <div style={{ fontSize: "1.8rem", marginBottom: "8px", fontWeight: 800 }}>How was your order?</div>
+                    <p style={{ color: "#6b7280", fontSize: "0.95rem", marginBottom: "20px" }}>Rate your experience with ONN DA WAY</p>
+                    <div style={{ display: "flex", justifyContent: "center", gap: "12px", marginBottom: "24px" }}>
                       {[1, 2, 3, 4, 5].map(star => (
                         <button
                           key={star}
-                          onClick={() => { setRating(star); setRatingSubmitted(true); toast.success("Thanks for rating! ⭐", { style: { background: "#18181b", color: "#fff" } }); }}
-                          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", fontSize: "2.2rem", transition: "transform 0.15s", animation: star <= rating ? "star-pop 0.3s ease" : "none" }}
+                          onClick={() => setRating(star)}
+                          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", fontSize: "2.4rem", transition: "transform 0.15s", animation: star <= rating ? "star-pop 0.3s ease" : "none" }}
                           onMouseEnter={e => e.currentTarget.style.transform = "scale(1.2)"}
                           onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
                         >
@@ -382,6 +415,30 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
                         </button>
                       ))}
                     </div>
+                    {rating > 0 && (
+                      <div style={{ animation: "fade-up 0.4s ease" }}>
+                        <textarea
+                          placeholder="Tell us what you liked or how we can improve (optional)"
+                          value={reviewText}
+                          onChange={(e) => setReviewText(e.target.value)}
+                          style={{
+                            width: "100%", padding: "14px", borderRadius: "10px", border: "1px solid #3f3f46",
+                            background: "#111", color: "#fff", resize: "none", height: "80px", marginBottom: "16px",
+                            fontFamily: "inherit", fontSize: "0.95rem"
+                          }}
+                        />
+                        <button 
+                          onClick={submitReview}
+                          style={{
+                            background: "#0055ff", color: "#fff", border: "none", padding: "12px 24px",
+                            borderRadius: "8px", fontWeight: 800, fontSize: "1rem", cursor: "pointer", width: "100%",
+                            textTransform: "uppercase", letterSpacing: "1px"
+                          }}
+                        >
+                          Submit Feedback
+                        </button>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

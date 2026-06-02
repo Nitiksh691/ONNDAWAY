@@ -5,11 +5,11 @@ import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell,
 import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
-  placed:            { bg: "#FFF7ED", border: "#FED7AA" },
-  preparing:         { bg: "#EFF6FF", border: "#BFDBFE" },
-  out_for_delivery:  { bg: "#F0FDF4", border: "#BBF7D0" },
-  delivered:         { bg: "#F9FAFB", border: "#E5E7EB" },
-  cancelled:         { bg: "#FFF1F2", border: "#FECDD3" },
+  placed:            { bg: "#271c19", border: "#522c22" },
+  preparing:         { bg: "#1a2436", border: "#1e3a5f" },
+  out_for_delivery:  { bg: "#143324", border: "#114c33" },
+  delivered:         { bg: "#18181b", border: "#27272a" },
+  cancelled:         { bg: "#3a1318", border: "#5c1923" },
 };
 
 // Plays a beep using the Web Audio API — works without any audio file
@@ -309,7 +309,7 @@ export default function AdminOrdersPage() {
 
       {/* Batch Assign Panel */}
       {selectedOrders.length > 0 && (
-        <div className="otw-card" style={{ padding: "16px 24px", marginBottom: "20px", background: "var(--primary)", color: "white", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ background: "var(--primary)", border: "1px solid #0044cc", borderRadius: "16px", padding: "16px 24px", marginBottom: "20px", color: "white", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
           <Users size={20} />
           <span style={{ fontWeight: 700 }}>{selectedOrders.length} orders selected</span>
           <select
@@ -329,22 +329,21 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      <div className="otw-card" style={{ padding: "24px" }}>
+      <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
         <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
             <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
             <input
               type="text"
               placeholder="Search by Order ID, Name, or Phone..."
-              className="otw-input"
-              style={{ paddingLeft: "48px" }}
+              style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
           <div style={{ position: "relative", width: "220px" }}>
             <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", zIndex: 1 }} />
-            <select className="otw-input" style={{ paddingLeft: "48px", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <select style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">All Statuses</option>
               <option value="placed">🔴 Placed (Pending)</option>
               <option value="preparing">🟡 Preparing</option>
@@ -372,7 +371,7 @@ export default function AdminOrdersPage() {
                   border: `2px solid ${isUnconfirmed ? "#FCA5A5" : selectedOrders.includes(order.id) ? "var(--primary)" : colors.border}`,
                   borderRadius: "12px",
                   padding: "20px",
-                  background: isUnconfirmed ? "#FFF7F7" : colors.bg,
+                  background: isUnconfirmed ? "#450a0a" : colors.bg,
                   transition: "all 0.2s",
                   position: "relative",
                   animation: isUnconfirmed ? "pulse-alarm 2s ease-in-out infinite" : "none",
@@ -451,45 +450,75 @@ export default function AdminOrdersPage() {
 
                   {/* Right panel: Confirm + Assign */}
                   <div style={{ display: "flex", flexDirection: "column", gap: "12px", width: "220px" }}>
-                    {/* CONFIRM BUTTON — only for unconfirmed placed orders */}
+                    {/* CONFIRM / CANCEL BUTTONS — only for unconfirmed placed orders */}
                     {isUnconfirmed && (
-                      <button
-                        onClick={() => handleConfirmOrder(order.id)}
-                        disabled={confirmingId === order.id}
-                        style={{
-                          width: "100%",
-                          padding: "12px 16px",
-                          background: "linear-gradient(135deg, #059669, #047857)",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "10px",
-                          fontWeight: 900,
-                          fontSize: "0.9rem",
-                          cursor: confirmingId === order.id ? "not-allowed" : "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          gap: "8px",
-                          boxShadow: "0 4px 12px rgba(5,150,105,0.4)",
-                          transition: "all 0.2s",
-                          opacity: confirmingId === order.id ? 0.7 : 1,
-                        }}
-                        onMouseOver={e => { if (confirmingId !== order.id) e.currentTarget.style.transform = "translateY(-2px)"; }}
-                        onMouseOut={e => { e.currentTarget.style.transform = "translateY(0)"; }}
-                      >
-                        <CheckCircle size={18} />
-                        {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
-                      </button>
+                      <div style={{ display: "flex", gap: "8px", flexDirection: "column" }}>
+                        <button
+                          onClick={() => handleConfirmOrder(order.id)}
+                          disabled={confirmingId === order.id}
+                          style={{
+                            width: "100%",
+                            padding: "12px 16px",
+                            background: "linear-gradient(135deg, #059669, #047857)",
+                            color: "white",
+                            border: "none",
+                            borderRadius: "10px",
+                            fontWeight: 900,
+                            fontSize: "0.9rem",
+                            cursor: confirmingId === order.id ? "not-allowed" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "8px",
+                            boxShadow: "0 4px 12px rgba(5,150,105,0.4)",
+                            transition: "all 0.2s",
+                            opacity: confirmingId === order.id ? 0.7 : 1,
+                          }}
+                          onMouseOver={e => { if (confirmingId !== order.id) e.currentTarget.style.transform = "translateY(-2px)"; }}
+                          onMouseOut={e => { e.currentTarget.style.transform = "translateY(0)"; }}
+                        >
+                          <CheckCircle size={18} />
+                          {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            if (confirm("Are you sure you want to cancel this potentially fraudulent/unresponsive order?")) {
+                              handleUpdateStatus(order.id, "cancelled");
+                            }
+                          }}
+                          disabled={confirmingId === order.id}
+                          style={{
+                            width: "100%",
+                            padding: "10px 16px",
+                            background: "transparent",
+                            color: "#ef4444",
+                            border: "1px solid #7f1d1d",
+                            borderRadius: "10px",
+                            fontWeight: 700,
+                            fontSize: "0.85rem",
+                            cursor: confirmingId === order.id ? "not-allowed" : "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px",
+                            transition: "all 0.2s",
+                          }}
+                          onMouseOver={e => { if (confirmingId !== order.id) { e.currentTarget.style.background = "#450a0a"; e.currentTarget.style.color = "#f87171"; } }}
+                          onMouseOut={e => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#ef4444"; }}
+                        >
+                          ❌ Cancel Order
+                        </button>
+                      </div>
                     )}
 
                     {/* Assign Partner */}
-                    <div style={{ background: "rgba(255,255,255,0.8)", padding: "14px", borderRadius: "10px" }}>
+                    <div style={{ background: "#27272a", padding: "14px", borderRadius: "10px" }}>
                       <div style={{ fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.05em" }}>
                         <Truck size={14} /> ASSIGN PARTNER
                       </div>
                       <select
-                        className="otw-input"
-                        style={{ fontSize: "0.85rem", padding: "8px 12px" }}
+                        style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "8px 12px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", fontSize: "0.85rem" }}
                         value={order.deliveryPersonId || ""}
                         onChange={(e) => handleAssignPartner(order.id, e.target.value)}
                       >

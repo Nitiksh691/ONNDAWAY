@@ -16,6 +16,8 @@ const OrderSchema = new Schema({
   deliveryPersonName: { type: String, default: null },
   deliveryOtp:        { type: String, default: null },
   messages:           { type: [{ sender: String, text: String, timestamp: { type: Date, default: Date.now } }], default: [] },
+  rating:             { type: Number, min: 1, max: 5, default: null },
+  review:             { type: String, default: null },
 }, { timestamps: true });
 
 export default models.Order || model("Order", OrderSchema);

@@ -18,9 +18,9 @@ interface AppContextType {
   loading: boolean;
   /** Current cart contents. */
   cart: CartItem[];
-  addToCart: (item: MenuItem) => void;
-  removeFromCart: (itemId: string) => void;
-  updateQuantity: (itemId: string, qty: number) => void;
+  addToCart: (item: MenuItem, specialInstructions?: string) => void;
+  removeFromCart: (cartItemId: string) => void;
+  updateQuantity: (cartItemId: string, qty: number) => void;
   clearCart: () => void;
   /** Sum of (price × quantity) for all cart items, before fees/discounts. */
   cartTotal: number;
@@ -105,36 +105,48 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
   const saveCart = useCallback((newCart: CartItem[]) => {
-    setCart(newCart);
-    localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(newCart));
+    // Migrate legacy carts to have cartItemId
+    const migrated = newCart.map(c => ({
+      ...c,
+      cartItemId: c.cartItemId || `${c.item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`
+    }));
+    setCart(migrated);
+    localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(migrated));
   }, []);
 
-  const addToCart = useCallback((item: MenuItem) => {
+  const addToCart = useCallback((item: MenuItem, specialInstructions?: string) => {
     setCart((prev) => {
-      const existing = prev.find((c) => c.item.id === item.id);
+      // Find if we already have this item with the exact same instructions
+      const existing = prev.find((c) => c.item.id === item.id && (c.specialInstructions || "") === (specialInstructions || ""));
       const updated = existing
-        ? prev.map((c) => c.item.id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
-        : [...prev, { item, quantity: 1 }];
+        ? prev.map((c) => c.cartItemId === existing.cartItemId ? { ...c, quantity: c.quantity + 1 } : c)
+        : [...prev, { 
+            cartItemId: `${item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`, 
+            item, 
+            quantity: 1, 
+            specialInstructions: specialInstructions || undefined
+          }];
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });
   }, []);
 
-  const removeFromCart = useCallback((itemId: string) => {
+  const removeFromCart = useCallback((cartItemId: string) => {
     setCart((prev) => {
-      const updated = prev.filter((c) => c.item.id !== itemId);
+      // Fallback to item.id if cartItemId doesn't match but item.id does (for legacy)
+      const updated = prev.filter((c) => c.cartItemId !== cartItemId && c.item.id !== cartItemId);
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });
   }, []);
 
-  const updateQuantity = useCallback((itemId: string, qty: number) => {
+  const updateQuantity = useCallback((cartItemId: string, qty: number) => {
     if (qty <= 0) {
-      removeFromCart(itemId);
+      removeFromCart(cartItemId);
       return;
     }
     setCart((prev) => {
-      const updated = prev.map((c) => c.item.id === itemId ? { ...c, quantity: qty } : c);
+      const updated = prev.map((c) => (c.cartItemId === cartItemId || c.item.id === cartItemId) ? { ...c, quantity: qty } : c);
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });

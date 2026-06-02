@@ -17,9 +17,36 @@ import {
   DollarSign,
   Lock,
   AlertCircle,
+  Bell,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { STORAGE_KEYS } from "@/lib/constants";
+
+function playAlarmBeep() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const playTone = (freq: number, start: number, duration: number) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.frequency.value = freq;
+      osc.type = "sine";
+      gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
+      osc.start(ctx.currentTime + start);
+      osc.stop(ctx.currentTime + start + duration);
+    };
+    playTone(880, 0,    0.18);
+    playTone(1100, 0.22, 0.18);
+    playTone(1320, 0.44, 0.28);
+    playTone(880, 0.85,  0.18);
+    playTone(1100, 1.07, 0.18);
+    playTone(1320, 1.29, 0.28);
+    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
+    audio.play().catch(() => {});
+  } catch (e) {}
+}
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
@@ -154,7 +181,7 @@ function AdminPasscodeModal({ onSuccess }: { onSuccess: () => void }) {
             >
               Admin Access
             </Dialog.Title>
-            <Dialog.Description style={{ color: "#a0a0a0", fontSize: "0.9rem", lineHeight: 1.5 }}>
+            <Dialog.Description style={{ color: "#e4e4e7", fontSize: "0.9rem", lineHeight: 1.5 }}>
               Enter the admin passcode to access the ONN D A WAY control panel.
             </Dialog.Description>
           </div>
@@ -168,7 +195,7 @@ function AdminPasscodeModal({ onSuccess }: { onSuccess: () => void }) {
                   display: "block",
                   fontSize: "0.78rem",
                   fontWeight: 700,
-                  color: "#a0a0a0",
+                  color: "#e4e4e7",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   marginBottom: 8,
@@ -236,7 +263,7 @@ function AdminPasscodeModal({ onSuccess }: { onSuccess: () => void }) {
                   flex: 1,
                   padding: "13px",
                   background: "#27272a",
-                  color: "#a0a0a0",
+                  color: "#e4e4e7",
                   border: "1px solid #3f3f46",
                   borderRadius: 10,
                   fontWeight: 700,
@@ -314,6 +341,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
+  const [pendingCount, setPendingCount] = useState(0);
+  const prevPendingRef = useRef(0);
 
   useEffect(() => {
     const isAdmin =
@@ -326,6 +355,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       setShowPasscodeModal(true);
     }
   }, []);
+
+  useEffect(() => {
+    if (!authorized) return;
+
+    const checkOrders = async () => {
+      try {
+        const res = await fetch("/api/orders");
+        if (res.ok) {
+          const data = await res.json();
+          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          if (unconfirmed > prevPendingRef.current) {
+            playAlarmBeep();
+          }
+          prevPendingRef.current = unconfirmed;
+          setPendingCount(unconfirmed);
+        }
+      } catch (e) {}
+    };
+
+    const interval = setInterval(checkOrders, 3000);
+    checkOrders();
+    return () => clearInterval(interval);
+  }, [authorized]);
 
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEYS.adminAuthorized);
@@ -347,7 +399,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (loading || !authorized) return null;
 
   return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a", color: "#e4e4e7" }}>
+    <div className="admin-theme" style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a", color: "#e4e4e7" }}>
 
       {/* Mobile Header */}
       <div
@@ -418,7 +470,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <div style={{ fontWeight: 900, fontSize: "1.4rem", color: "#0055ff", letterSpacing: "1px" }}>
               ONN D A WAY
             </div>
-            <div style={{ fontSize: "0.75rem", color: "#a0a0a0", letterSpacing: "0.15em", fontWeight: 700, marginTop: "4px" }}>
+            <div style={{ fontSize: "0.75rem", color: "#e4e4e7", letterSpacing: "0.15em", fontWeight: 700, marginTop: "4px" }}>
               ADMIN PORTAL
             </div>
           </div>
@@ -457,14 +509,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   background: isActive
                     ? "linear-gradient(135deg, rgba(0,85,255,0.15), transparent)"
                     : "transparent",
-                  color: isActive ? "#0055ff" : "#a0a0a0",
+                  color: isActive ? "#0055ff" : "#e4e4e7",
                   border: `1px solid ${isActive ? "rgba(0,85,255,0.3)" : "transparent"}`,
                 }}
                 onMouseEnter={(e) => {
                   if (!isActive) e.currentTarget.style.color = "#fff";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.color = "#a0a0a0";
+                  if (!isActive) e.currentTarget.style.color = "#e4e4e7";
                 }}
               >
                 <span style={{ opacity: isActive ? 1 : 0.7 }}>{link.icon}</span>
@@ -502,11 +554,65 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       </div>
 
       {/* Main Content */}
-      <div style={{ flex: 1, padding: "40px", overflowY: "auto", position: "relative" }} className="admin-main">
-        <div style={{ maxWidth: "1200px", margin: "0 auto" }}>{children}</div>
+      <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", position: "relative" }} className="admin-main">
+        {pendingCount > 0 && (
+          <div style={{
+            background: "linear-gradient(135deg, #DC2626, #B91C1C)",
+            color: "white", padding: "14px 24px",
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            boxShadow: "0 4px 20px rgba(220,38,38,0.4)", zIndex: 10, flexShrink: 0
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <Bell size={24} />
+              <div style={{ fontWeight: 900 }}>
+                🚨 {pendingCount} NEW ORDER{pendingCount > 1 ? "S" : ""} WAITING FOR CONFIRMATION!
+              </div>
+            </div>
+            <Link href="/admin/orders" style={{ background: "white", color: "#DC2626", padding: "8px 16px", borderRadius: "8px", fontWeight: 800, textDecoration: "none" }}>
+              View Orders
+            </Link>
+          </div>
+        )}
+        <div style={{ flex: 1, padding: "40px", position: "relative" }}>
+          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>{children}</div>
+        </div>
       </div>
 
       <style>{`
+        .admin-theme {
+          --text-dark: #ffffff !important;
+          --text-mid: #e4e4e7 !important;
+          --text-muted: #a1a1aa !important;
+          --border: #3f3f46 !important;
+        }
+        .admin-theme .otw-card {
+          background: #18181b !important;
+          border-color: #27272a !important;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+        }
+        .admin-theme .otw-input {
+          background: #111 !important;
+          border-color: #3f3f46 !important;
+          color: #ffffff !important;
+        }
+        .admin-theme .otw-input:focus {
+          border-color: #0055ff !important;
+          box-shadow: 0 0 0 3px rgba(0,85,255,0.2) !important;
+        }
+        .admin-theme .otw-label {
+          color: #a1a1aa !important;
+        }
+        .admin-theme .otw-btn-primary {
+          background: #0055ff !important;
+          border-color: #0055ff !important;
+          color: #ffffff !important;
+          box-shadow: 0 4px 0 #0033cc !important;
+        }
+        .admin-theme .otw-btn-primary:hover {
+          background: #0044cc !important;
+          box-shadow: 0 2px 0 #0033cc !important;
+          transform: translateY(2px) !important;
+        }
         @media(max-width: 900px) {
           .show-mobile { display: flex !important; }
           .admin-sidebar { position: fixed !important; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }

@@ -102,7 +102,7 @@ export default function ExpensesPage() {
           { label: "This Month", val: monthlyTotal, color: "#7C3AED" },
           { label: "This Year", val: yearlyTotal, color: "#059669" },
         ].map((card, i) => (
-          <div key={i} className="otw-card" style={{ padding: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
+          <div key={i} style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
             <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>{card.label}</div>
             <div style={{ fontSize: "1.8rem", fontWeight: 900, color: card.color }}>₹{card.val.toLocaleString()}</div>
           </div>
@@ -111,33 +111,33 @@ export default function ExpensesPage() {
 
       <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "32px" }}>
         {/* Add Expense Form */}
-        <div className="otw-card" style={{ padding: "24px", height: "fit-content" }}>
+        <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px", height: "fit-content" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
             <Plus size={20} color="var(--primary)"/> Log Expense
           </h3>
           <form onSubmit={handleAddExpense} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
             <div>
-              <label className="otw-label">Amount (₹) *</label>
-              <input type="number" className="otw-input" placeholder="e.g. 500" value={amount} onChange={e=>setAmount(e.target.value)} required />
+              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Amount (₹) *</label>
+              <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. 500" value={amount} onChange={e=>setAmount(e.target.value)} required />
             </div>
             <div>
-              <label className="otw-label">Category *</label>
-              <select className="otw-input" value={category} onChange={e=>setCategory(e.target.value)}>
+              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Category *</label>
+              <select className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={category} onChange={e=>setCategory(e.target.value)}>
                 {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
               </select>
             </div>
             <div>
-              <label className="otw-label">Description (Optional)</label>
-              <textarea className="otw-input" rows={3} placeholder="e.g. Bought 5L milk" value={description} onChange={e=>setDescription(e.target.value)} />
+              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Description (Optional)</label>
+              <textarea className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} rows={3} placeholder="e.g. Bought 5L milk" value={description} onChange={e=>setDescription(e.target.value)} />
             </div>
-            <button type="submit" disabled={isSubmitting} className="otw-btn otw-btn-primary" style={{ marginTop: "8px" }}>
+            <button type="submit" disabled={isSubmitting} style={{ background: "#0055ff", color: "#fff", border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", marginTop: "8px", fontFamily: "inherit" }}>
               {isSubmitting ? "Saving..." : "Add Expense"}
             </button>
           </form>
         </div>
 
         {/* Expense History */}
-        <div className="otw-card" style={{ padding: "24px" }}>
+        <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
             <Wallet size={20} color="var(--primary)"/> Expense History
           </h3>

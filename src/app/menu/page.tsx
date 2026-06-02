@@ -1,9 +1,20 @@
 "use client";
-import { useState, useMemo } from "react";
-import { useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import Image from "next/image";
+import Link from "next/link";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { MenuItem } from "@/lib/types";
+
+type BannerSlide = {
+  id: string;
+  text: string;
+  subText?: string;
+  image: string;
+  link: string;
+  active: boolean;
+};
 
 const CATEGORIES = ["all", "coffee", "snacks", "meals", "drinks", "desserts"] as const;
 const CAT_EMOJI: Record<string, string> = {
@@ -32,13 +43,47 @@ export default function MenuPage() {
 
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminBanner, setAdminBanner] = useState<{ text: string, link: string, active: boolean } | null>(null);
+  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
+  const [bannerEnabled, setBannerEnabled] = useState(true);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const sliderRef = useRef<HTMLDivElement>(null);
+  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Autoplay slider
+  const startAutoplay = useCallback(() => {
+    if (autoplayRef.current) clearInterval(autoplayRef.current);
+    autoplayRef.current = setInterval(() => {
+      setCurrentSlide(prev => (prev + 1) % Math.max(bannerSlides.length, 1));
+    }, 5000);
+  }, [bannerSlides.length]);
+
+  useEffect(() => {
+    if (bannerSlides.length > 1) startAutoplay();
+    return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
+  }, [bannerSlides.length, startAutoplay]);
+
+  const goToSlide = useCallback((idx: number) => {
+    setCurrentSlide(idx);
+    startAutoplay(); // reset autoplay timer on manual navigation
+  }, [startAutoplay]);
 
   useEffect(() => {
     try {
-      const b = localStorage.getItem("otw_demo_banner");
-      if (b) setAdminBanner(JSON.parse(b));
-    } catch (e) {}
+      const enabled = localStorage.getItem("otw_banner_enabled");
+      if (enabled !== null) setBannerEnabled(enabled === "true");
+
+      const raw = localStorage.getItem("otw_banner_slides");
+      if (raw) {
+        const parsed: BannerSlide[] = JSON.parse(raw);
+        setBannerSlides(parsed.filter(s => s.active && s.image));
+      }
+    } catch (e) { }
+
+    const params = new URLSearchParams(window.location.search);
+    const cat = params.get("category");
+    if (cat && CATEGORIES.includes(cat as any)) {
+      setActiveCategory(cat);
+    }
 
     const fetchMenu = async () => {
       try {
@@ -69,34 +114,149 @@ export default function MenuPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @media (max-width: 768px) {
           .food-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; gap: 16px !important; }
         }
       `}} />
 
-      {/* Dynamic Admin Banner */}
-      {adminBanner?.active && (
-        <div style={{ background: "#0055ff", color: "white", textAlign: "center", padding: "12px", fontSize: "0.9rem", fontWeight: 700 }}>
-          {adminBanner.link ? (
-            <a href={adminBanner.link} style={{ color: "white", textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
-              {adminBanner.text}
-            </a>
-          ) : (
-            <span>{adminBanner.text}</span>
-          )}
+      {/* ─── BANNER SLIDER ─── */}
+      {bannerEnabled && bannerSlides.length > 0 ? (
+        <div style={{ background: "var(--bg-cream)", padding: "24px 0 16px" }}>
+          <div className="otw-container">
+            <div ref={sliderRef} style={{
+              position: "relative", borderRadius: "24px", overflow: "hidden",
+              aspectRatio: "21/9", minHeight: "220px", maxHeight: "480px",
+              background: "#111", boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
+            }}>
+              {/* Slides */}
+              {bannerSlides.map((slide, idx) => (
+                <div key={slide.id} style={{
+                  position: "absolute", inset: 0,
+                  opacity: idx === currentSlide ? 1 : 0,
+                  transform: idx === currentSlide ? "scale(1)" : "scale(1.04)",
+                  transition: "opacity 0.7s ease, transform 0.7s ease",
+                  zIndex: idx === currentSlide ? 1 : 0,
+                }}>
+                  <Image
+                    src={slide.image} alt={slide.text || "Banner"} fill
+                    sizes="(max-width: 768px) 100vw, 1200px"
+                    style={{ objectFit: "cover" }}
+                    priority={idx === 0}
+                  />
+                  {/* Dark gradient overlay */}
+                  <div style={{
+                    position: "absolute", inset: 0, zIndex: 1,
+                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.05) 100%)"
+                  }} />
+
+                  {/* Text content */}
+                  <div style={{
+                    position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2,
+                    padding: "clamp(24px, 5vw, 48px)", display: "flex", flexDirection: "column", gap: "10px"
+                  }}>
+                    {slide.text && (
+                      <h3 style={{
+                        fontFamily: "'Outfit', sans-serif", fontWeight: 900,
+                        fontSize: "clamp(1.4rem, 5vw, 3.2rem)", lineHeight: 1.05,
+                        color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em",
+                        textShadow: "0 4px 16px rgba(0,0,0,0.8)",
+                        maxWidth: "80%", wordBreak: "break-word", overflowWrap: "anywhere"
+                      }}>
+                        {slide.text}
+                      </h3>
+                    )}
+                    {slide.subText && (
+                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.9rem, 2.2vw, 1.15rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                        {slide.subText}
+                      </p>
+                    )}
+                    {slide.link && (
+                      <Link href={slide.link} style={{
+                        display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "8px",
+                        background: "var(--primary)", color: "#fff", padding: "12px 28px",
+                        borderRadius: "99px", fontWeight: 800, fontSize: "0.95rem",
+                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px",
+                        width: "fit-content", boxShadow: "0 8px 24px rgba(1,53,251,0.5)",
+                        transition: "transform 0.2s",
+                      }}
+                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
+                      >
+                        SHOP NOW <ArrowRight size={16} />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              ))}
+
+              {/* Navigation arrows (desktop) */}
+              {bannerSlides.length > 1 && (
+                <>
+                  <button onClick={() => goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length)}
+                    aria-label="Previous slide"
+                    className="desktop-only"
+                    style={{
+                      position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 40, height: 40, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+                  >
+                    <ChevronLeft size={20} />
+                  </button>
+                  <button onClick={() => goToSlide((currentSlide + 1) % bannerSlides.length)}
+                    aria-label="Next slide"
+                    className="desktop-only"
+                    style={{
+                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 40, height: 40, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
+                      transition: "background 0.2s",
+                    }}
+                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
+                  >
+                    <ChevronRight size={20} />
+                  </button>
+                </>
+              )}
+
+              {/* Dots */}
+              {bannerSlides.length > 1 && (
+                <div style={{
+                  position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", zIndex: 3,
+                  display: "flex", gap: "6px"
+                }}>
+                  {bannerSlides.map((_, idx) => (
+                    <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
+                      style={{
+                        width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none",
+                        background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
+                        cursor: "pointer", transition: "all 0.3s ease", padding: 0,
+                      }}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="otw-page-header">
+          <div className="otw-container">
+            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "8px" }}>Our Menu</h1>
+            <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
+              Fresh campus food, curated daily. Delivered to you.
+            </p>
+          </div>
         </div>
       )}
-
-      {/* Header */}
-      <div className="otw-page-header">
-        <div className="otw-container">
-          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "8px" }}>Our Menu</h1>
-          <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
-            Fresh campus food, curated daily. Delivered to you.
-          </p>
-        </div>
-      </div>
 
       {/* Sticky Category Filters */}
       <div style={{
@@ -153,7 +313,7 @@ export default function MenuPage() {
                 }}>
                   {popular.map(item => (
                     <div key={item.id} style={{ minWidth: "260px", maxWidth: "280px", flexShrink: 0 }}>
-                      <FoodCard item={item} compact/>
+                      <FoodCard item={item} compact />
                     </div>
                   ))}
                 </div>
@@ -176,7 +336,7 @@ export default function MenuPage() {
                 }}>
                   {recommended.map(item => (
                     <div key={item.id} style={{ minWidth: "260px", maxWidth: "280px", flexShrink: 0 }}>
-                      <FoodCard item={item} compact/>
+                      <FoodCard item={item} compact />
                     </div>
                   ))}
                 </div>
@@ -188,7 +348,7 @@ export default function MenuPage() {
                   📋 Full Menu
                 </h2>
                 <div className="food-grid">
-                  {menu.map(item => <FoodCard key={item.id} item={item}/>)}
+                  {menu.map(item => <FoodCard key={item.id} item={item} />)}
                 </div>
               </section>
             </>
@@ -207,7 +367,7 @@ export default function MenuPage() {
                 </div>
               ) : (
                 <div className="food-grid">
-                  {filtered.map(item => <FoodCard key={item.id} item={item}/>)}
+                  {filtered.map(item => <FoodCard key={item.id} item={item} />)}
                 </div>
               )}
             </div>
@@ -215,7 +375,7 @@ export default function MenuPage() {
         </div>
       </div>
 
-      <Footer/>
+      <Footer />
     </>
   );
 }
