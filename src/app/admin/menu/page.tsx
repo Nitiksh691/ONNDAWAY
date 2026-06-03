@@ -227,7 +227,7 @@ export default function AdminMenuPage() {
                 <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Name</label>
                 <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
               </div>
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
                 <div>
                   <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Current Price (₹)</label>
                   <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} required min="0" />

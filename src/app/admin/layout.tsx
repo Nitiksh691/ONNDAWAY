@@ -573,8 +573,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </Link>
           </div>
         )}
-        <div style={{ flex: 1, padding: "40px", position: "relative" }}>
-          <div style={{ maxWidth: "1200px", margin: "0 auto" }}>{children}</div>
+        <div className="admin-content-pad">
+          <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>{children}</div>
         </div>
       </div>
 
@@ -584,6 +584,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           --text-mid: #e4e4e7 !important;
           --text-muted: #a1a1aa !important;
           --border: #3f3f46 !important;
+        }
+        .admin-content-pad {
+          flex: 1;
+          padding: 32px;
+          position: relative;
         }
         .admin-theme .otw-card {
           background: #18181b !important;
@@ -617,7 +622,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           .show-mobile { display: flex !important; }
           .admin-sidebar { position: fixed !important; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
           .admin-sidebar.open { transform: translateX(0); }
-          .admin-main { padding: 90px 24px 40px !important; }
+          .admin-main { padding-top: 60px !important; }
+          .admin-content-pad { padding: 16px !important; }
         }
         /* Modern Scrollbar for Admin */
         ::-webkit-scrollbar { width: 8px; height: 8px; }

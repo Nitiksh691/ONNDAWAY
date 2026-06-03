@@ -68,16 +68,21 @@ export default function MenuPage() {
   }, [startAutoplay]);
 
   useEffect(() => {
-    try {
-      const enabled = localStorage.getItem("otw_banner_enabled");
-      if (enabled !== null) setBannerEnabled(enabled === "true");
-
-      const raw = localStorage.getItem("otw_banner_slides");
-      if (raw) {
-        const parsed: BannerSlide[] = JSON.parse(raw);
-        setBannerSlides(parsed.filter(s => s.active && s.image));
+    const fetchBanner = async () => {
+      try {
+        const res = await fetch("/api/settings/banner");
+        if (res.ok) {
+          const data = await res.json();
+          setBannerEnabled(data.bannerEnabled ?? true);
+          if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
+            setBannerSlides(data.bannerSlides.filter((s: BannerSlide) => s.active && s.image));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load banner settings:", err);
       }
-    } catch (e) { }
+    };
+    fetchBanner();
 
     const params = new URLSearchParams(window.location.search);
     const cat = params.get("category");

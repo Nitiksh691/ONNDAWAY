@@ -42,14 +42,23 @@ export default function AdminDashboard() {
   const [isLoaded, setIsLoaded] = useState(false);
 
   useEffect(() => {
-    try {
-      const enabled = localStorage.getItem("otw_banner_enabled");
-      if (enabled !== null) setBannerEnabled(enabled === "true");
-      
-      const raw = localStorage.getItem("otw_banner_slides");
-      if (raw) setSlides(JSON.parse(raw));
-    } catch (e) {}
-    setIsLoaded(true);
+    const fetchBanner = async () => {
+      try {
+        const res = await fetch("/api/settings/banner");
+        if (res.ok) {
+          const data = await res.json();
+          setBannerEnabled(data.bannerEnabled ?? true);
+          if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
+            setSlides(data.bannerSlides);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load banner settings:", err);
+      } finally {
+        setIsLoaded(true);
+      }
+    };
+    fetchBanner();
 
     const fetchStats = async () => {
       try {
@@ -65,13 +74,6 @@ export default function AdminDashboard() {
     const interval = setInterval(fetchStats, 5000);
     return () => clearInterval(interval);
   }, []);
-
-  // Auto-save when slides or bannerEnabled changes
-  useEffect(() => {
-    if (!isLoaded) return;
-    localStorage.setItem("otw_banner_slides", JSON.stringify(slides));
-    localStorage.setItem("otw_banner_enabled", String(bannerEnabled));
-  }, [slides, bannerEnabled, isLoaded]);
 
   const handleImageUpload = async (file: File, idx: number) => {
     setUploadingIdx(idx);
@@ -99,14 +101,26 @@ export default function AdminDashboard() {
     }
   };
 
-  const saveSlides = () => {
+  const saveSlides = async () => {
     setSaving(true);
-    localStorage.setItem("otw_banner_slides", JSON.stringify(slides));
-    localStorage.setItem("otw_banner_enabled", String(bannerEnabled));
-    setTimeout(() => setSaving(false), 800);
-    import("react-hot-toast").then(({ default: toast }) =>
-      toast.success("Banner settings saved! 🎉", { style: { background: "#18181b", color: "#fff", border: "1px solid #27272a" } })
-    );
+    try {
+      const res = await fetch("/api/settings/banner", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bannerEnabled, bannerSlides: slides })
+      });
+      if (res.ok) {
+        import("react-hot-toast").then(({ default: toast }) =>
+          toast.success("Banner settings saved! 🎉", { style: { background: "#18181b", color: "#fff", border: "1px solid #27272a" } })
+        );
+      } else {
+        throw new Error("Failed to save");
+      }
+    } catch (err) {
+      import("react-hot-toast").then(({ default: toast }) => toast.error("Error saving banner settings"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const moveSlide = (idx: number, dir: -1 | 1) => {
@@ -150,7 +164,7 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <div style={{ fontFamily: "inherit" }}>
+    <div style={{ fontFamily: "inherit", maxWidth: "1200px", margin: "0 auto", padding: "0 12px" }}>
       {/* Header */}
       <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
         <h1 style={{ fontSize: "clamp(1.6rem,4vw,2.2rem)", fontWeight: 900, color: "#fff", letterSpacing: "1px", textTransform: "uppercase" }}>Dashboard</h1>
@@ -264,7 +278,7 @@ export default function AdminDashboard() {
               </div>
 
               {/* Slide body */}
-              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", padding: "16px" }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "16px", padding: "16px" }}>
                 {/* Image upload */}
                 <div style={{ gridColumn: "1/-1" }}>
                   <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#a1a1aa", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "8px" }}>Banner Image</label>

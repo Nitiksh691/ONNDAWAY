@@ -513,7 +513,7 @@ export default function CustomersPage() {
                     <div
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "1fr 1fr",
+                        gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
                         gap: "14px",
                       }}
                     >
@@ -542,7 +542,7 @@ export default function CustomersPage() {
                   <div
                     style={{
                       display: "grid",
-                      gridTemplateColumns: "repeat(4, 1fr)",
+                      gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))",
                       gap: "12px",
                       marginBottom: "28px",
                     }}

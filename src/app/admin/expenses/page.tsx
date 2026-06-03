@@ -109,7 +109,7 @@ export default function ExpensesPage() {
         ))}
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: "32px" }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "32px" }}>
         {/* Add Expense Form */}
         <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px", height: "fit-content" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
