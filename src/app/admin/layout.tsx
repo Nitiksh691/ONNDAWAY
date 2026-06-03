@@ -18,6 +18,7 @@ import {
   Lock,
   AlertCircle,
   Bell,
+  Store,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -53,7 +54,8 @@ const ADMIN_LINKS = [
   { href: "/admin/analytics", label: "Analytics", icon: <LayoutDashboard size={18} /> },
   { href: "/admin/menu", label: "Menu Management", icon: <Coffee size={18} /> },
   { href: "/admin/orders", label: "Live Orders", icon: <ShoppingBag size={18} /> },
-  { href: "/admin/customers", label: "Customers", icon: <Users size={18} /> },
+  { href: "/admin/customers", label: "App Customers", icon: <Users size={18} /> },
+  { href: "/admin/walkin", label: "Walk-in Customers", icon: <Store size={18} /> },
   { href: "/admin/expenses", label: "Expenses", icon: <DollarSign size={18} /> },
   { href: "/admin/coupons", label: "Coupons", icon: <Tag size={18} /> },
   { href: "/admin/settings", label: "Settings", icon: <LayoutDashboard size={18} /> },
