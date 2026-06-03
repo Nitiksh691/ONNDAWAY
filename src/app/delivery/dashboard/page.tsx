@@ -155,6 +155,16 @@ export default function DeliveryDashboard() {
           </div>
         </div>
 
+        {/* Quick Actions */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "32px", flexWrap: "wrap" }}>
+          <button onClick={() => router.push('/')} style={{ flex: 1, minWidth: "160px", padding: "14px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.2)" }}>
+            <MapPin size={18} /> Explore Main Site
+          </button>
+          <button onClick={() => router.push('/delivery/walkin')} style={{ flex: 1, minWidth: "160px", padding: "14px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(245,158,11,0.2)" }}>
+            <User size={18} /> Walk-in Customers
+          </button>
+        </div>
+
         <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "20px" }}>Active Assignments</h2>
 
         {orders.length === 0 ? (
