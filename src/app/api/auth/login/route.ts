@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { withLogger } from "@/lib/withLogger";
 
 /**
  * POST /api/auth/login
@@ -9,7 +10,7 @@ import User from "@/models/User";
  * Authenticates a user with username + password.
  * Uses bcrypt.compare() to safely validate against the stored hash.
  */
-export async function POST(req: NextRequest) {
+const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const { username, password } = await req.json();
@@ -39,9 +40,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Update lastLoginAt
+    await User.updateOne(
+      { _id: user._id },
+      { $set: { lastLoginAt: new Date() } }
+    );
+
     return NextResponse.json({ userId: user.userId }, { status: 200 });
   } catch (error) {
     console.error("Login error:", error);
     return NextResponse.json({ error: "Failed to login" }, { status: 500 });
   }
-}
+};
+
+export const POST = withLogger("POST /api/auth/login", _POST);

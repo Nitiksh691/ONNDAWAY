@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
+import { withLogger } from "@/lib/withLogger";
 
-export async function GET(req: NextRequest) {
+const _GET = async (req: NextRequest) => {
   await dbConnect();
   const userId = req.nextUrl.searchParams.get("userId");
   const status = req.nextUrl.searchParams.get("status");
@@ -19,14 +20,22 @@ export async function GET(req: NextRequest) {
   }
   if (deliveryPersonId) filter.deliveryPersonId = deliveryPersonId;
 
-  const orders = await Order.find(filter).sort({ createdAt: -1 }).lean();
+  let query = Order.find(filter).sort({ createdAt: -1 });
+  
+  // Cap at 100 results for delivered/cancelled to prevent giant payloads
+  // but let active statuses return all for the dashboard
+  if (status === "delivered" || status === "cancelled" || !status) {
+      query = query.limit(100);
+  }
+
+  const orders = await query.lean();
 
   // Map _id to id for frontend compatibility
   const mapped = orders.map((o: { _id: { toString: () => string } } & Record<string, unknown>) => ({ ...o, id: o._id.toString() }));
   return NextResponse.json(mapped);
-}
+};
 
-export async function POST(req: NextRequest) {
+const _POST = async (req: NextRequest) => {
   await dbConnect();
   const body = await req.json();
   const { userId, userName, userPhone, items, location, total, couponCode, discount, status, scheduledTime } = body;
@@ -51,4 +60,8 @@ export async function POST(req: NextRequest) {
   });
 
   return NextResponse.json({ ...order.toObject(), id: order._id.toString() }, { status: 201 });
-}
+};
+
+export const GET  = withLogger("GET /api/orders",  _GET);
+export const POST = withLogger("POST /api/orders", _POST);
+

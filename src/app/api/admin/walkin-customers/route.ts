@@ -1,39 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import WalkInCustomer from "@/models/WalkInCustomer";
+import { withLogger } from "@/lib/withLogger";
 
 /**
  * GET  /api/admin/walkin-customers
  * Returns all walk-in customers sorted by most recent activity.
  */
-export async function GET() {
+const _GET = async () => {
   await dbConnect();
   try {
     const customers = await WalkInCustomer.find({})
-      .sort({ updatedAt: -1 })
-      .lean();
+      .sort({ lastVisitAt: -1, createdAt: -1 })
+      .lean({ virtuals: true }); // Ensure virtuals are included in lean() output
 
-    const result = customers.map((c: any) => {
-      const drinksInCycle = c.totalDrinks % 7;
-      const lastOrder =
-        c.orders && c.orders.length > 0
-          ? c.orders[c.orders.length - 1]
-          : null;
-
-      return {
-        id: c._id.toString(),
-        name: c.name,
-        phone: c.phone,
-        totalOrders: c.totalOrders || 0,
-        totalSpent: c.totalSpent || 0,
-        totalDrinks: c.totalDrinks || 0,
-        loyaltyRedeemed: c.loyaltyRedeemed || 0,
-        drinksInCycle,
-        isEligibleForFree: drinksInCycle >= 6,
-        lastVisit: lastOrder?.createdAt || c.createdAt,
-        createdAt: c.createdAt,
-      };
-    });
+    const result = customers.map((c: any) => ({
+      id:                c._id.toString(),
+      name:              c.name,
+      phone:             c.phone,
+      totalOrders:       c.totalOrders || 0,
+      totalSpent:        c.totalSpent || 0,
+      totalDrinks:       c.totalDrinks || 0,
+      loyaltyRedeemed:   c.loyaltyRedeemed || 0,
+      drinksInCycle:     c.drinksInCycle || 0,
+      isEligibleForFree: c.isEligibleForFree || false,
+      lastVisit:         c.lastVisitAt || c.createdAt,
+      createdAt:         c.createdAt,
+    }));
 
     return NextResponse.json(result);
   } catch (error) {
@@ -43,14 +36,14 @@ export async function GET() {
       { status: 500 }
     );
   }
-}
+};
 
 /**
  * POST /api/admin/walkin-customers
  * Create a new walk-in customer. Body: { name, phone }
  * If a customer with the same phone already exists, return that customer instead.
  */
-export async function POST(req: NextRequest) {
+const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const body = await req.json();
@@ -100,4 +93,7 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+export const GET  = withLogger("GET /api/admin/walkin-customers", _GET);
+export const POST = withLogger("POST /api/admin/walkin-customers", _POST);

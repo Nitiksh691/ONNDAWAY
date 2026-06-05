@@ -363,7 +363,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const checkOrders = async () => {
       try {
-        const res = await fetch("/api/orders");
+        const res = await fetch("/api/orders?status=placed");
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;

@@ -25,12 +25,7 @@ export default function Navbar() {
     setMounted(true);
   }, []);
 
-  // Redirect delivery personnel to their dashboard
-  useEffect(() => {
-    if (profile?.role === "delivery" && !pathname.startsWith("/delivery")) {
-      router.push("/delivery/dashboard");
-    }
-  }, [profile, pathname, router]);
+  // Removed redirect so delivery personnel can explore the main site
 
   // Hide navbar on admin/delivery pages
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
@@ -200,12 +195,22 @@ export default function Navbar() {
                 )}
               </div>
             ) : (
-              <button 
-                onClick={() => setShowAuthModal(true)} 
-                className="otw-btn otw-btn-primary otw-btn-sm" 
-                style={{ borderRadius: "10px", padding: "8px 16px", textTransform: "none", letterSpacing: 0 }}
+              <button
+                id="nav-auth-btn"
+                onClick={() => setShowAuthModal(true)}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
+                  padding: "8px", borderRadius: "10px",
+                  border: "2px solid var(--primary)",
+                  background: "var(--primary)", color: "white",
+                  cursor: "pointer", fontFamily: "inherit",
+                  fontWeight: 700, fontSize: "0.82rem",
+                  whiteSpace: "nowrap", flexShrink: 0,
+                  letterSpacing: 0, transition: "all 0.15s",
+                }}
               >
-                Login / Sign Up
+                <User size={16} />
+                <span className="desktop-only" style={{ paddingRight: "6px" }}>Log in</span>
               </button>
             )}
           </div>
@@ -292,11 +297,20 @@ export default function Navbar() {
               </div>
             ) : (
               <div style={{ borderTop: "1px solid var(--border)", paddingTop: "16px", marginTop: "auto" }}>
-                <button 
-                  onClick={() => { setMobileOpen(false); setShowAuthModal(true); }} 
-                  className="otw-btn otw-btn-primary" 
-                  style={{ width: "100%", padding: "12px 16px", borderRadius: "10px" }}
+                <button
+                  id="mobile-drawer-auth-btn"
+                  onClick={() => { setMobileOpen(false); setShowAuthModal(true); }}
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                    width: "100%", padding: "13px 16px", borderRadius: "12px",
+                    border: "2px solid var(--primary)",
+                    background: "var(--primary)", color: "white",
+                    cursor: "pointer", fontFamily: "inherit",
+                    fontWeight: 700, fontSize: "0.95rem",
+                    letterSpacing: 0, transition: "all 0.15s",
+                  }}
                 >
+                  <User size={18} />
                   Login / Sign Up
                 </button>
               </div>

@@ -40,11 +40,25 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
   const fetchProfile = useCallback(async (uid: string) => {
+    // Check if we have a fresh profile in memory (30s TTL)
+    const now = Date.now();
+    if (
+      typeof window !== "undefined" &&
+      (window as any).__otw_profile_cache?.uid === uid &&
+      now - (window as any).__otw_profile_cache.timestamp < 30000
+    ) {
+      setProfile((window as any).__otw_profile_cache.data);
+      return;
+    }
+
     try {
       const res = await fetch(`/api/users?userId=${uid}`);
       if (res.ok) {
-        const data = await res.json();
-        setProfile(data as UserProfile);
+        const data = await res.json() as UserProfile;
+        if (typeof window !== "undefined") {
+          (window as any).__otw_profile_cache = { uid, data, timestamp: Date.now() };
+        }
+        setProfile(data);
       } else {
         setProfile(null);
       }

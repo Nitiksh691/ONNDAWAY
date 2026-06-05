@@ -1,83 +1,101 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
+import { withLogger } from "@/lib/withLogger";
 
-export async function GET(req: NextRequest) {
+const _GET = async () => {
   await dbConnect();
   try {
-    // Fetch all orders
-    const orders = await Order.find({}).sort({ createdAt: -1 }).lean();
-    
-    // Group by userId
-    const customerMap = new Map();
+    // Single aggregation — DB groups, counts, and sums. No in-Node loops.
+    const customers = await Order.aggregate([
+      // Step 1: Only count non-cancelled orders for revenue/order stats
+      {
+        $facet: {
+          // Branch A: group stats (totalSpent, totalOrders, lastOrderDate)
+          stats: [
+            { $match: { status: { $ne: "cancelled" } } },
+            {
+              $group: {
+                _id: "$userId",
+                name:          { $last: "$userName" },
+                phone:         { $last: "$userPhone" },
+                totalSpent:    { $sum: "$total" },
+                totalOrders:   { $sum: 1 },
+                lastOrderDate: { $max: "$createdAt" },
+              },
+            },
+          ],
+          // Branch B: unwind items to find each user's favourite item
+          items: [
+            { $match: { status: { $ne: "cancelled" } } },
+            { $unwind: "$items" },
+            {
+              $group: {
+                _id:       { userId: "$userId", item: "$items.item.name" },
+                itemCount: { $sum: "$items.quantity" },
+              },
+            },
+            { $sort: { itemCount: -1 } },
+            {
+              $group: {
+                _id:           "$_id.userId",
+                frequentItem:  { $first: "$_id.item" },
+              },
+            },
+          ],
+        },
+      },
+      // Step 2: Merge the two branches on userId
+      {
+        $project: {
+          merged: {
+            $map: {
+              input: "$stats",
+              as: "s",
+              in: {
+                $mergeObjects: [
+                  "$$s",
+                  {
+                    $arrayElemAt: [
+                      {
+                        $filter: {
+                          input: "$items",
+                          as: "i",
+                          cond: { $eq: ["$$i._id", "$$s._id"] },
+                        },
+                      },
+                      0,
+                    ],
+                  },
+                ],
+              },
+            },
+          },
+        },
+      },
+      { $unwind: "$merged" },
+      { $replaceRoot: { newRoot: "$merged" } },
+      { $sort: { totalSpent: -1 } },
+    ]);
 
-    orders.forEach((order) => {
-      const uId = order.userId;
-      if (!customerMap.has(uId)) {
-        customerMap.set(uId, {
-          userId: uId,
-          name: order.userName || "Unknown",
-          phone: order.userPhone || "Unknown",
-          totalSpent: 0,
-          totalOrders: 0,
-          lastOrderDate: order.createdAt,
-          items: {}
-        });
-      }
+    // Shape output for frontend
+    const result = customers.map((c) => ({
+      userId:        c._id,
+      name:          c.name  || "Unknown",
+      phone:         c.phone || "Unknown",
+      totalSpent:    c.totalSpent    ?? 0,
+      totalOrders:   c.totalOrders   ?? 0,
+      lastOrderDate: c.lastOrderDate ?? null,
+      frequentItem:  c.frequentItem  || "None",
+    }));
 
-      const customer = customerMap.get(uId);
-      
-      // We only count delivered/completed orders towards total spent (or you could count all placed)
-      if (order.status !== "cancelled") {
-        customer.totalSpent += order.total;
-        customer.totalOrders += 1;
-        
-        // Ensure lastOrderDate is accurate (assuming sort is desc, the first one encountered is newest)
-        if (new Date(order.createdAt) > new Date(customer.lastOrderDate)) {
-          customer.lastOrderDate = order.createdAt;
-          // In case user updated their name/phone in a newer order
-          customer.name = order.userName || customer.name;
-          customer.phone = order.userPhone || customer.phone;
-        }
-
-        // Tally items
-        order.items.forEach((cartItem: any) => {
-          const itemName = cartItem.item?.name;
-          if (itemName) {
-            customer.items[itemName] = (customer.items[itemName] || 0) + cartItem.quantity;
-          }
-        });
-      }
-    });
-
-    const customers = Array.from(customerMap.values()).map(c => {
-      // Find top item
-      let topItem = "None";
-      let topItemCount = 0;
-      for (const [name, count] of Object.entries(c.items)) {
-        if ((count as number) > topItemCount) {
-          topItemCount = count as number;
-          topItem = name;
-        }
-      }
-
-      return {
-        userId: c.userId,
-        name: c.name,
-        phone: c.phone,
-        totalSpent: c.totalSpent,
-        totalOrders: c.totalOrders,
-        lastOrderDate: c.lastOrderDate,
-        frequentItem: topItem
-      };
-    });
-
-    // Sort by total spent by default
-    customers.sort((a, b) => b.totalSpent - a.totalSpent);
-
-    return NextResponse.json(customers);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Error fetching customers:", error);
     return NextResponse.json({ error: "Failed to fetch customers" }, { status: 500 });
   }
-}
+};
+
+export const GET = withLogger("GET /api/admin/customers", _GET);
+
+

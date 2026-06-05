@@ -59,7 +59,14 @@ export default function AdminOrdersPage() {
 
   const fetchOrders = useCallback(async () => {
     try {
-      const res = await fetch("/api/orders");
+      let url = "/api/orders";
+      if (statusFilter === "all") {
+        url = "/api/orders?status=placed,preparing,out_for_delivery";
+      } else {
+        url = `/api/orders?status=${statusFilter}`;
+      }
+
+      const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -67,7 +74,7 @@ export default function AdminOrdersPage() {
     } catch (e) {
       console.error(e);
     }
-  }, []);
+  }, [statusFilter]);
 
   const fetchDeliveryPersons = async () => {
     try {

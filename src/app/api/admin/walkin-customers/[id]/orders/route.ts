@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import WalkInCustomer from "@/models/WalkInCustomer";
+import { withLogger } from "@/lib/withLogger";
 
 /**
  * POST /api/admin/walkin-customers/[id]/orders
@@ -51,8 +52,9 @@ export async function POST(
     });
 
     customer.totalOrders = (customer.totalOrders || 0) + 1;
-    customer.totalSpent = (customer.totalSpent || 0) + amount;
+    customer.totalSpent  = (customer.totalSpent  || 0) + amount;
     customer.totalDrinks = (customer.totalDrinks || 0) + orderDrinkCount;
+    customer.lastVisitAt = new Date(); // track recency without scanning orders array
 
     await customer.save();
 
@@ -60,7 +62,7 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      totalDrinks: customer.totalDrinks,
+      totalDrinks:      customer.totalDrinks,
       drinksInCycle,
       isEligibleForFree: drinksInCycle >= 6,
     });
@@ -71,4 +73,6 @@ export async function POST(
       { status: 500 }
     );
   }
-}
+};
+
+export const POST = withLogger("POST /api/admin/walkin-customers/[id]/orders", _POST as any);

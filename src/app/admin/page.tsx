@@ -31,7 +31,7 @@ const CAT_OPTIONS = [
 ];
 
 export default function AdminDashboard() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [slides, setSlides] = useState<BannerSlide[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
@@ -46,10 +46,10 @@ export default function AdminDashboard() {
       try {
         const res = await fetch("/api/settings/banner");
         if (res.ok) {
-          const data = await res.json();
-          setBannerEnabled(data.bannerEnabled ?? true);
-          if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
-            setSlides(data.bannerSlides);
+          const bannerData = await res.json();
+          setBannerEnabled(bannerData.bannerEnabled ?? true);
+          if (bannerData.bannerSlides && Array.isArray(bannerData.bannerSlides)) {
+            setSlides(bannerData.bannerSlides);
           }
         }
       } catch (err) {
@@ -62,8 +62,8 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/orders");
-        if (res.ok) setOrders(await res.json());
+        const res = await fetch("/api/admin/analytics");
+        if (res.ok) setData(await res.json());
       } catch (err) {
         console.error(err);
       } finally {
@@ -86,12 +86,12 @@ export default function AdminDashboard() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ image: reader.result }),
         });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          setSlides(prev => prev.map((s, i) => i === idx ? { ...s, image: data.url } : s));
+        const uploadData = await res.json();
+        if (res.ok && uploadData.url) {
+          setSlides(prev => prev.map((s, i) => i === idx ? { ...s, image: uploadData.url } : s));
           import("react-hot-toast").then(({ default: toast }) => toast.success("Image uploaded!"));
         } else {
-          import("react-hot-toast").then(({ default: toast }) => toast.error(data.error || "Upload failed"));
+          import("react-hot-toast").then(({ default: toast }) => toast.error(uploadData.error || "Upload failed"));
         }
         setUploadingIdx(null);
       };
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
     setSlides(arr);
   };
 
-  if (loading) {
+  if (loading || !data) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "400px", color: "#e4e4e7", gap: "12px", fontWeight: 700 }}>
         <div style={{ width: 24, height: 24, border: "3px solid #333", borderTop: "3px solid #0055ff", borderRadius: "50%", animation: "spin-slow 1s linear infinite" }} />
@@ -140,27 +140,16 @@ export default function AdminDashboard() {
     );
   }
 
-  const totalOrders = orders.length;
-  const totalRevenue = orders.reduce((sum, o) => sum + o.total, 0);
-  const uniqueUsers = new Set(orders.map(o => o.userId)).size;
-  const itemCounts: Record<string, number> = {};
-  orders.forEach(o => o.items.forEach(i => { itemCounts[i.item.name] = (itemCounts[i.item.name] || 0) + i.quantity; }));
-  const popularItem = Object.entries(itemCounts).sort((a, b) => b[1] - a[1])[0] || ["None", 0];
-
-  const hoursMap: Record<number, number> = {};
-  for (let i = 8; i <= 22; i++) hoursMap[i] = 0;
-  orders.forEach(o => {
-    const hour = o.createdAt ? new Date(o.createdAt).getHours() : new Date().getHours();
-    if (hour >= 8 && hour <= 22) hoursMap[hour]++;
-  });
-  const chartData = Object.entries(hoursMap).map(([hour, count]) => ({ time: `${hour}:00`, orders: count }));
-  const chartMax = Math.max(...chartData.map(c => c.orders), 1);
+  const { summary, bestSellers, ordersByHour } = data;
+  const popularItem = bestSellers?.[0] || { name: "None", count: 0 };
+  const chartData = ordersByHour || [];
+  const chartMax = Math.max(...chartData.map((c: any) => c.orders), 1);
 
   const STAT_CARDS = [
-    { title: "Total Orders", value: totalOrders, icon: <Package size={22}/>, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },
-    { title: "Total Revenue", value: `₹${totalRevenue}`, icon: <DollarSign size={22}/>, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
-    { title: "Unique Customers", value: uniqueUsers, icon: <Users size={22}/>, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.25)" },
-    { title: "Top Item", value: popularItem[0], sub: `${popularItem[1]} portions sold`, icon: <TrendingUp size={22}/>, color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
+    { title: "Total Orders", value: summary.totalOrders, icon: <Package size={22}/>, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },
+    { title: "Total Revenue", value: `₹${summary.totalRevenue.toLocaleString()}`, icon: <DollarSign size={22}/>, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
+    { title: "Unique Customers", value: summary.uniqueUsers, icon: <Users size={22}/>, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.25)" },
+    { title: "Top Item", value: popularItem.name, sub: `${popularItem.count} portions sold`, icon: <TrendingUp size={22}/>, color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
   ];
 
   return (

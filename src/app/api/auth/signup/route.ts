@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
+import { withLogger } from "@/lib/withLogger";
 
 /** Salt rounds for bcrypt — 12 is a good balance of security and performance. */
 const SALT_ROUNDS = 12;
@@ -12,7 +13,7 @@ const SALT_ROUNDS = 12;
  * Creates a new admin or delivery staff account.
  * Passwords are hashed with bcrypt before persistence — never stored in plain text.
  */
-export async function POST(req: NextRequest) {
+const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const { username, password } = await req.json();
@@ -60,4 +61,6 @@ export async function POST(req: NextRequest) {
       { status: 500 }
     );
   }
-}
+};
+
+export const POST = withLogger("POST /api/auth/signup", _POST);
