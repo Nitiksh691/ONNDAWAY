@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
+import { normalizeCartLines } from "@/lib/orderLine";
 import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, Phone, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -103,7 +104,7 @@ export default function CartPage() {
         userId: finalUserId,
         userName: name.trim(),
         userPhone: phoneDigits,
-        items: cart,
+        items: normalizeCartLines(cart),
         location: finalLoc,
         total: grandTotal,
         couponCode: appliedCoupon ? couponCode : null,
@@ -316,19 +317,29 @@ export default function CartPage() {
             </h3>
             <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               {cart.map((c) => (
-                <div key={c.item.id} style={{ display: "flex", gap: "20px", alignItems: "center" }}>
+                <div key={c.cartItemId} style={{ display: "flex", gap: "20px", alignItems: "center" }}>
                   <div style={{ width: 80, height: 80, borderRadius: "8px", background: "#fff", position: "relative", overflow: "hidden", flexShrink: 0 }}>
                     <Image src={c.item.image} alt={c.item.name} fill style={{ objectFit: "cover" }} />
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#fff", textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.item.name}</div>
                     <div style={{ fontWeight: 600, color: "#a0a0a0", fontSize: "0.85rem", marginTop: "4px" }}>{c.item.category || "Item"}</div>
-                    {c.specialInstructions && (
+                    {c.lineDetails && (
+                      <div style={{ marginTop: "6px", fontSize: "0.82rem", color: "#93C5FD", lineHeight: 1.4 }}>
+                        {c.lineDetails}
+                      </div>
+                    )}
+                    {!c.lineDetails && c.selectedCustomizations && c.selectedCustomizations.length > 0 && (
+                      <div style={{ marginTop: "6px", fontSize: "0.82rem", color: "#93C5FD" }}>
+                        {c.selectedCustomizations.map(sc => `${sc.category}: ${sc.option}`).join(" · ")}
+                      </div>
+                    )}
+                    {!c.lineDetails && c.specialInstructions && (
                       <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#f59e0b", background: "rgba(245, 158, 11, 0.1)", padding: "6px 10px", borderRadius: "6px", display: "inline-block", fontWeight: 600 }}>
                         <span style={{ color: "#d97706", marginRight: "4px" }}>Note:</span> {c.specialInstructions}
                       </div>
                     )}
-                    <div style={{ fontWeight: 800, fontSize: "1.1rem", marginTop: "8px" }}>₹{c.item.price}</div>
+                    <div style={{ fontWeight: 800, fontSize: "1.1rem", marginTop: "8px" }}>₹{c.unitPrice ?? c.item.price}</div>
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px", border: "1px solid #3f3f46", borderRadius: "6px", padding: "4px" }}>

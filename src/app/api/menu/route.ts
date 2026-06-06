@@ -33,7 +33,7 @@ const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner } = body;
+    const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner, customizationCategories } = body;
 
     if (!name || !price || !image || !category) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -50,6 +50,7 @@ const _POST = async (req: NextRequest) => {
       isRecommended: isRecommended || false,
       isBanner:      isBanner      || false,
       section:       section       || "",
+      customizationCategories: customizationCategories || [],
     });
 
     // Bust cache so next GET reflects the new item

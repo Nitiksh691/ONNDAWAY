@@ -361,24 +361,66 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   useEffect(() => {
     if (!authorized) return;
 
-    const checkOrders = async () => {
-      try {
-        const res = await fetch("/api/orders?status=placed");
-        if (res.ok) {
-          const data = await res.json();
-          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
-          if (unconfirmed > prevPendingRef.current) {
-            playAlarmBeep();
+    let eventSource: EventSource | null = null;
+    let fallbackInterval: NodeJS.Timeout | null = null;
+
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          
+          if (data.type === "orders_update") {
+            const unconfirmed = data.count;
+            if (unconfirmed > prevPendingRef.current) {
+              playAlarmBeep();
+            }
+            prevPendingRef.current = unconfirmed;
+            setPendingCount(unconfirmed);
           }
-          prevPendingRef.current = unconfirmed;
-          setPendingCount(unconfirmed);
+        } catch (e) {
+          // ignore parsing errors
         }
-      } catch (e) {}
+      };
+
+      eventSource.onerror = () => {
+        // If SSE fails (e.g. Vercel timeout), close it and fallback to slow polling
+        eventSource?.close();
+        if (!fallbackInterval) {
+          setupFallbackPolling();
+        }
+      };
     };
 
-    const interval = setInterval(checkOrders, 3000);
-    checkOrders();
-    return () => clearInterval(interval);
+    const setupFallbackPolling = () => {
+      const checkOrders = async () => {
+        try {
+          const res = await fetch("/api/orders?status=placed");
+          if (res.ok) {
+            const data = await res.json();
+            const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+            if (unconfirmed > prevPendingRef.current) {
+              playAlarmBeep();
+            }
+            prevPendingRef.current = unconfirmed;
+            setPendingCount(unconfirmed);
+          }
+        } catch (e) {}
+      };
+      
+      // Fallback polling is slightly slower (5s) to save resources
+      fallbackInterval = setInterval(checkOrders, 5000);
+      checkOrders();
+    };
+
+    // Attempt SSE first
+    setupSSE();
+
+    return () => {
+      if (eventSource) eventSource.close();
+      if (fallbackInterval) clearInterval(fallbackInterval);
+    };
   }, [authorized]);
 
   const handleLogout = () => {

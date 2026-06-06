@@ -2,7 +2,7 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight, ChevronRight as ChevRight } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { MenuItem } from "@/lib/types";
@@ -20,6 +20,9 @@ const CATEGORIES = ["all", "coffee", "snacks", "meals", "drinks", "desserts"] as
 const CAT_EMOJI: Record<string, string> = {
   all: "🍽️", coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤", desserts: "🍰",
 };
+const CAT_LABEL: Record<string, string> = {
+  all: "All", coffee: "Coffee", snacks: "Snacks", meals: "Meals", drinks: "Drinks", desserts: "Desserts",
+};
 const TIME_RECS: Record<string, string[]> = {
   morning: ["coffee", "snacks"],
   afternoon: ["meals", "drinks"],
@@ -35,11 +38,88 @@ function getTimeOfDay(): string {
   return "night";
 }
 
+/* Horizontal scroll row for a list of items */
+function HScrollRow({ items, label, emoji, viewAllHref, emptyText }: {
+  items: MenuItem[];
+  label: string;
+  emoji: string;
+  viewAllHref: string;
+  emptyText?: string;
+}) {
+  if (items.length === 0) {
+    return emptyText ? (
+      <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", padding: "8px 0" }}>{emptyText}</p>
+    ) : null;
+  }
+
+  return (
+    <section style={{ marginBottom: "40px" }}>
+      {/* Section header */}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
+        <div>
+          <h2 style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-dark)", display: "flex", alignItems: "center", gap: "6px" }}>
+            {emoji} {label}
+          </h2>
+        </div>
+        <Link
+          href={viewAllHref}
+          style={{
+            display: "flex", alignItems: "center", gap: "4px",
+            fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
+            textDecoration: "none", padding: "5px 10px",
+            borderRadius: "8px", background: "var(--accent-2)",
+            transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "#D6DDFF"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-2)"; }}
+        >
+          View All <ChevRight size={13} />
+        </Link>
+      </div>
+
+      {/* Horizontal scroll container */}
+      <div style={{
+        display: "flex", gap: "14px", overflowX: "auto",
+        paddingBottom: "8px", WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none", msOverflowStyle: "none",
+      }}>
+        {items.map(item => (
+          <div key={item.id} style={{ minWidth: "185px", maxWidth: "185px", flexShrink: 0 }}>
+            <FoodCard item={item} compact />
+          </div>
+        ))}
+
+        {/* "See all" end card */}
+        <Link
+          href={viewAllHref}
+          style={{
+            minWidth: "110px", maxWidth: "110px", flexShrink: 0,
+            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+            gap: "8px", borderRadius: "12px", border: "2px dashed rgba(1,53,251,0.25)",
+            textDecoration: "none", color: "var(--primary)", fontWeight: 700,
+            fontSize: "0.8rem", background: "rgba(1,53,251,0.03)",
+            transition: "background 0.2s", padding: "16px 8px", textAlign: "center",
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background = "rgba(1,53,251,0.06)"; }}
+          onMouseLeave={e => { e.currentTarget.style.background = "rgba(1,53,251,0.03)"; }}
+        >
+          <div style={{
+            width: 36, height: 36, borderRadius: "50%", background: "var(--accent-2)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}>
+            <ArrowRight size={16} />
+          </div>
+          See all {label}
+        </Link>
+      </div>
+    </section>
+  );
+}
+
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
 
   const timeOfDay = getTimeOfDay();
-  const recCategories = TIME_RECS[timeOfDay];
 
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -64,7 +144,7 @@ export default function MenuPage() {
 
   const goToSlide = useCallback((idx: number) => {
     setCurrentSlide(idx);
-    startAutoplay(); // reset autoplay timer on manual navigation
+    startAutoplay();
   }, [startAutoplay]);
 
   useEffect(() => {
@@ -93,9 +173,7 @@ export default function MenuPage() {
     const fetchMenu = async () => {
       try {
         const res = await fetch("/api/menu");
-        if (!res.ok) {
-          throw new Error("Server returned " + res.status);
-        }
+        if (!res.ok) throw new Error("Server returned " + res.status);
         const data = await res.json();
         setMenu(data.filter((item: MenuItem) => item.available));
       } catch (e) {
@@ -108,34 +186,45 @@ export default function MenuPage() {
   }, []);
 
   const popular = useMemo(() => menu.filter(i => i.isPopular), [menu]);
-  const recommended: MenuItem[] = useMemo(() => menu.filter(i => i.isRecommended), [menu]);
+  const recommended = useMemo(() => menu.filter(i => i.isRecommended), [menu]);
 
   const filtered = useMemo(() => {
     if (activeCategory === "all") return menu;
     return menu.filter(i => i.category === activeCategory);
   }, [activeCategory, menu]);
 
+  // Group menu by category for the "All" sectioned view
+  const byCategory = useMemo(() => {
+    const cats = ["coffee", "snacks", "meals", "drinks", "desserts"];
+    return cats.map(cat => ({
+      cat,
+      items: menu.filter(i => i.category === cat),
+    })).filter(g => g.items.length > 0);
+  }, [menu]);
+
   const showSections = activeCategory === "all";
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{
-        __html: `
+      <style dangerouslySetInnerHTML={{ __html: `
+        .hscroll::-webkit-scrollbar { display: none; }
         @media (max-width: 768px) {
-          .food-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)) !important; gap: 16px !important; }
+          .food-grid-filtered { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
         }
-      `}} />
+        @media (max-width: 400px) {
+          .food-grid-filtered { grid-template-columns: 1fr !important; }
+        }
+      ` }} />
 
       {/* ─── BANNER SLIDER ─── */}
       {bannerEnabled && bannerSlides.length > 0 ? (
-        <div style={{ background: "var(--bg-cream)", padding: "24px 0 16px" }}>
+        <div style={{ background: "var(--bg-cream)", padding: "20px 0 12px" }}>
           <div className="otw-container">
             <div ref={sliderRef} style={{
-              position: "relative", borderRadius: "24px", overflow: "hidden",
-              aspectRatio: "21/9", minHeight: "220px", maxHeight: "480px",
-              background: "#111", boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
+              position: "relative", borderRadius: "20px", overflow: "hidden",
+              aspectRatio: "21/9", minHeight: "180px", maxHeight: "420px",
+              background: "#111", boxShadow: "0 16px 40px rgba(0,0,0,0.12)"
             }}>
-              {/* Slides */}
               {bannerSlides.map((slide, idx) => (
                 <div key={slide.id} style={{
                   position: "absolute", inset: 0,
@@ -150,104 +239,81 @@ export default function MenuPage() {
                     style={{ objectFit: "cover" }}
                     priority={idx === 0}
                   />
-                  {/* Dark gradient overlay */}
                   <div style={{
                     position: "absolute", inset: 0, zIndex: 1,
-                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.05) 100%)"
+                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)"
                   }} />
-
-                  {/* Text content */}
                   <div style={{
                     position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2,
-                    padding: "clamp(24px, 5vw, 48px)", display: "flex", flexDirection: "column", gap: "10px"
+                    padding: "clamp(18px, 4vw, 40px)", display: "flex", flexDirection: "column", gap: "8px"
                   }}>
                     {slide.text && (
                       <h3 style={{
                         fontFamily: "'Outfit', sans-serif", fontWeight: 900,
-                        fontSize: "clamp(1.4rem, 5vw, 3.2rem)", lineHeight: 1.05,
+                        fontSize: "clamp(1.2rem, 4vw, 2.8rem)", lineHeight: 1.05,
                         color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em",
-                        textShadow: "0 4px 16px rgba(0,0,0,0.8)",
-                        maxWidth: "80%", wordBreak: "break-word", overflowWrap: "anywhere"
-                      }}>
-                        {slide.text}
-                      </h3>
+                        textShadow: "0 4px 16px rgba(0,0,0,0.8)", maxWidth: "75%",
+                      }}>{slide.text}</h3>
                     )}
                     {slide.subText && (
-                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.9rem, 2.2vw, 1.15rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
+                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.8rem, 2vw, 1.05rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
                         {slide.subText}
                       </p>
                     )}
                     {slide.link && (
                       <Link href={slide.link} style={{
-                        display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "8px",
-                        background: "var(--primary)", color: "#fff", padding: "12px 28px",
-                        borderRadius: "99px", fontWeight: 800, fontSize: "0.95rem",
-                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px",
-                        width: "fit-content", boxShadow: "0 8px 24px rgba(1,53,251,0.5)",
+                        display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px",
+                        background: "var(--primary)", color: "#fff", padding: "10px 22px",
+                        borderRadius: "99px", fontWeight: 800, fontSize: "0.85rem",
+                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px",
+                        width: "fit-content", boxShadow: "0 6px 20px rgba(1,53,251,0.4)",
                         transition: "transform 0.2s",
                       }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
+                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
                         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                       >
-                        SHOP NOW <ArrowRight size={16} />
+                        ORDER NOW <ArrowRight size={14} />
                       </Link>
                     )}
                   </div>
                 </div>
               ))}
 
-              {/* Navigation arrows (desktop) */}
               {bannerSlides.length > 1 && (
                 <>
                   <button onClick={() => goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length)}
-                    aria-label="Previous slide"
-                    className="desktop-only"
+                    aria-label="Previous" className="desktop-only"
                     style={{
-                      position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 40, height: 40, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 36, height: 36, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", color: "#fff",
                       display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      transition: "background 0.2s",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
+                  ><ChevronLeft size={18} /></button>
                   <button onClick={() => goToSlide((currentSlide + 1) % bannerSlides.length)}
-                    aria-label="Next slide"
-                    className="desktop-only"
+                    aria-label="Next" className="desktop-only"
                     style={{
-                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 40, height: 40, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
+                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", zIndex: 3,
+                      width: 36, height: 36, borderRadius: "50%", border: "none",
+                      background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", color: "#fff",
                       display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      transition: "background 0.2s",
                     }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
-                  >
-                    <ChevronRight size={20} />
-                  </button>
+                  ><ChevronRight size={18} /></button>
+                  <div style={{
+                    position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 3,
+                    display: "flex", gap: "5px",
+                  }}>
+                    {bannerSlides.map((_, idx) => (
+                      <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
+                        style={{
+                          width: idx === currentSlide ? 20 : 6, height: 6, borderRadius: "99px", border: "none",
+                          background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
+                          cursor: "pointer", transition: "all 0.3s ease", padding: 0,
+                        }}
+                      />
+                    ))}
+                  </div>
                 </>
-              )}
-
-              {/* Dots */}
-              {bannerSlides.length > 1 && (
-                <div style={{
-                  position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", zIndex: 3,
-                  display: "flex", gap: "6px"
-                }}>
-                  {bannerSlides.map((_, idx) => (
-                    <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
-                      style={{
-                        width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none",
-                        background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
-                        cursor: "pointer", transition: "all 0.3s ease", padding: 0,
-                      }}
-                    />
-                  ))}
-                </div>
               )}
             </div>
           </div>
@@ -255,24 +321,22 @@ export default function MenuPage() {
       ) : (
         <div className="otw-page-header">
           <div className="otw-container">
-            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "8px" }}>Our Menu</h1>
-            <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
-              Fresh campus food, curated daily. Delivered to you.
-            </p>
+            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "6px" }}>Our Menu</h1>
+            <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>Fresh campus food, curated daily.</p>
           </div>
         </div>
       )}
 
-      {/* Sticky Category Filters */}
+      {/* ─── Sticky Category Filters ─── */}
       <div style={{
         position: "sticky", top: "60px", zIndex: 100,
         background: "rgba(248,250,255,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid var(--border)", padding: "12px 0",
+        borderBottom: "1px solid rgba(1,53,251,0.1)", padding: "10px 0",
       }}>
         <div className="otw-container">
-          <div style={{
+          <div className="hscroll" style={{
             display: "flex", gap: "8px", overflowX: "auto",
-            paddingBottom: "4px", WebkitOverflowScrolling: "touch",
+            paddingBottom: "2px", WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none",
           }}>
             {CATEGORIES.map(cat => (
@@ -281,87 +345,92 @@ export default function MenuPage() {
                 id={`filter-${cat}`}
                 onClick={() => setActiveCategory(cat)}
                 style={{
-                  padding: "10px 20px", borderRadius: "999px",
+                  padding: "8px 16px", borderRadius: "999px",
                   border: "1.5px solid",
-                  borderColor: activeCategory === cat ? "var(--primary)" : "var(--border)",
+                  borderColor: activeCategory === cat ? "var(--primary)" : "rgba(1,53,251,0.15)",
                   background: activeCategory === cat ? "var(--primary)" : "white",
                   color: activeCategory === cat ? "white" : "var(--text-mid)",
-                  fontWeight: 600, fontSize: "0.85rem", cursor: "pointer",
+                  fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
                   transition: "all 0.2s", textTransform: "capitalize",
                   fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0,
+                  boxShadow: activeCategory === cat ? "0 3px 10px rgba(1,53,251,0.25)" : "none",
                 }}
               >
-                {CAT_EMOJI[cat]} {cat === "all" ? "All" : cat.charAt(0).toUpperCase() + cat.slice(1)}
+                {CAT_EMOJI[cat]} {CAT_LABEL[cat]}
               </button>
             ))}
           </div>
         </div>
       </div>
 
+      {/* ─── Content ─── */}
       <div style={{ background: "#F8FAFF", minHeight: "60vh" }}>
-        <div className="otw-container" style={{ padding: "32px 24px" }}>
+        <div className="otw-container" style={{ padding: "28px 24px" }}>
 
-          {showSections ? (
+          {loading ? (
+            /* Skeleton */
+            <div style={{ display: "flex", gap: "14px", overflowX: "hidden" }}>
+              {[1,2,3,4].map(i => (
+                <div key={i} style={{ minWidth: 185, height: 240, borderRadius: 12, background: "#E2E8F0", flexShrink: 0,
+                  backgroundImage: "linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%)",
+                  backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }}
+                />
+              ))}
+            </div>
+          ) : showSections ? (
             <>
-              {/* Popular — Horizontal scroller */}
-              <section style={{ marginBottom: "48px" }}>
-                <div style={{ marginBottom: "20px" }}>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-dark)" }}>
-                    🔥 Popular Items
-                  </h2>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "4px" }}>Most ordered by students like you</p>
-                </div>
-                <div style={{
-                  display: "flex", gap: "16px", overflowX: "auto",
-                  paddingBottom: "12px", WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "none",
-                }}>
-                  {popular.map(item => (
-                    <div key={item.id} style={{ minWidth: "260px", maxWidth: "280px", flexShrink: 0 }}>
-                      <FoodCard item={item} compact />
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {/* Popular — Horizontal scroll */}
+              {popular.length > 0 && (
+                <HScrollRow
+                  items={popular}
+                  label="Popular Right Now"
+                  emoji="🔥"
+                  viewAllHref="/menu?category=all"
+                />
+              )}
 
-              {/* Recommended — Horizontal scroller */}
-              <section style={{ marginBottom: "48px" }}>
-                <div style={{ marginBottom: "20px" }}>
-                  <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-dark)" }}>
-                    🎯 Recommended For You
-                  </h2>
-                  <p style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "4px" }}>
-                    Perfect picks for your afternoon break
-                  </p>
-                </div>
-                <div style={{
-                  display: "flex", gap: "16px", overflowX: "auto",
-                  paddingBottom: "12px", WebkitOverflowScrolling: "touch",
-                  scrollbarWidth: "none",
-                }}>
-                  {recommended.map(item => (
-                    <div key={item.id} style={{ minWidth: "260px", maxWidth: "280px", flexShrink: 0 }}>
-                      <FoodCard item={item} compact />
-                    </div>
-                  ))}
-                </div>
-              </section>
+              {/* Recommended — Horizontal scroll */}
+              {recommended.length > 0 && (
+                <HScrollRow
+                  items={recommended}
+                  label={`Perfect for ${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}`}
+                  emoji="🎯"
+                  viewAllHref="/menu?category=all"
+                />
+              )}
 
-              {/* All items — Grid */}
-              <section>
-                <h2 style={{ fontSize: "1.3rem", fontWeight: 800, color: "var(--text-dark)", marginBottom: "20px" }}>
-                  📋 Full Menu
-                </h2>
-                <div className="food-grid">
-                  {menu.map(item => <FoodCard key={item.id} item={item} />)}
-                </div>
-              </section>
+              {/* Divider */}
+              <div style={{ borderTop: "2px solid rgba(1,53,251,0.08)", margin: "8px 0 32px", position: "relative" }}>
+                <span style={{
+                  position: "absolute", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
+                  background: "#F8FAFF", padding: "0 12px",
+                  fontSize: "0.75rem", fontWeight: 700, color: "var(--text-muted)", letterSpacing: "0.08em", textTransform: "uppercase",
+                }}>Explore by Category</span>
+              </div>
+
+              {/* Per-category horizontal scroll rows */}
+              {byCategory.map(({ cat, items }) => (
+                <HScrollRow
+                  key={cat}
+                  items={items}
+                  label={CAT_LABEL[cat]}
+                  emoji={CAT_EMOJI[cat]}
+                  viewAllHref={`/menu?category=${cat}`}
+                />
+              ))}
             </>
           ) : (
+            /* Filtered category grid */
             <div>
-              <div style={{ marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontSize: "0.9rem", color: "var(--text-muted)", fontWeight: 600 }}>
-                  {CAT_EMOJI[activeCategory]} {filtered.length} item{filtered.length !== 1 ? "s" : ""} found
+              <div style={{ marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-dark)" }}>
+                  {CAT_EMOJI[activeCategory]} {CAT_LABEL[activeCategory]}
+                </span>
+                <span style={{
+                  fontSize: "0.78rem", color: "var(--text-muted)", fontWeight: 600,
+                  background: "white", padding: "3px 10px", borderRadius: "999px", border: "1px solid #E5E7EB",
+                }}>
+                  {filtered.length} item{filtered.length !== 1 ? "s" : ""}
                 </span>
               </div>
               {filtered.length === 0 ? (
@@ -371,7 +440,11 @@ export default function MenuPage() {
                   <p style={{ color: "var(--text-muted)" }}>Try a different category.</p>
                 </div>
               ) : (
-                <div className="food-grid">
+                <div className="food-grid-filtered" style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
+                  gap: "16px",
+                }}>
                   {filtered.map(item => <FoodCard key={item.id} item={item} />)}
                 </div>
               )}

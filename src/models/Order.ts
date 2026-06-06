@@ -15,6 +15,16 @@ const CartItemSchema = new Schema(
     },
     quantity:             { type: Number, required: true, min: 1, default: 1 },
     specialInstructions:  { type: String, default: "" },
+    unitPrice:            { type: Number, default: null },
+    lineDetails:          { type: String, default: "" },
+    selectedCustomizations: {
+      type: [{
+        category: { type: String },
+        option:   { type: String },
+        price:    { type: Number, default: 0 },
+      }],
+      default: [],
+    },
   },
   { _id: false } // no extra _id per cart item — saves space
 );
@@ -53,5 +63,10 @@ OrderSchema.index({ status: 1, createdAt: -1 });
 // Compound index: delivery dashboard — assigned orders by status
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
 
-export default models.Order || model("Order", OrderSchema);
+// Re-register schema in dev when CartItem fields change
+if (models.Order) {
+  delete models.Order;
+}
+
+export default model("Order", OrderSchema);
 

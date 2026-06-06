@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
+import { buildLineDetails } from "@/lib/orderLine";
 import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Eye, EyeOff } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -221,11 +222,23 @@ export default function DeliveryDashboard() {
                   {/* Items */}
                   <div style={{ borderTop: "1px dashed var(--border)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
                     <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)" }}>ITEMS TO DELIVER</div>
-                    {order.items.map((item, idx) => (
-                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
-                        <span style={{ fontWeight: 600 }}>{item.quantity}x {item.item.name}</span>
-                      </div>
-                    ))}
+                    {order.items.map((item, idx) => {
+                      const details = item.lineDetails || buildLineDetails(item.selectedCustomizations, item.specialInstructions);
+                      const unit = item.unitPrice ?? item.item.price ?? 0;
+                      return (
+                        <div key={item.cartItemId || idx} style={{ padding: "10px 0", borderBottom: idx < order.items.length - 1 ? "1px solid var(--border)" : "none" }}>
+                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", gap: "12px" }}>
+                            <span style={{ fontWeight: 700 }}>{item.quantity}× {item.item.name}</span>
+                            <span style={{ fontWeight: 800, color: "var(--primary)", flexShrink: 0 }}>₹{unit * item.quantity}</span>
+                          </div>
+                          {details && (
+                            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.45 }}>
+                              {details}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* ── Chat Panel (Transit Only) ── */}

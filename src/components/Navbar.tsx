@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Truck } from "lucide-react";
+import { ShoppingCart, Menu, X, User, LogOut, LayoutDashboard, Truck, MapPin, ChevronDown } from "lucide-react";
 import { useApp } from "@/lib/context";
 import toast from "react-hot-toast";
 import AuthModal from "./AuthModal";
+import { LocationModal, useDeliveryLocation } from "./LocationModal";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -20,12 +21,12 @@ export default function Navbar() {
   const [profileOpen, setProfileOpen] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [locationOpen, setLocationOpen] = useState(false);
+  const { location, saveLocation } = useDeliveryLocation();
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
-  // Removed redirect so delivery personnel can explore the main site
 
   // Hide navbar on admin/delivery pages
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
@@ -44,6 +45,65 @@ export default function Navbar() {
 
   return (
     <>
+      <style>{`
+        .nav-inner {
+          display: flex;
+          align-items: center;
+          height: 60px;
+          justify-content: space-between;
+          gap: 8px;
+        }
+        .nav-left {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .nav-right {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          flex-shrink: 0;
+        }
+        .nav-location-pill {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 6px 10px;
+          border-radius: 10px;
+          border: 1.5px solid rgba(1,53,251,0.2);
+          background: #EEF1FF;
+          color: #0135FB;
+          cursor: pointer;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 0.76rem;
+          transition: all 0.2s;
+          white-space: nowrap;
+          max-width: 160px;
+          overflow: hidden;
+        }
+        .nav-location-pill:hover { background: #E0E7FF; }
+        .nav-location-text {
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+        /* On mobile: show icon-only location pill (no text) */
+        @media (max-width: 480px) {
+          .nav-location-pill {
+            padding: 6px 8px;
+            max-width: unset;
+            width: 34px;
+            height: 34px;
+            border-radius: 10px;
+            justify-content: center;
+          }
+          .nav-location-text { display: none; }
+          .nav-location-chevron { display: none; }
+        }
+      `}</style>
+
       <nav style={{
         position: "sticky", top: 0, zIndex: 1000,
         background: "rgba(255,255,255,0.97)",
@@ -51,14 +111,14 @@ export default function Navbar() {
         borderBottom: "3px solid var(--primary)",
         boxShadow: "none",
       }}>
-        <div className="otw-container" style={{ display: "flex", alignItems: "center", height: "60px", justifyContent: "space-between" }}>
+        <div className="otw-container nav-inner">
 
           {/* Left: Hamburger (mobile) + Logo */}
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div className="nav-left">
             <button className="mobile-only" onClick={() => setMobileOpen(!mobileOpen)} style={{
-              width: 38, height: 38, border: "none", background: "var(--accent)",
+              width: 36, height: 36, border: "none", background: "var(--accent)",
               borderRadius: "10px", color: "var(--primary)", cursor: "pointer",
-              display: "none", alignItems: "center", justifyContent: "center",
+              display: "none", alignItems: "center", justifyContent: "center", flexShrink: 0,
             }}>
               {mobileOpen ? <X size={18} /> : <Menu size={18} />}
             </button>
@@ -67,7 +127,7 @@ export default function Navbar() {
               <div style={{
                 width: 36, height: 36, borderRadius: "10px",
                 background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center",
-                boxShadow: "0 2px 10px rgba(0,74,173,0.3)",
+                boxShadow: "0 2px 10px rgba(0,74,173,0.3)", flexShrink: 0,
               }}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
                   <circle cx="12" cy="5" r="2.5" fill="white" />
@@ -76,20 +136,20 @@ export default function Navbar() {
                   <path d="M10 16 L8.5 20 M14 16 L15.5 20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </div>
-              <div>
+              <div className="hide-mobile">
                 <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--primary)", lineHeight: 1.1 }}>ONN D A WAY</div>
                 <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", fontWeight: 500, letterSpacing: "0.05em" }}>COFFEE</div>
               </div>
             </Link>
           </div>
 
-          {/* Center: Desktop Links */}
+          {/* Center: Desktop Nav Links */}
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }} className="desktop-only">
             {NAV_LINKS.map(l => (
               <Link key={l.href} href={l.href} style={{
                 padding: "8px 16px", borderRadius: "8px", textDecoration: "none",
                 fontWeight: 600, fontSize: "0.88rem", transition: "all 0.15s",
-                background: pathname === l.href ? "var(--accent)" : "transparent",
+                background: pathname === l.href ? "var(--accent-2)" : "transparent",
                 color: pathname === l.href ? "var(--primary)" : "var(--text-mid)",
               }}>{l.label}</Link>
             ))}
@@ -100,13 +160,27 @@ export default function Navbar() {
             )}
           </div>
 
-          {/* Right: Cart + Auth */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          {/* Right: Location + Cart + Auth */}
+          <div className="nav-right">
+
+            {/* Location Pill — visible on all sizes, icon-only on xs mobile */}
+            <button
+              id="location-picker-btn"
+              onClick={() => setLocationOpen(true)}
+              className="nav-location-pill"
+            >
+              <MapPin size={13} style={{ flexShrink: 0 }} />
+              <span className="nav-location-text">
+                {location ? location : "Delivering to?"}
+              </span>
+              <ChevronDown size={11} className="nav-location-chevron" style={{ flexShrink: 0 }} />
+            </button>
+
             {/* Cart */}
             <Link href="/cart" style={{ position: "relative", textDecoration: "none" }}>
               <div id="cart-button" style={{
-                width: 38, height: 38, borderRadius: "10px", border: "none",
-                background: "var(--accent)", color: "var(--primary)", cursor: "pointer",
+                width: 36, height: 36, borderRadius: "10px", border: "none",
+                background: "var(--accent-2)", color: "var(--primary)", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}>
                 <ShoppingCart size={17} />
@@ -125,19 +199,19 @@ export default function Navbar() {
 
             {/* User / Auth */}
             {!mounted ? (
-              <div style={{ width: 120, height: 38, background: "rgba(0,0,0,0.05)", borderRadius: "10px" }} />
+              <div style={{ width: 36, height: 36, background: "rgba(0,0,0,0.05)", borderRadius: "10px" }} />
             ) : user ? (
               <div style={{ position: "relative" }}>
                 <button id="profile-button" onClick={() => setProfileOpen(!profileOpen)} style={{
                   display: "flex", alignItems: "center", gap: "6px",
-                  padding: "6px 10px", borderRadius: "10px", border: "2px solid var(--primary)",
+                  padding: "4px 8px 4px 4px", borderRadius: "10px", border: "2px solid var(--primary)",
                   background: "white", cursor: "pointer", transition: "all 0.2s",
                 }}>
                   <div style={{
                     width: 28, height: 28, borderRadius: "50%",
                     background: "var(--primary)", color: "white",
                     display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.75rem", fontWeight: 700, overflow: "hidden"
+                    fontSize: "0.75rem", fontWeight: 700, overflow: "hidden", flexShrink: 0,
                   }}>
                     {(profile as any)?.image ? (
                       <img src={(profile as any).image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -158,7 +232,7 @@ export default function Navbar() {
                       border: "1px solid var(--border)", boxShadow: "var(--shadow-lg)",
                       minWidth: 200, zIndex: 100, overflow: "hidden",
                     }}>
-                      <div style={{ padding: "14px 16px", borderBottom: "1px solid var(--border)" }}>
+                      <div style={{ padding: "14px 16px", borderBottom: "1px solid #E5E7EB" }}>
                         <div style={{ fontWeight: 700, fontSize: "0.92rem" }}>{profile?.name || "User"}</div>
                         <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{profile?.college || "Welcome"}</div>
                       </div>
@@ -173,7 +247,7 @@ export default function Navbar() {
                           color: "var(--text-dark)", fontSize: "0.85rem", fontWeight: 500,
                           transition: "background 0.15s",
                         }}
-                          onMouseEnter={e => (e.currentTarget.style.background = "var(--accent)")}
+                          onMouseEnter={e => (e.currentTarget.style.background = "var(--accent-2)")}
                           onMouseLeave={e => (e.currentTarget.style.background = "transparent")}>
                           {item.icon}{item.label}
                         </Link>
@@ -183,7 +257,7 @@ export default function Navbar() {
                         padding: "12px 16px", width: "100%", border: "none",
                         background: "transparent", cursor: "pointer",
                         color: "var(--error)", fontSize: "0.85rem", fontWeight: 500,
-                        borderTop: "1px solid var(--border)", transition: "background 0.15s",
+                        borderTop: "1px solid #E5E7EB", transition: "background 0.15s",
                         fontFamily: "inherit",
                       }}
                         onMouseEnter={e => (e.currentTarget.style.background = "#FEE2E2")}
@@ -199,18 +273,18 @@ export default function Navbar() {
                 id="nav-auth-btn"
                 onClick={() => setShowAuthModal(true)}
                 style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px",
-                  padding: "8px", borderRadius: "10px",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "5px",
+                  padding: "7px 10px", borderRadius: "10px",
                   border: "2px solid var(--primary)",
                   background: "var(--primary)", color: "white",
                   cursor: "pointer", fontFamily: "inherit",
                   fontWeight: 700, fontSize: "0.82rem",
                   whiteSpace: "nowrap", flexShrink: 0,
-                  letterSpacing: 0, transition: "all 0.15s",
+                  transition: "all 0.15s",
                 }}
               >
-                <User size={16} />
-                <span className="desktop-only" style={{ paddingRight: "6px" }}>Log in</span>
+                <User size={15} />
+                <span className="desktop-only">Log in</span>
               </button>
             )}
           </div>
@@ -218,14 +292,20 @@ export default function Navbar() {
       </nav>
 
       {showAuthModal && (
-        <AuthModal 
-          onClose={() => setShowAuthModal(false)} 
+        <AuthModal
+          onClose={() => setShowAuthModal(false)}
           onSuccess={(uid) => {
             localStorage.setItem("otw_user_id", uid);
-            window.location.reload(); // Quickest way to refresh context for demo
-          }} 
+            window.location.reload();
+          }}
         />
       )}
+
+      <LocationModal
+        isOpen={locationOpen}
+        onClose={() => setLocationOpen(false)}
+        onSave={saveLocation}
+      />
 
       {/* Mobile Drawer */}
       {mobileOpen && (
@@ -243,7 +323,7 @@ export default function Navbar() {
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
               <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--primary)" }}>ONN D A WAY</div>
               <button onClick={() => setMobileOpen(false)} style={{
-                width: 36, height: 36, border: "none", background: "var(--accent)",
+                width: 36, height: 36, border: "none", background: "var(--accent-2)",
                 borderRadius: "10px", color: "var(--primary)", cursor: "pointer",
                 display: "flex", alignItems: "center", justifyContent: "center",
               }}><X size={18} /></button>
@@ -255,7 +335,7 @@ export default function Navbar() {
                   padding: "14px 16px", borderRadius: "10px", textDecoration: "none",
                   fontWeight: 600, fontSize: "0.95rem",
                   color: pathname === l.href ? "var(--primary)" : "var(--text-mid)",
-                  background: pathname === l.href ? "var(--accent)" : "transparent",
+                  background: pathname === l.href ? "var(--accent-2)" : "transparent",
                 }}>{l.label}</Link>
               ))}
               {profile?.role === "admin" && (
@@ -268,12 +348,12 @@ export default function Navbar() {
             </div>
 
             {user ? (
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "16px", marginTop: "auto" }}>
+              <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "16px", marginTop: "auto" }}>
                 <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
                   <div style={{
                     width: 40, height: 40, borderRadius: "50%", background: "var(--primary)",
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.95rem", fontWeight: 700, overflow: "hidden"
+                    fontSize: "0.95rem", fontWeight: 700, overflow: "hidden",
                   }}>
                     {(profile as any)?.image ? (
                       <img src={(profile as any).image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
@@ -296,7 +376,7 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div style={{ borderTop: "1px solid var(--border)", paddingTop: "16px", marginTop: "auto" }}>
+              <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "16px", marginTop: "auto" }}>
                 <button
                   id="mobile-drawer-auth-btn"
                   onClick={() => { setMobileOpen(false); setShowAuthModal(true); }}
@@ -307,7 +387,7 @@ export default function Navbar() {
                     background: "var(--primary)", color: "white",
                     cursor: "pointer", fontFamily: "inherit",
                     fontWeight: 700, fontSize: "0.95rem",
-                    letterSpacing: 0, transition: "all 0.15s",
+                    transition: "all 0.15s",
                   }}
                 >
                   <User size={18} />

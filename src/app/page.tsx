@@ -2,12 +2,13 @@
 import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Search, ChevronLeft, ChevronRight, ShoppingBag } from "lucide-react";
+import { ArrowRight, Search, ChevronLeft, ChevronRight, ShoppingBag, MapPin } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { useApp } from "@/lib/context";
 import OnboardingModal from "@/components/OnboardingModal";
 import AuthModal from "@/components/AuthModal";
+import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
 
 type BannerSlide = {
   id: string;
@@ -29,6 +30,8 @@ export default function HomePage() {
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { cartCount, cartTotal, profile } = useApp();
+  const { location, saveLocation } = useDeliveryLocation();
+  const [locationOpen, setLocationOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -68,18 +71,30 @@ export default function HomePage() {
       .finally(() => setLoadingMenu(false));
   }, []);
 
+  const bannerItems = useMemo(() => menuItems.filter(i => i.isBanner).map(i => ({
+    id: `item-${i.id}`,
+    text: i.name,
+    subText: i.description || "Freshly prepared for you",
+    image: i.image,
+    link: `/item/${i.id}`,
+    active: true
+  })), [menuItems]);
+
+  const combinedBannerSlides = useMemo(() => [...bannerItems, ...bannerSlides], [bannerItems, bannerSlides]);
+  const hasBanner = bannerEnabled && combinedBannerSlides.length > 0;
+
   // Autoplay slider
   const startAutoplay = useCallback(() => {
     if (autoplayRef.current) clearInterval(autoplayRef.current);
     autoplayRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % Math.max(bannerSlides.length, 1));
+      setCurrentSlide(prev => (prev + 1) % Math.max(combinedBannerSlides.length, 1));
     }, 5000);
-  }, [bannerSlides.length]);
+  }, [combinedBannerSlides.length]);
 
   useEffect(() => {
-    if (bannerSlides.length > 1) startAutoplay();
+    if (combinedBannerSlides.length > 1) startAutoplay();
     return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
-  }, [bannerSlides.length, startAutoplay]);
+  }, [combinedBannerSlides.length, startAutoplay]);
 
   const goToSlide = useCallback((idx: number) => {
     setCurrentSlide(idx);
@@ -95,8 +110,15 @@ export default function HomePage() {
   }), [menuItems, selectedCategory, deferredSearch]);
 
   const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 6), [menuItems]);
-
-  const hasBanner = bannerEnabled && bannerSlides.length > 0;
+  const recommendedItems = useMemo(() => menuItems.filter(i => i.isRecommended).slice(0, 6), [menuItems]);
+  const featuredIds = useMemo(
+    () => new Set([...popularItems, ...recommendedItems].map(i => i.id)),
+    [popularItems, recommendedItems]
+  );
+  const gridItems = useMemo(() => {
+    if (selectedCategory !== "all") return filteredItems;
+    return filteredItems.filter(i => !featuredIds.has(i.id));
+  }, [filteredItems, selectedCategory, featuredIds]);
   const userName = profile?.name?.split(" ")[0] || null;
 
   const CAT_EMOJI: Record<string, string> = { all: "🍽️", coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤", desserts: "🍰" };
@@ -115,26 +137,22 @@ export default function HomePage() {
 
       {/* ─── BANNER SLIDER ─── */}
       {hasBanner && (
-        <div style={{ background: "var(--bg-cream)", padding: "24px 0 16px" }}>
+        <div className="home-banner-section">
           <div className="otw-container">
-            <div ref={sliderRef} style={{
-              position: "relative", borderRadius: "24px", overflow: "hidden",
-              aspectRatio: "21/9", minHeight: "220px", maxHeight: "480px",
-              background: "#111", boxShadow: "0 20px 40px rgba(0,0,0,0.12)"
-            }}>
+            <div ref={sliderRef} className="home-banner-slider">
               {/* Slides */}
-              {bannerSlides.map((slide, idx) => (
+              {combinedBannerSlides.map((slide, idx) => (
                 <div key={slide.id} style={{
                   position: "absolute", inset: 0,
                   opacity: idx === currentSlide ? 1 : 0,
-                  transform: idx === currentSlide ? "scale(1)" : "scale(1.04)",
+                  transform: idx === currentSlide ? "scale(1)" : "scale(1.02)",
                   transition: "opacity 0.7s ease, transform 0.7s ease",
                   zIndex: idx === currentSlide ? 1 : 0,
                 }}>
                   <Image
                     src={slide.image} alt={slide.text || "Banner"} fill
-                    sizes="(max-width: 768px) 100vw, 1200px"
-                    style={{ objectFit: "cover" }}
+                    sizes="(max-width: 768px) calc(100vw - 40px), 1200px"
+                    className="home-banner-slide-img"
                     priority={idx === 0}
                   />
                   {/* Dark gradient overlay */}
@@ -176,7 +194,7 @@ export default function HomePage() {
                         onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
                         onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
                       >
-                        SHOP NOW <ArrowRight size={16} />
+                        ORDER NOW <ArrowRight size={16} />
                       </Link>
                     )}
                   </div>
@@ -184,9 +202,9 @@ export default function HomePage() {
               ))}
 
               {/* Navigation arrows (desktop) */}
-              {bannerSlides.length > 1 && (
+              {combinedBannerSlides.length > 1 && (
                 <>
-                  <button onClick={() => goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length)}
+                  <button onClick={() => goToSlide((currentSlide - 1 + combinedBannerSlides.length) % combinedBannerSlides.length)}
                     aria-label="Previous slide"
                     className="desktop-only"
                     style={{
@@ -201,7 +219,7 @@ export default function HomePage() {
                   >
                     <ChevronLeft size={20} />
                   </button>
-                  <button onClick={() => goToSlide((currentSlide + 1) % bannerSlides.length)}
+                  <button onClick={() => goToSlide((currentSlide + 1) % combinedBannerSlides.length)}
                     aria-label="Next slide"
                     className="desktop-only"
                     style={{
@@ -220,12 +238,12 @@ export default function HomePage() {
               )}
 
               {/* Dots */}
-              {bannerSlides.length > 1 && (
+              {combinedBannerSlides.length > 1 && (
                 <div style={{
                   position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", zIndex: 3,
                   display: "flex", gap: "6px"
                 }}>
-                  {bannerSlides.map((_, idx) => (
+                  {combinedBannerSlides.map((_, idx) => (
                     <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
                       style={{
                         width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none",
@@ -257,10 +275,12 @@ export default function HomePage() {
         </section>
       )}
 
+
+
       {/* ─── MARQUEE ─── */}
       <div className="marquee">
-        <span>⚡ FRESH COFFEE ⚡ FAST DELIVERY ⚡ GREAT DEALS ⚡ NO LOGIN NEEDED ⚡ ORDER NOW ⚡ ONN DA WAY ⚡</span>
-        <span>⚡ FRESH COFFEE ⚡ FAST DELIVERY ⚡ GREAT DEALS ⚡ NO LOGIN NEEDED ⚡ ORDER NOW ⚡ ONN DA WAY ⚡</span>
+        <span>☕ FRESH COFFEE ⚡ FAST DELIVERY ☕ COLD COFFEE ⚡ BURGERS & SANDWICHES ☕ CAFÉ-STYLE FOOD ⚡ ROHINI DELIVERY ☕ ORDER NOW ⚡ ONN DA WAY ☕</span>
+        <span>☕ FRESH COFFEE ⚡ FAST DELIVERY ☕ COLD COFFEE ⚡ BURGERS & SANDWICHES ☕ CAFÉ-STYLE FOOD ⚡ ROHINI DELIVERY ☕ ORDER NOW ⚡ ONN DA WAY ☕</span>
       </div>
 
       {/* ─── SEARCH BAR ─── */}
@@ -301,23 +321,22 @@ export default function HomePage() {
       <section style={{ padding: "24px 0 40px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
 
-          {/* Popular horizontal scroller (only when "all") */}
+          {/* Popular — top: social proof & bestsellers */}
           {selectedCategory === "all" && popularItems.length > 0 && (
             <section style={{ marginBottom: "32px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px", padding: "0 4px" }}>
-                <div>
-                  <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-                    🔥 Popular Right Now
-                  </h2>
-                </div>
+              <div style={{ marginBottom: "14px", padding: "0 4px" }}>
+                <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
+                  🔥 Popular Right Now
+                </h2>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Trending picks — order what everyone&apos;s loving</p>
               </div>
               <div style={{
-                display: "flex", gap: "14px", overflowX: "auto",
-                paddingBottom: "8px", WebkitOverflowScrolling: "touch",
-                scrollbarWidth: "none", scrollSnapType: "x mandatory",
+                display: "grid", gridAutoFlow: "column", gridAutoColumns: "220px",
+                gap: "14px", overflowX: "auto", paddingBottom: "8px",
+                WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
               }}>
                 {popularItems.map(item => (
-                  <div key={item.id} style={{ minWidth: "220px", maxWidth: "240px", flexShrink: 0, scrollSnapAlign: "start" }}>
+                  <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
                     <FoodCard item={item} compact />
                   </div>
                 ))}
@@ -325,11 +344,37 @@ export default function HomePage() {
             </section>
           )}
 
-          {/* Main grid */}
+          {/* Recommended — middle: curated discovery */}
+          {selectedCategory === "all" && recommendedItems.length > 0 && (
+            <section style={{ marginBottom: "32px" }}>
+              <div style={{ marginBottom: "14px", padding: "0 4px" }}>
+                <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
+                  🎯 Recommended For You
+                </h2>
+                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Hand-picked by us — great pairings & hidden gems</p>
+              </div>
+              <div style={{
+                display: "grid", gridAutoFlow: "column", gridAutoColumns: "220px",
+                gap: "14px", overflowX: "auto", paddingBottom: "8px",
+                WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
+              }}>
+                {recommendedItems.map(item => (
+                  <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
+                    <FoodCard item={item} compact />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Full menu — bottom: complete browseable catalog */}
           <div style={{ marginBottom: "12px", padding: "0 4px" }}>
-            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
               {selectedCategory === "all" ? "📋 Full Menu" : `${CAT_EMOJI[selectedCategory] || "📦"} ${selectedCategory}`}
             </h2>
+            {selectedCategory === "all" && (popularItems.length > 0 || recommendedItems.length > 0) && (
+              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Everything else — popular & recommended items shown above</p>
+            )}
           </div>
 
           <div className="bento-grid">
@@ -338,11 +383,11 @@ export default function HomePage() {
                 <div key={i} className="skeleton" style={{ height: 260, borderRadius: "12px" }} />
               ))
             ) : (
-              filteredItems.map(item => (
+              gridItems.map(item => (
                 <FoodCard key={item.id} item={item} />
               ))
             )}
-            {!loadingMenu && filteredItems.length === 0 && (
+            {!loadingMenu && gridItems.length === 0 && (
               <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px" }}>
                 <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
                 <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
@@ -354,6 +399,13 @@ export default function HomePage() {
       </section>
 
       <Footer />
+
+      {/* Location Modal */}
+      <LocationModal
+        isOpen={locationOpen}
+        onClose={() => setLocationOpen(false)}
+        onSave={saveLocation}
+      />
 
       {/* ─── MOBILE STICKY CART BAR ─── */}
       {cartCount > 0 && (

@@ -19,9 +19,18 @@ export function withLogger(route: string, handler: Handler): Handler {
     const method = req.method ?? "UNKNOWN";
     try {
       const res = await handler(req, ctx);
-      logger.api(method, route, res.status, Date.now() - start);
+      const durationMs = Date.now() - start;
+      
+      // Log based on duration to detect slow queries
+      if (durationMs > 2000) {
+        logger.error("critical_slow_request", { method, route, durationMs, status: res.status });
+      } else if (durationMs > 500) {
+        logger.warn("slow_request", { method, route, durationMs, status: res.status });
+      }
+      
+      logger.api(method, route, res.status, durationMs);
       // Attach a lightweight Server-Timing header so DevTools shows duration
-      res.headers.set("Server-Timing", `handler;dur=${Date.now() - start}`);
+      res.headers.set("Server-Timing", `handler;dur=${durationMs}`);
       return res;
     } catch (err) {
       const durationMs = Date.now() - start;

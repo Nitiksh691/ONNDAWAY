@@ -11,6 +11,24 @@ export interface UserProfile {
   orderCount?: number;
 }
 
+export interface CustomizationOption {
+  name: string;
+  price: number;
+}
+
+export interface CustomizationCategory {
+  name: string;
+  options: CustomizationOption[];
+  required?: boolean;
+  multiple?: boolean;
+}
+
+export interface SelectedCustomization {
+  category: string;
+  option: string;
+  price: number;
+}
+
 export interface MenuItem {
   id: string;
   name: string;
@@ -25,14 +43,19 @@ export interface MenuItem {
   isBanner?: boolean;
   originalPrice?: number;
   section?: string;
+  customizationCategories?: CustomizationCategory[];
   createdAt?: string;
 }
 
 export interface CartItem {
-  cartItemId: string; // Unique ID for each cart item instance
+  cartItemId: string;
   item: MenuItem;
   quantity: number;
   specialInstructions?: string;
+  selectedCustomizations?: SelectedCustomization[];
+  unitPrice?: number;
+  /** Full readable summary: customizations + special notes (stored on orders). */
+  lineDetails?: string;
 }
 
 export type OrderStatus = "placed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";

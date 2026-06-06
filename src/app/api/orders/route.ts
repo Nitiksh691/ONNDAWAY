@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { withLogger } from "@/lib/withLogger";
+import { normalizeCartLines } from "@/lib/orderLine";
+import type { CartItem } from "@/lib/types";
 
 const _GET = async (req: NextRequest) => {
   await dbConnect();
@@ -44,11 +46,13 @@ const _POST = async (req: NextRequest) => {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
+  const normalizedItems = normalizeCartLines(items as CartItem[]);
+
   const order = await Order.create({
     userId,
     userName: userName || "Customer",
     userPhone: userPhone || "",
-    items,
+    items: normalizedItems,
     location,
     total: total || 0,
     couponCode: couponCode || null,

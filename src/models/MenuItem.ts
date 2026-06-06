@@ -13,6 +13,18 @@ const MenuItemSchema = new Schema({
   isBanner:      { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
+  customizationCategories: {
+    type: [{
+      name:     { type: String, required: true },
+      required: { type: Boolean, default: false },
+      multiple: { type: Boolean, default: false },
+      options:  [{
+        name:  { type: String, required: true },
+        price: { type: Number, default: 0 },
+      }],
+    }],
+    default: [],
+  },
   createdAt:     { type: Date, default: Date.now },
   updatedAt:     { type: Date, default: Date.now },
 });

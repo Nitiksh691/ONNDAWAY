@@ -13,11 +13,11 @@ export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
-  
+
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
-  
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "" });
+
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", customizationCategories: [] });
   const [uploadingImage, setUploadingImage] = useState(false);
 
   const fetchMenu = async () => {
@@ -46,7 +46,7 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0 });
+      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, customizationCategories: [] });
     }
     setDialogOpen(true);
   };
@@ -86,7 +86,7 @@ export default function AdminMenuPage() {
     try {
       const url = editingItem ? `/api/menu/${editingItem.id}` : "/api/menu";
       const method = editingItem ? "PATCH" : "POST";
-      
+
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
@@ -107,7 +107,7 @@ export default function AdminMenuPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if(confirm("Are you sure you want to delete this item?")) {
+    if (confirm("Are you sure you want to delete this item?")) {
       try {
         const res = await fetch(`/api/menu/${id}`, { method: "DELETE" });
         if (res.ok) {
@@ -130,17 +130,17 @@ export default function AdminMenuPage() {
           <p style={{ color: "var(--text-muted)" }}>Add, edit, or remove items from the campus menu.</p>
         </div>
         <button onClick={() => handleOpenEdit(null)} style={{ background: "#0055ff", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Plus size={18}/> Add New Item
+          <Plus size={18} /> Add New Item
         </button>
       </div>
 
       <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
-        
+
         <div style={{ position: "relative", marginBottom: "24px", maxWidth: "400px" }}>
           <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
-          <input 
-            type="text" 
-            placeholder="Search menu items..." 
+          <input
+            type="text"
+            placeholder="Search menu items..."
             style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
             value={search}
             onChange={e => setSearch(e.target.value)}
@@ -160,11 +160,11 @@ export default function AdminMenuPage() {
             </thead>
             <tbody>
               {filtered.map(item => (
-                <tr key={item.id} style={{ borderBottom: "1px solid var(--border)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background="var(--accent)"} onMouseLeave={e => e.currentTarget.style.background="transparent"}>
+                <tr key={item.id} style={{ borderBottom: "1px solid var(--border)", transition: "background 0.2s" }} onMouseEnter={e => e.currentTarget.style.background = "var(--accent)"} onMouseLeave={e => e.currentTarget.style.background = "transparent"}>
                   <td style={{ padding: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div style={{ width: 48, height: 48, borderRadius: "10px", background: "#27272a", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {item.image ? <Image src={item.image} alt={item.name} fill style={{ objectFit: "cover" }} /> : <ImageIcon size={20} color="var(--text-muted)"/>}
+                        {item.image ? <Image src={item.image} alt={item.name} fill style={{ objectFit: "cover" }} /> : <ImageIcon size={20} color="var(--text-muted)" />}
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-dark)" }}>{item.name}</div>
@@ -193,8 +193,8 @@ export default function AdminMenuPage() {
                   </td>
                   <td style={{ padding: "16px", textAlign: "right" }}>
                     <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                      <button onClick={() => handleOpenEdit(item)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #3f3f46", background: "#27272a", color: "#e4e4e7", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14}/></button>
-                      <button onClick={() => handleDelete(item.id)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14}/></button>
+                      <button onClick={() => handleOpenEdit(item)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #3f3f46", background: "#27272a", color: "#e4e4e7", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14} /></button>
+                      <button onClick={() => handleDelete(item.id)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -208,9 +208,10 @@ export default function AdminMenuPage() {
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(8px)", zIndex: 1000 }} />
-          <Dialog.Content style={{ background: "#18181b",
+          <Dialog.Content style={{
+            background: "#18181b",
             position: "fixed", top: "45%", left: "50%", transform: "translate(-50%, -50%)",
-            width: "95%", maxWidth: "650px", padding: "0", zIndex: 1001, 
+            width: "95%", maxWidth: "650px", padding: "0", zIndex: 1001,
             maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden",
             boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
             border: "3px solid var(--primary)", borderRadius: "16px"
@@ -220,121 +221,182 @@ export default function AdminMenuPage() {
                 {editingItem ? "Edit Menu Item" : "Create New Item"}
               </Dialog.Title>
             </div>
-            
+
             <div style={{ padding: "32px", overflowY: "auto", flex: 1, minHeight: 0, overscrollBehavior: "contain" }}>
               <form id="menu-form" onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-              <div>
-                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Name</label>
-                <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.name} onChange={e => setForm({...form, name: e.target.value})} required />
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
                 <div>
-                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Current Price (₹)</label>
-                  <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.price} onChange={e => setForm({...form, price: Number(e.target.value)})} required min="0" />
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Name</label>
+                  <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                  <div>
+                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Current Price (₹)</label>
+                    <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.price} onChange={e => setForm({ ...form, price: Number(e.target.value) })} required min="0" />
+                  </div>
+                  <div>
+                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Original Price (₹) - Optional</label>
+                    <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="For discounts" value={form.originalPrice || ""} onChange={e => setForm({ ...form, originalPrice: e.target.value ? Number(e.target.value) : undefined })} min="0" />
+                  </div>
+                  <div>
+                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Category</label>
+                    <select className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} required>
+                      <option value="coffee">Coffee</option>
+                      <option value="snacks">Snacks</option>
+                      <option value="meals">Meals</option>
+                      <option value="drinks">Drinks</option>
+                      <option value="desserts">Desserts</option>
+                    </select>
+                  </div>
                 </div>
                 <div>
-                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Original Price (₹) - Optional</label>
-                  <input type="number" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="For discounts" value={form.originalPrice || ""} onChange={e => setForm({...form, originalPrice: e.target.value ? Number(e.target.value) : undefined})} min="0" />
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
+                  <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({ ...form, section: e.target.value })} />
+                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together on the homepage.</p>
                 </div>
                 <div>
-                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Category</label>
-                  <select className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.category} onChange={e => setForm({...form, category: e.target.value as any})} required>
-                    <option value="coffee">Coffee</option>
-                    <option value="snacks">Snacks</option>
-                    <option value="meals">Meals</option>
-                    <option value="drinks">Drinks</option>
-                    <option value="desserts">Desserts</option>
-                  </select>
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Description</label>
+                  <textarea className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: "80px", resize: "vertical" }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required />
                 </div>
-              </div>
-              <div>
-                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
-                <input type="text" className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({...form, section: e.target.value})} />
-                <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together on the homepage.</p>
-              </div>
-              <div>
-                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Description</label>
-                <textarea className="otw-input" style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: "80px", resize: "vertical" }} value={form.description} onChange={e => setForm({...form, description: e.target.value})} required />
-              </div>
-              <div>
-                <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Image</label>
-                <label style={{
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  border: "2px dashed var(--border)", borderRadius: "16px", padding: "40px 20px",
-                  background: "#111", cursor: "pointer", transition: "all 0.2s",
-                  position: "relative", overflow: "hidden"
-                }} onMouseEnter={e => e.currentTarget.style.borderColor="var(--primary)"} onMouseLeave={e => e.currentTarget.style.borderColor="var(--border)"}>
-                  <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
-                  {uploadingImage ? (
-                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
-                      <div style={{ width: "30px", height: "30px", border: "3px solid var(--border)", borderTopColor: "var(--primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
-                      <div style={{ color: "var(--primary)", fontWeight: 700 }}>Uploading to Cloudinary...</div>
+                <div>
+                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#e4e4e7", marginBottom: "8px" }}>Item Image</label>
+                  <label style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                    border: "2px dashed var(--border)", borderRadius: "16px", padding: "40px 20px",
+                    background: "#111", cursor: "pointer", transition: "all 0.2s",
+                    position: "relative", overflow: "hidden"
+                  }} onMouseEnter={e => e.currentTarget.style.borderColor = "var(--primary)"} onMouseLeave={e => e.currentTarget.style.borderColor = "var(--border)"}>
+                    <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: "none" }} />
+                    {uploadingImage ? (
+                      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
+                        <div style={{ width: "30px", height: "30px", border: "3px solid var(--border)", borderTopColor: "var(--primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
+                        <div style={{ color: "var(--primary)", fontWeight: 700 }}>Uploading to Cloudinary...</div>
+                      </div>
+                    ) : form.image ? (
+                      <>
+                        <div style={{ position: "absolute", inset: 0 }}>
+                          <Image src={form.image} alt="Preview" fill style={{ objectFit: "contain" }} />
+                        </div>
+                        <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700 }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0"}>
+                          Click to change image
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.05)" }}>
+                          <ImageIcon size={28} color="var(--primary)" />
+                        </div>
+                        <div style={{ fontWeight: 800, color: "var(--text-dark)", fontSize: "1.1rem", marginBottom: "4px" }}>Click to upload image</div>
+                        <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Supports JPG, PNG, WEBP</div>
+                      </>
+                    )}
+                  </label>
+                </div>
+
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#111", borderRadius: "12px" }}>
+                    <input type="checkbox" id="avail" checked={form.available} onChange={e => setForm({ ...form, available: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "var(--primary)" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="avail" style={{ fontWeight: 700, cursor: "pointer", color: "var(--text-dark)" }}>Item is currently available</label>
+                      <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Uncheck this if the item is out of stock.</span>
                     </div>
-                  ) : form.image ? (
-                    <>
-                      <div style={{ position: "absolute", inset: 0 }}>
-                        <Image src={form.image} alt="Preview" fill style={{ objectFit: "contain" }} />
-                      </div>
-                      <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700 }} onMouseEnter={e => e.currentTarget.style.opacity="1"} onMouseLeave={e => e.currentTarget.style.opacity="0"}>
-                        Click to change image
-                      </div>
-                    </>
-                  ) : (
-                    <>
-                      <div style={{ width: 64, height: 64, borderRadius: "50%", background: "#27272a", display: "flex", alignItems: "center", justifyContent: "center", marginBottom: "16px", boxShadow: "0 4px 14px rgba(0,0,0,0.05)" }}>
-                        <ImageIcon size={28} color="var(--primary)" />
-                      </div>
-                      <div style={{ fontWeight: 800, color: "var(--text-dark)", fontSize: "1.1rem", marginBottom: "4px" }}>Click to upload image</div>
-                      <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Supports JPG, PNG, WEBP</div>
-                    </>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#2a160c", border: "1px solid #4a2111", borderRadius: "12px" }}>
+                    <input type="checkbox" id="popular" checked={form.isPopular || false} onChange={e => setForm({ ...form, isPopular: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#EA580C" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="popular" style={{ fontWeight: 700, cursor: "pointer", color: "#9A3412" }}>🔥 Mark as Popular</label>
+                      <span style={{ fontSize: "0.8rem", color: "#C2410C" }}>Will show up in the "Popular Items" sections.</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d2b18", border: "1px solid #164f2b", borderRadius: "12px" }}>
+                    <input type="checkbox" id="recommended" checked={form.isRecommended || false} onChange={e => setForm({ ...form, isRecommended: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#16A34A" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="recommended" style={{ fontWeight: 700, cursor: "pointer", color: "#166534" }}>🎯 Mark as Recommended</label>
+                      <span style={{ fontSize: "0.8rem", color: "#15803D" }}>Will show up in the "Recommended For You" section.</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d1b2a", border: "1px solid #1a365d", borderRadius: "12px" }}>
+                    <input type="checkbox" id="banner" checked={form.isBanner || false} onChange={e => setForm({ ...form, isBanner: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#2563EB" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="banner" style={{ fontWeight: 700, cursor: "pointer", color: "#1E3A8A" }}>🎇 Feature in Top Banner</label>
+                      <span style={{ fontSize: "0.8rem", color: "#1D4ED8" }}>Item will appear in the large moving carousel on the homepage.</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Customizations Section ── */}
+                <div style={{ padding: "20px", background: "#111", border: "1px solid #27272a", borderRadius: "12px", marginTop: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-dark)", margin: 0 }}>Customizations (Add-ons)</h3>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, customizationCategories: [...(f.customizationCategories || []), { name: "", options: [], required: false, multiple: false }] }))} style={{ background: "#27272a", color: "#fff", border: "1px solid #3f3f46", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>+ Add Category</button>
+                  </div>
+
+                  {(!form.customizationCategories || form.customizationCategories.length === 0) && (
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No customizations added (e.g. Milk Options, Add-ons).</div>
                   )}
-                </label>
-              </div>
 
-              <div style={{ display: "flex", flexDirection: "column", gap: "12px", marginTop: "8px" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#111", borderRadius: "12px" }}>
-                  <input type="checkbox" id="avail" checked={form.available} onChange={e => setForm({...form, available: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "var(--primary)" }} />
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <label htmlFor="avail" style={{ fontWeight: 700, cursor: "pointer", color: "var(--text-dark)" }}>Item is currently available</label>
-                    <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Uncheck this if the item is out of stock.</span>
-                  </div>
+                  {form.customizationCategories?.map((cat, catIdx) => (
+                    <div key={catIdx} style={{ background: "#18181b", border: "1px solid #3f3f46", borderRadius: "8px", padding: "16px", marginBottom: "16px" }}>
+                      <div style={{ display: "flex", gap: "12px", marginBottom: "12px", alignItems: "center" }}>
+                        <input type="text" placeholder="Category Name (e.g. Milk)" style={{ flex: 1, background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "6px", padding: "8px 12px", outline: "none", fontSize: "0.9rem" }} value={cat.name} onChange={e => {
+                          const newCats = [...form.customizationCategories!];
+                          newCats[catIdx].name = e.target.value;
+                          setForm({ ...form, customizationCategories: newCats });
+                        }} />
+                        <button type="button" onClick={() => {
+                          const newCats = [...form.customizationCategories!];
+                          newCats.splice(catIdx, 1);
+                          setForm({ ...form, customizationCategories: newCats });
+                        }} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={16} /></button>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", paddingLeft: "12px", borderLeft: "2px solid #27272a" }}>
+                        {cat.options.map((opt, optIdx) => (
+                          <div key={optIdx} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                            <input type="text" placeholder="Option (e.g. Oat Milk)" style={{ flex: 1, background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "6px", padding: "6px 10px", outline: "none", fontSize: "0.85rem" }} value={opt.name} onChange={e => {
+                              const newCats = [...form.customizationCategories!];
+                              newCats[catIdx].options[optIdx].name = e.target.value;
+                              setForm({ ...form, customizationCategories: newCats });
+                            }} />
+                            <div style={{ display: "flex", alignItems: "center", background: "#111", border: "1px solid #3f3f46", borderRadius: "6px", overflow: "hidden" }}>
+                              <span style={{ padding: "6px 8px", color: "var(--text-muted)", fontSize: "0.85rem", borderRight: "1px solid #3f3f46" }}>+₹</span>
+                              <input type="number" placeholder="0" style={{ width: "60px", background: "transparent", border: "none", color: "#fff", padding: "6px", outline: "none", fontSize: "0.85rem" }} value={opt.price} onChange={e => {
+                                const newCats = [...form.customizationCategories!];
+                                newCats[catIdx].options[optIdx].price = Number(e.target.value);
+                                setForm({ ...form, customizationCategories: newCats });
+                              }} min="0" />
+                            </div>
+                            <button type="button" onClick={() => {
+                              const newCats = [...form.customizationCategories!];
+                              newCats[catIdx].options.splice(optIdx, 1);
+                              setForm({ ...form, customizationCategories: newCats });
+                            }} style={{ background: "transparent", border: "none", color: "var(--text-muted)", cursor: "pointer" }}><Trash2 size={14} /></button>
+                          </div>
+                        ))}
+                        <button type="button" onClick={() => {
+                          const newCats = [...form.customizationCategories!];
+                          newCats[catIdx].options.push({ name: "", price: 0 });
+                          setForm({ ...form, customizationCategories: newCats });
+                        }} style={{ background: "transparent", color: "var(--primary)", border: "none", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", width: "fit-content", marginTop: "4px" }}>
+                          <Plus size={14} /> Add Option
+                        </button>
+                      </div>
+                    </div>
+                  ))}
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#2a160c", border: "1px solid #4a2111", borderRadius: "12px" }}>
-                  <input type="checkbox" id="popular" checked={form.isPopular || false} onChange={e => setForm({...form, isPopular: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#EA580C" }} />
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <label htmlFor="popular" style={{ fontWeight: 700, cursor: "pointer", color: "#9A3412" }}>🔥 Mark as Popular</label>
-                    <span style={{ fontSize: "0.8rem", color: "#C2410C" }}>Will show up in the "Popular Items" sections.</span>
-                  </div>
+                <div style={{ paddingTop: "24px", borderTop: "1px solid var(--border)", marginTop: "12px", display: "flex", gap: "16px", justifyContent: "flex-end" }}>
+                  <Dialog.Close asChild>
+                    <button type="button" style={{ background: "transparent", color: "#e4e4e7", border: "1px solid #3f3f46", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "120px" }}>Cancel</button>
+                  </Dialog.Close>
+                  <button type="submit" style={{ background: "#0055ff", color: "#fff", border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "160px" }}>
+                    {editingItem ? "Save Changes" : "Create Item"}
+                  </button>
                 </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d2b18", border: "1px solid #164f2b", borderRadius: "12px" }}>
-                  <input type="checkbox" id="recommended" checked={form.isRecommended || false} onChange={e => setForm({...form, isRecommended: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#16A34A" }} />
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <label htmlFor="recommended" style={{ fontWeight: 700, cursor: "pointer", color: "#166534" }}>🎯 Mark as Recommended</label>
-                    <span style={{ fontSize: "0.8rem", color: "#15803D" }}>Will show up in the "Recommended For You" section.</span>
-                  </div>
-                </div>
-
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: "#0d1b2a", border: "1px solid #1a365d", borderRadius: "12px" }}>
-                  <input type="checkbox" id="banner" checked={form.isBanner || false} onChange={e => setForm({...form, isBanner: e.target.checked})} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#2563EB" }} />
-                  <div style={{ display: "flex", flexDirection: "column" }}>
-                    <label htmlFor="banner" style={{ fontWeight: 700, cursor: "pointer", color: "#1E3A8A" }}>🎇 Feature in Top Banner</label>
-                    <span style={{ fontSize: "0.8rem", color: "#1D4ED8" }}>Item will appear in the large moving carousel on the homepage.</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ paddingTop: "24px", borderTop: "1px solid var(--border)", marginTop: "12px", display: "flex", gap: "16px", justifyContent: "flex-end" }}>
-                <Dialog.Close asChild>
-                  <button type="button" style={{ background: "transparent", color: "#e4e4e7", border: "1px solid #3f3f46", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "120px" }}>Cancel</button>
-                </Dialog.Close>
-                <button type="submit" style={{ background: "#0055ff", color: "#fff", border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", minWidth: "160px" }}>
-                  {editingItem ? "Save Changes" : "Create Item"}
-                </button>
-              </div>
-
-            </form>
+              </form>
             </div>
           </Dialog.Content>
         </Dialog.Portal>

@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
-import { UserProfile, CartItem, MenuItem } from "./types";
+import { UserProfile, CartItem, MenuItem, SelectedCustomization } from "./types";
+import { buildLineDetails, normalizeCartLine } from "./orderLine";
 import { STORAGE_KEYS } from "./constants";
 
 // ── Type for the minimal session user object ─────────────────────────────────
@@ -18,7 +19,7 @@ interface AppContextType {
   loading: boolean;
   /** Current cart contents. */
   cart: CartItem[];
-  addToCart: (item: MenuItem, specialInstructions?: string) => void;
+  addToCart: (item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => void;
   removeFromCart: (cartItemId: string) => void;
   updateQuantity: (cartItemId: string, qty: number) => void;
   clearCart: () => void;
@@ -97,7 +98,8 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const saved = localStorage.getItem(STORAGE_KEYS.cart);
     if (saved) {
       try {
-        setCart(JSON.parse(saved) as CartItem[]);
+        const parsed = JSON.parse(saved) as CartItem[];
+        setCart(parsed.map(normalizeCartLine));
       } catch {
         /* Corrupted localStorage — silently ignore and start fresh */
       }
@@ -109,7 +111,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const handleStorage = (e: StorageEvent) => {
       if (e.key === STORAGE_KEYS.cart && e.newValue) {
         try {
-          setCart(JSON.parse(e.newValue) as CartItem[]);
+          setCart(JSON.parse(e.newValue).map(normalizeCartLine));
         } catch { /* ignore */ }
       }
     };
@@ -128,18 +130,32 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(migrated));
   }, []);
 
-  const addToCart = useCallback((item: MenuItem, specialInstructions?: string) => {
+  const customizationKey = (customizations?: SelectedCustomization[]) =>
+    JSON.stringify((customizations || []).map(c => `${c.category}:${c.option}`).sort());
+
+  const addToCart = useCallback((item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => {
+    const resolvedPrice = unitPrice ?? item.price;
+    const customizations = selectedCustomizations ?? [];
+    const lineDetails = buildLineDetails(customizations, specialInstructions);
+
     setCart((prev) => {
-      // Find if we already have this item with the exact same instructions
-      const existing = prev.find((c) => c.item.id === item.id && (c.specialInstructions || "") === (specialInstructions || ""));
+      const existing = prev.find(
+        (c) =>
+          c.item.id === item.id &&
+          (c.specialInstructions || "") === (specialInstructions || "") &&
+          customizationKey(c.selectedCustomizations) === customizationKey(customizations)
+      );
       const updated = existing
         ? prev.map((c) => c.cartItemId === existing.cartItemId ? { ...c, quantity: c.quantity + 1 } : c)
-        : [...prev, { 
-            cartItemId: `${item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`, 
-            item, 
-            quantity: 1, 
-            specialInstructions: specialInstructions || undefined
-          }];
+        : [...prev, normalizeCartLine({
+            cartItemId: `${item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
+            item,
+            quantity: 1,
+            specialInstructions: specialInstructions || undefined,
+            selectedCustomizations: customizations,
+            unitPrice: resolvedPrice,
+            lineDetails,
+          })];
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });
@@ -173,7 +189,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // ── Derived totals (memoised) ───────────────────────────────────────────────
   const cartTotal = useMemo(
-    () => cart.reduce((total, c) => total + c.item.price * c.quantity, 0),
+    () => cart.reduce((total, c) => total + (c.unitPrice ?? c.item.price) * c.quantity, 0),
     [cart]
   );
   const cartCount = useMemo(
