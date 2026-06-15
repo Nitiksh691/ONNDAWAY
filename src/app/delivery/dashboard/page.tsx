@@ -4,7 +4,8 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
-import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Eye, EyeOff } from "lucide-react";
+import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Navigation, Clock, Tag } from "lucide-react";
+import { getOrderMapsUrl, getOrderMapsEmbedUrl } from "@/lib/maps";
 import toast from "react-hot-toast";
 
 const RIDER_QUICK_MESSAGES = [
@@ -210,13 +211,67 @@ export default function DeliveryDashboard() {
                     </div>
                   </div>
 
-                  {/* Location */}
-                  <div style={{ background: "var(--accent)", padding: "16px", borderRadius: "12px", display: "flex", alignItems: "flex-start", gap: "12px" }}>
-                    <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-                    <div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" }}>Delivery Location</div>
-                      <div style={{ fontWeight: 600, fontSize: "1.05rem", color: "var(--text-dark)" }}>{order.location}</div>
+                  {/* Customer contact */}
+                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                    <a
+                      href={`tel:+91${order.userPhone}`}
+                      style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", background: "#ecfdf5", border: "1.5px solid #86efac", borderRadius: 12, color: "#166534", fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}
+                    >
+                      <Phone size={18} /> Call Customer
+                    </a>
+                    <a
+                      href={getOrderMapsUrl(order)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", background: "#eff6ff", border: "1.5px solid #93c5fd", borderRadius: 12, color: "#1d4ed8", fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}
+                    >
+                      <Navigation size={18} /> Open in Maps
+                    </a>
+                  </div>
+
+                  {/* Location details */}
+                  <div style={{ background: "var(--accent)", padding: "16px", borderRadius: "12px" }}>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
+                      <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "0.8rem", color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Delivery Location</div>
+                        <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--text-dark)", lineHeight: 1.4 }}>{order.location}</div>
+                        {order.locationNotes && (
+                          <div style={{ marginTop: 8, padding: "10px 12px", background: "#fff", borderRadius: 8, fontSize: "0.88rem", color: "#475569", border: "1px solid #e2e8f0" }}>
+                            <strong style={{ color: "#0f172a" }}>Notes:</strong> {order.locationNotes}
+                          </div>
+                        )}
+                        {order.latitude != null && order.longitude != null && (
+                          <div style={{ marginTop: 8, fontSize: "0.78rem", color: "#64748b", fontFamily: "monospace" }}>
+                            GPS: {order.latitude.toFixed(5)}, {order.longitude.toFixed(5)}
+                          </div>
+                        )}
+                      </div>
                     </div>
+                    {getOrderMapsEmbedUrl(order) && (
+                      <iframe
+                        title={`Map for order ${order.id}`}
+                        src={getOrderMapsEmbedUrl(order)!}
+                        width="100%"
+                        height="200"
+                        style={{ border: 0, borderRadius: 10, display: "block" }}
+                        loading="lazy"
+                      />
+                    )}
+                  </div>
+
+                  {/* Order meta */}
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
+                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 14px" }}>
+                      <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Clock size={12} /> Scheduled</div>
+                      <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{order.scheduledTime || "ASAP"}</div>
+                    </div>
+                    {order.discount ? (
+                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px" }}>
+                        <div style={{ fontSize: "0.72rem", color: "#166534", fontWeight: 700, textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Tag size={12} /> Discount</div>
+                        <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#15803d" }}>-₹{order.discount} {order.couponCode ? `(${order.couponCode})` : ""}</div>
+                      </div>
+                    ) : null}
                   </div>
 
                   {/* Items */}

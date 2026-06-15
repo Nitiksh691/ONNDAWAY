@@ -29,6 +29,8 @@ interface AppContextType {
   cartCount: number;
   refreshProfile: () => Promise<void>;
   checkSession: () => Promise<void>;
+  /** Re-fetch profile bypassing the 30s cache (e.g. after checkout). */
+  syncProfile: (uid: string) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -68,6 +70,14 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       setProfile(null);
     }
   }, []);
+
+  const syncProfile = useCallback(async (uid: string) => {
+    if (typeof window !== "undefined") {
+      delete (window as any).__otw_profile_cache;
+    }
+    setUser({ uid });
+    await fetchProfile(uid);
+  }, [fetchProfile]);
 
   // ── Session check — reads from localStorage (SSR-safe via useEffect) ────────
   const checkSession = useCallback(async () => {
@@ -212,6 +222,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         cartCount,
         refreshProfile: checkSession,
         checkSession,
+        syncProfile,
       }}
     >
       {children}

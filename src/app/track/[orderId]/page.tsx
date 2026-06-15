@@ -4,7 +4,11 @@ import { useParams, useRouter } from "next/navigation";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
-import { CheckCircle, Package, ChefHat, Truck, MapPin, Star, Phone, Clock, MessageCircle, Send } from "lucide-react";
+import { STORAGE_KEYS } from "@/lib/constants";
+import { clearActiveOrderId, getActiveOrderId } from "@/lib/activeOrder";
+import { getOrderMapsEmbedUrl } from "@/lib/maps";
+import { CheckCircle, MapPin, Clock, MessageCircle, Navigation, Phone } from "lucide-react";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from "@/lib/company";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -39,29 +43,43 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
     props.params.then(p => setOrderId(p.orderId));
   }, [props.params]);
 
-  const { user, loading } = useApp();
+  const { loading } = useApp();
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [fetching, setFetching] = useState(true);
+  const [animTick, setAnimTick] = useState(0);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollRef = useRef<HTMLDivElement>(null);
+
+  // Animate rider position smoothly while on the way
+  useEffect(() => {
+    const t = setInterval(() => setAnimTick(v => v + 1), 2000);
+    return () => clearInterval(t);
+  }, []);
 
   useEffect(() => {
-    if (!loading && !user) router.push("/auth");
-  }, [user, loading, router]);
-
-  useEffect(() => {
-    if (!orderId || !user) return;
+    if (!orderId) return;
     const fetchOrder = async () => {
       try {
         const res = await fetch(`/api/orders/${orderId}`);
         if (res.ok) {
           const data: Order = await res.json();
+          const sessionUid = localStorage.getItem(STORAGE_KEYS.userId);
+          const isOwner = sessionUid && data.userId === sessionUid;
+          const isActive = getActiveOrderId() === orderId;
+          if (!isOwner && !isActive) {
+            toast.error("You don't have access to this order");
+            router.push("/orders");
+            return;
+          }
           setOrder(data);
+          if (data.status === "delivered" || data.status === "cancelled") {
+            clearActiveOrderId();
+          }
         } else {
           toast.error("Order not found");
           router.push("/orders");
@@ -72,14 +90,16 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
         setFetching(false);
       }
     };
-    fetchOrder();
+    if (!loading) fetchOrder();
     const interval = setInterval(fetchOrder, 3000);
     return () => clearInterval(interval);
-  }, [orderId, user, router]);
+  }, [orderId, loading, router]);
 
-  // Auto-scroll to latest message
+  // Scroll only inside chat panel — never jump the whole page
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    const el = chatScrollRef.current;
+    if (!el || !order?.messages?.length) return;
+    el.scrollTop = el.scrollHeight;
   }, [order?.messages]);
 
   const sendMessage = async (text: string) => {
@@ -138,53 +158,68 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const isDelivered = order.status === "delivered";
   const isOnWay = order.status === "out_for_delivery";
   const riderProgress = isOnWay
-    ? Math.min(85, 20 + ((Date.now() - new Date(order.updatedAt).getTime()) / 1000 / 60) * 8)
-    : isDelivered ? 100 : 0;
+    ? Math.min(88, 18 + ((Date.now() - new Date(order.updatedAt).getTime()) / 1000 / 60) * 9 + (animTick % 3))
+    : isDelivered ? 100 : order.status === "preparing" ? 35 : order.confirmed ? 22 : 8;
+
+  const mapEmbed = getOrderMapsEmbedUrl(order);
+  const currentStep = STATUS_STEPS[Math.max(0, currentStepIndex)];
 
   return (
-    <div style={{ background: "#111", minHeight: "100vh", color: "#e4e4e7", fontFamily: "inherit" }}>
+    <div style={{ background: "linear-gradient(180deg, #0a0a12 0%, #111 40%, #111 100%)", minHeight: "100vh", color: "#e4e4e7", fontFamily: "inherit" }}>
       <style>{`
         @keyframes spin-track { to { transform: rotate(360deg); } }
         @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
-        @keyframes bounce-rider { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-4px); } }
+        @keyframes bounce-rider { 0%, 100% { transform: translate(-50%, -65%) translateY(0) rotate(-3deg); } 50% { transform: translate(-50%, -65%) translateY(-6px) rotate(3deg); } }
         @keyframes glow-step { 0%, 100% { box-shadow: 0 0 0 0 rgba(0,85,255,0.4); } 50% { box-shadow: 0 0 0 8px rgba(0,85,255,0); } }
         @keyframes slide-in { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
         @keyframes fade-up { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes road-move { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+        @keyframes road-move { from { background-position: 0 0; } to { background-position: -48px 0; } }
         @keyframes star-pop { 0% { transform: scale(1); } 50% { transform: scale(1.4); } 100% { transform: scale(1); } }
         @keyframes otp-glow { 0%, 100% { box-shadow: 0 0 0 0 rgba(16,185,129,0.5); } 50% { box-shadow: 0 0 0 12px rgba(16,185,129,0); } }
         @keyframes chat-pop { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes cloud-drift { from { transform: translateX(0); } to { transform: translateX(24px); } }
       `}</style>
 
-      {/* Top Header */}
-      <div style={{ background: "#18181b", borderBottom: "1px solid #27272a", padding: "16px 24px", display: "flex", alignItems: "center", gap: "16px" }}>
-        <Link href="/orders" style={{ color: "#6b7280", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.9rem", fontWeight: 600 }}>
-          ← Orders
-        </Link>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#fff", textTransform: "uppercase", letterSpacing: "0.5px" }}>
-            Track Order #{order.id.slice(-6).toUpperCase()}
-          </div>
-          <div style={{ fontSize: "0.8rem", color: "#6b7280", marginTop: "2px", display: "flex", alignItems: "center", gap: "6px" }}>
-            <Clock size={12} />
-            Placed {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-            {order.scheduledTime && order.scheduledTime !== "ASAP" && (
-              <> · 🕐 {order.scheduledTime}</>
+      {/* Hero status banner */}
+      <div style={{
+        background: isCancelled ? "linear-gradient(135deg, #450a0a, #7f1d1d)" : `linear-gradient(135deg, ${currentStep?.color || "#0055ff"}22, #01235F 50%, #0044ff33)`,
+        borderBottom: "1px solid #27272a",
+        padding: "28px 24px 24px",
+      }}>
+        <div style={{ maxWidth: 680, margin: "0 auto" }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16, flexWrap: "wrap" }}>
+            <div>
+              <Link href="/orders" style={{ color: "#93c5fd", textDecoration: "none", fontSize: "0.82rem", fontWeight: 600, display: "inline-flex", alignItems: "center", gap: 4, marginBottom: 10 }}>
+                ← My Orders
+              </Link>
+              <div style={{ fontSize: "2.2rem", marginBottom: 8 }}>{currentStep?.icon || "📦"}</div>
+              <h1 style={{ fontWeight: 900, fontSize: "clamp(1.4rem, 4vw, 1.9rem)", color: "#fff", margin: 0 }}>
+                {isCancelled ? "Order Cancelled" : currentStep?.label}
+              </h1>
+              <p style={{ color: "#a1a1aa", marginTop: 8, fontSize: "0.95rem", lineHeight: 1.5 }}>
+                {isCancelled ? "This order was cancelled." : currentStep?.subLabel}
+              </p>
+            </div>
+            {!isCancelled && (
+              <div style={{ textAlign: "right" }}>
+                <div style={{ fontSize: "0.7rem", color: "#71717a", letterSpacing: "1px", textTransform: "uppercase" }}>#{order.id.slice(-6).toUpperCase()}</div>
+                <div style={{ fontWeight: 900, fontSize: "1.5rem", color: "#60a5fa", marginTop: 4 }}>₹{order.total}</div>
+                <div style={{ fontSize: "0.78rem", color: "#71717a", marginTop: 6, display: "flex", alignItems: "center", gap: 4, justifyContent: "flex-end" }}>
+                  <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                </div>
+              </div>
             )}
-            {" · "}
-            <MapPin size={12} />
-            {order.location}
           </div>
+          {!isCancelled && !isDelivered && (
+            <div style={{ marginTop: 16, display: "inline-flex", alignItems: "center", gap: 8, background: "rgba(0,85,255,0.15)", border: "1px solid rgba(96,165,250,0.35)", borderRadius: 999, padding: "6px 14px" }}>
+              <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", animation: "pulse-dot 1s ease-in-out infinite" }} />
+              <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#93c5fd", letterSpacing: "1px" }}>LIVE UPDATES</span>
+            </div>
+          )}
         </div>
-        {!isCancelled && (
-          <div style={{ textAlign: "right" }}>
-            <div style={{ fontSize: "0.7rem", color: "#6b7280", letterSpacing: "1px", textTransform: "uppercase" }}>Total</div>
-            <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0055ff" }}>₹{order.total}</div>
-          </div>
-        )}
       </div>
 
-      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "32px 24px", display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div style={{ maxWidth: "680px", margin: "0 auto", padding: "32px 24px 100px", display: "flex", flexDirection: "column", gap: "24px" }}>
 
         {isCancelled ? (
           <div style={{ background: "#18181b", border: "1px solid #3f1111", borderRadius: "16px", padding: "40px", textAlign: "center", animation: "fade-up 0.5s ease" }}>
@@ -236,40 +271,47 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
               </div>
             )}
 
-            {/* ── Rider Animation Strip (only when out_for_delivery) ── */}
-            {(isOnWay || isDelivered) && (
-              <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px", animation: "fade-up 0.4s ease", overflow: "hidden" }}>
-                <div style={{ fontSize: "0.75rem", color: "#6b7280", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700, marginBottom: "16px", display: "flex", alignItems: "center", gap: "8px" }}>
-                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#10B981", display: "inline-block", animation: "pulse-dot 1s ease-in-out infinite" }} />
-                  {isDelivered ? "Delivered" : "Rider is on the way"}
+            {/* ── Cartoon delivery scene ── */}
+            {!isDelivered && (
+              <div style={{ background: "linear-gradient(180deg, #1e293b 0%, #0f172a 100%)", border: "1px solid #334155", borderRadius: "20px", padding: "20px", animation: "fade-up 0.4s ease", overflow: "hidden" }}>
+                <div style={{ fontSize: "0.75rem", color: "#94a3b8", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700, marginBottom: 12, display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#22c55e", animation: "pulse-dot 1s ease-in-out infinite" }} />
+                  {isOnWay ? "Rider en route to you" : "Preparing your order"}
                 </div>
-                <div style={{ position: "relative", height: "60px", background: "#0f0f0f", borderRadius: "12px", overflow: "hidden", border: "1px solid #27272a" }}>
-                  <div style={{ position: "absolute", top: "50%", left: 0, right: 0, height: "2px", display: "flex", gap: "0", overflow: "hidden" }}>
-                    <div style={{ height: "2px", width: "200%", background: "repeating-linear-gradient(90deg, #333 0, #333 20px, transparent 20px, transparent 40px)", animation: isDelivered ? "none" : "road-move 1s linear infinite" }} />
-                  </div>
-                  <div style={{ position: "absolute", left: "8px", top: "50%", transform: "translateY(-50%)", fontSize: "1.6rem" }}>🏪</div>
-                  <div style={{ position: "absolute", right: "8px", top: "50%", transform: "translateY(-55%)", fontSize: "1.6rem" }}>📍</div>
-                  <div style={{
-                    position: "absolute", top: "50%",
-                    left: isDelivered ? "calc(100% - 48px)" : `${riderProgress}%`,
-                    transform: "translateY(-60%)", fontSize: "1.8rem",
-                    transition: "left 3s ease-in-out",
-                    animation: isDelivered ? "none" : "bounce-rider 0.6s ease-in-out infinite",
-                    filter: "drop-shadow(0 4px 8px rgba(0,0,0,0.5))",
-                  }}>🛵</div>
+                <div style={{ position: "relative", height: 120, borderRadius: 14, overflow: "hidden", background: "linear-gradient(180deg, #38bdf8 0%, #7dd3fc 35%, #86efac 35%, #4ade80 100%)" }}>
+                  <span style={{ position: "absolute", top: 12, left: 24, fontSize: "1.4rem", opacity: 0.7, animation: "cloud-drift 4s ease-in-out infinite alternate" }}>☁️</span>
+                  <span style={{ position: "absolute", top: 20, right: 60, fontSize: "1rem", opacity: 0.5, animation: "cloud-drift 5s ease-in-out infinite alternate-reverse" }}>☁️</span>
+                  <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: 44, background: "#374151" }} />
+                  <div style={{ position: "absolute", bottom: 44, left: 0, right: 0, height: 3, background: "repeating-linear-gradient(90deg, #fbbf24 0, #fbbf24 16px, #1f2937 16px, #1f2937 32px)", animation: isOnWay ? "road-move 0.7s linear infinite" : "none" }} />
+                  <span style={{ position: "absolute", bottom: 48, left: 12, fontSize: "1.8rem" }}>🏪</span>
+                  <span style={{ position: "absolute", bottom: 50, right: 12, fontSize: "1.6rem" }}>🏠</span>
+                  <span style={{ position: "absolute", bottom: 52, left: `${riderProgress}%`, fontSize: "2rem", transition: "left 2.5s ease", animation: isOnWay ? "bounce-rider 0.55s ease-in-out infinite" : "none", filter: "drop-shadow(0 4px 6px rgba(0,0,0,0.35))", transform: "translateX(-50%)" }}>🛵</span>
+                  {isOnWay && (
+                    <span style={{ position: "absolute", bottom: 78, left: `${riderProgress}%`, transform: "translateX(-50%)", fontSize: "0.65rem", fontWeight: 800, color: "#fff", background: "rgba(0,0,0,0.5)", padding: "2px 8px", borderRadius: 999, whiteSpace: "nowrap" }}>
+                      {order.deliveryPersonName || "Your rider"}
+                    </span>
+                  )}
                 </div>
                 {order.deliveryPersonName && (
-                  <div style={{ marginTop: "14px", display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: 36, height: 36, borderRadius: "50%", background: "#0044ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem" }}>🏍️</div>
+                  <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0044ff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>🏍️</div>
                     <div>
-                      <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#fff" }}>{order.deliveryPersonName}</div>
-                      <div style={{ fontSize: "0.78rem", color: "#6b7280" }}>Your delivery partner</div>
+                      <div style={{ fontWeight: 700, fontSize: "0.92rem", color: "#fff" }}>{order.deliveryPersonName}</div>
+                      <div style={{ fontSize: "0.78rem", color: "#94a3b8" }}>Delivery partner</div>
                     </div>
-                    <a href={`tel:+91${order.userPhone}`} style={{ marginLeft: "auto", background: "#18181b", border: "1px solid #27272a", color: "#fff", padding: "8px 14px", borderRadius: "8px", textDecoration: "none", display: "flex", alignItems: "center", gap: "6px", fontWeight: 700, fontSize: "0.85rem" }}>
-                      <Phone size={14} /> Call
-                    </a>
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Map preview when GPS captured */}
+            {mapEmbed && !isDelivered && (
+              <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", overflow: "hidden", animation: "fade-up 0.45s ease" }}>
+                <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #27272a" }}>
+                  <Navigation size={16} color="#60a5fa" />
+                  <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#e4e4e7" }}>Your delivery pin</span>
+                </div>
+                <iframe title="Delivery location" src={mapEmbed} width="100%" height="180" style={{ border: 0, display: "block" }} loading="lazy" />
               </div>
             )}
 
@@ -281,7 +323,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
                 </div>
 
                 {/* Messages */}
-                <div style={{ maxHeight: "200px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px", padding: "4px" }}>
+                <div ref={chatScrollRef} style={{ maxHeight: "200px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "16px", padding: "4px" }}>
                   {(!order.messages || order.messages.length === 0) ? (
                     <div style={{ color: "#4b5563", fontSize: "0.85rem", textAlign: "center", padding: "16px" }}>No messages yet. Send a quick update below!</div>
                   ) : (
@@ -301,7 +343,6 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
                       </div>
                     ))
                   )}
-                  <div ref={messagesEndRef} />
                 </div>
 
                 {/* Quick Send Buttons */}
@@ -449,9 +490,18 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
         {/* ── Order Items Summary ── */}
         <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px", animation: "fade-up 0.7s ease" }}>
           <div style={{ fontSize: "0.75rem", color: "#6b7280", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700, marginBottom: "16px" }}>Your Items</div>
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px", padding: "10px 14px", background: "#111", borderRadius: "8px", fontSize: "0.88rem", color: "#a0a0a0", fontWeight: 600 }}>
-            <MapPin size={14} color="#0055ff" />
-            Delivering to: <strong style={{ color: "#fff", marginLeft: "4px" }}>{order.location}</strong>
+          <div style={{ marginBottom: 16, padding: "14px 16px", background: "#111", borderRadius: "10px", border: "1px solid #27272a" }}>
+            <div style={{ display: "flex", alignItems: "flex-start", gap: 10, fontSize: "0.88rem", color: "#a0a0a0", fontWeight: 600 }}>
+              <MapPin size={16} color="#0055ff" style={{ flexShrink: 0, marginTop: 2 }} />
+              <div>
+                <div style={{ color: "#71717a", fontSize: "0.72rem", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>Delivering to</div>
+                <strong style={{ color: "#fff", display: "block" }}>{order.location}</strong>
+                {order.locationNotes && <div style={{ color: "#93c5fd", marginTop: 6, fontSize: "0.82rem" }}>📝 {order.locationNotes}</div>}
+                {order.scheduledTime && order.scheduledTime !== "ASAP" && (
+                  <div style={{ color: "#fbbf24", marginTop: 6, fontSize: "0.82rem" }}>🕐 {order.scheduledTime}</div>
+                )}
+              </div>
+            </div>
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: "14px" }}>
             {order.items.map((item, idx) => (
@@ -471,6 +521,24 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
             <span style={{ fontWeight: 700, fontSize: "1rem", color: "#a0a0a0" }}>Total Paid</span>
             <span style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0055ff" }}>₹{order.total}</span>
           </div>
+        </div>
+
+        {/* Support helpline */}
+        <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: 16, padding: 20, animation: "fade-up 0.7s ease" }}>
+          <div style={{ fontSize: "0.72rem", color: "#71717a", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>
+            Need help?
+          </div>
+          <p style={{ color: "#a1a1aa", fontSize: "0.88rem", lineHeight: 1.6, marginBottom: 14 }}>
+            {COMPANY_NAME} is bootstrapped and serving fresh food daily. Call us for any enquiry about your order.
+          </p>
+          <a href={SUPPORT_TEL} style={{
+            display: "inline-flex", alignItems: "center", gap: 8,
+            background: "#01235F", color: "#fff", padding: "11px 20px", borderRadius: 10,
+            fontWeight: 800, textDecoration: "none", fontSize: "0.9rem",
+          }}>
+            <Phone size={17} /> Call {SUPPORT_PHONE_DISPLAY}
+          </a>
+          <p style={{ color: "#52525b", fontSize: "0.78rem", marginTop: 10, lineHeight: 1.5 }}>{COMPANY_BLURB}</p>
         </div>
 
       </div>

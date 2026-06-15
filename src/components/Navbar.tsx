@@ -10,7 +10,10 @@ import { LocationModal, useDeliveryLocation } from "./LocationModal";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
+  { href: "/menu", label: "Menu" },
+  { href: "/orders", label: "Orders" },
   { href: "/cart", label: "Cart" },
+  { href: "/about", label: "About" },
 ];
 
 export default function Navbar() {

@@ -8,13 +8,13 @@ import { withLogger } from "@/lib/withLogger";
  * Add an order to a walk-in customer.
  * Body: { items: [{ name, price, quantity, category }], amount, drinkCount, note? }
  */
-export async function POST(
+const _POST = async (
   req: NextRequest,
-  props: { params: Promise<{ id: string }> }
-) {
+  ctx?: { params: Promise<Record<string, string>> }
+) => {
   await dbConnect();
   try {
-    const params = await props.params;
+    const params = await ctx!.params;
     const body = await req.json();
     const { items, amount, drinkCount, note } = body;
 
@@ -75,4 +75,4 @@ export async function POST(
   }
 };
 
-export const POST = withLogger("POST /api/admin/walkin-customers/[id]/orders", _POST as any);
+export const POST = withLogger("POST /api/admin/walkin-customers/[id]/orders", _POST);

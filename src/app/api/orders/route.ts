@@ -3,7 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { withLogger } from "@/lib/withLogger";
 import { normalizeCartLines } from "@/lib/orderLine";
-import type { CartItem } from "@/lib/types";
+import type { CartItem, OrderStatus } from "@/lib/types";
 
 const _GET = async (req: NextRequest) => {
   await dbConnect();
@@ -11,13 +11,17 @@ const _GET = async (req: NextRequest) => {
   const status = req.nextUrl.searchParams.get("status");
   const deliveryPersonId = req.nextUrl.searchParams.get("deliveryPersonId");
 
-  const filter: Partial<{ userId: string; status: string | { $in: string[] }; deliveryPersonId: string }> = {};
+  const filter: {
+    userId?: string;
+    status?: OrderStatus | { $in: OrderStatus[] };
+    deliveryPersonId?: string;
+  } = {};
   if (userId) filter.userId = userId;
   if (status) {
     if (status.includes(",")) {
-      filter.status = { $in: status.split(",") };
+      filter.status = { $in: status.split(",") as OrderStatus[] };
     } else {
-      filter.status = status;
+      filter.status = status as OrderStatus;
     }
   }
   if (deliveryPersonId) filter.deliveryPersonId = deliveryPersonId;
@@ -40,7 +44,7 @@ const _GET = async (req: NextRequest) => {
 const _POST = async (req: NextRequest) => {
   await dbConnect();
   const body = await req.json();
-  const { userId, userName, userPhone, items, location, total, couponCode, discount, status, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, status, scheduledTime } = body;
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -54,6 +58,9 @@ const _POST = async (req: NextRequest) => {
     userPhone: userPhone || "",
     items: normalizedItems,
     location,
+    locationNotes: locationNotes || "",
+    latitude: latitude ?? null,
+    longitude: longitude ?? null,
     total: total || 0,
     couponCode: couponCode || null,
     discount: discount || 0,

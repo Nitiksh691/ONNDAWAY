@@ -3,6 +3,8 @@ import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
+import { setActiveOrderId, getActiveOrderId } from "@/lib/activeOrder";
+import { STORAGE_KEYS } from "@/lib/constants";
 import { normalizeCartLines } from "@/lib/orderLine";
 import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, Phone, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
@@ -17,7 +19,7 @@ const CAMPUS_LOCATIONS = [
 ];
 
 export default function CartPage() {
-  const { user, profile, cart, updateQuantity, removeFromCart, clearCart, cartTotal } = useApp();
+  const { user, profile, cart, updateQuantity, removeFromCart, clearCart, cartTotal, syncProfile } = useApp();
   const router = useRouter();
   const [location, setLocation] = useState("");
   const [customLocation, setCustomLocation] = useState("");
@@ -32,7 +34,23 @@ export default function CartPage() {
   const [deliveryFee, setDeliveryFee] = useState(20);
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
+  const [locationNotes, setLocationNotes] = useState("");
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // Restore post-checkout screen after refresh (only when cart is empty)
+  useEffect(() => {
+    const activeId = getActiveOrderId();
+    if (!activeId) return;
+    try {
+      const savedCart = localStorage.getItem(STORAGE_KEYS.cart);
+      if (savedCart && JSON.parse(savedCart).length > 0) return;
+    } catch { /* ignore */ }
+    setPlacedOrderId(activeId);
+    fetch(`/api/orders/${activeId}`)
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data?.confirmed) setIsConfirmed(true); })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetch("/api/settings")
@@ -99,6 +117,20 @@ export default function CartPage() {
     try {
       const finalLoc = isCustomLoc ? customLocation.trim() : location;
       const finalUserId = phoneDigits; // Use phone number as the unique user ID
+
+      let latitude: number | null = null;
+      let longitude: number | null = null;
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        try {
+          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 60000 })
+          );
+          latitude = pos.coords.latitude;
+          longitude = pos.coords.longitude;
+        } catch {
+          /* GPS optional — campus location string is still saved */
+        }
+      }
       
       const orderData = {
         userId: finalUserId,
@@ -106,6 +138,9 @@ export default function CartPage() {
         userPhone: phoneDigits,
         items: normalizeCartLines(cart),
         location: finalLoc,
+        locationNotes: locationNotes.trim() || null,
+        latitude,
+        longitude,
         total: grandTotal,
         couponCode: appliedCoupon ? couponCode : null,
         discount: finalDiscount,
@@ -129,8 +164,10 @@ export default function CartPage() {
         body: JSON.stringify({ name: name.trim(), phone: phoneDigits, location: finalLoc, userId: finalUserId }),
       });
 
-      // Log them in silently
+      // Log them in silently and sync profile into app context
       localStorage.setItem("otw_user_id", finalUserId);
+      setActiveOrderId(orderResult.id);
+      await syncProfile(finalUserId);
 
       clearCart();
       setShowConfirm(false);
@@ -248,8 +285,14 @@ export default function CartPage() {
               ))}
             </div>
 
-            <p style={{ marginTop: "24px", fontSize: "0.78rem", color: "#555", lineHeight: 1.6 }}>
-              This page auto-updates every 3 seconds. Please keep it open.
+            <Link
+              href={`/track/${placedOrderId}`}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "24px", background: "#0044ff", color: "#fff", padding: "14px 28px", borderRadius: "8px", fontWeight: 800, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.9rem" }}
+            >
+              Track Order Live <ArrowRight size={18} />
+            </Link>
+            <p style={{ marginTop: "16px", fontSize: "0.78rem", color: "#555", lineHeight: 1.6 }}>
+              This page auto-updates every 3 seconds. You can also browse the menu — tracking stays in the bottom corner.
             </p>
           </div>
         )}
@@ -421,6 +464,10 @@ export default function CartPage() {
                   <input type="text" style={inputStyle} placeholder="e.g. Near Basketball Court" value={customLocation} onChange={e => setCustomLocation(e.target.value)} />
                 </div>
               )}
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Delivery Notes (optional)</label>
+                <input type="text" style={inputStyle} placeholder="e.g. Gate 2, call when you arrive, room 204" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
+              </div>
             </div>
             {!isLoggedIn && (
               <div style={{ marginTop: "24px", padding: "14px 16px", borderRadius: "6px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", fontSize: "0.85rem", color: "#fcd34d", lineHeight: 1.5, display: "flex", gap: "12px", alignItems: "flex-start" }}>

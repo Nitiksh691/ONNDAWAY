@@ -142,8 +142,8 @@ export default function AdminDashboard() {
 
   const { summary, bestSellers, ordersByHour } = data;
   const popularItem = bestSellers?.[0] || { name: "None", count: 0 };
-  const chartData = ordersByHour || [];
-  const chartMax = Math.max(...chartData.map((c: any) => c.orders), 1);
+  const chartData: { orders: number; time: string }[] = ordersByHour || [];
+  const chartMax = Math.max(...chartData.map((c) => c.orders), 1);
 
   const STAT_CARDS = [
     { title: "Total Orders", value: summary.totalOrders, icon: <Package size={22}/>, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },

@@ -3,6 +3,9 @@ import "./globals.css";
 import { AppProvider } from "@/lib/context";
 import Navbar from "@/components/Navbar";
 import Loader from "@/components/Loader";
+import ActiveOrderWidget from "@/components/ActiveOrderWidget";
+import SupportFab from "@/components/SupportFab";
+import BottomActionBar from "@/components/BottomActionBar";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -30,7 +33,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <Loader />
           <Navbar />
-          <main style={{ minHeight: "100vh" }}>{children}</main>
+          <main style={{ minHeight: "100vh", paddingBottom: "env(safe-area-inset-bottom)" }}>{children}</main>
+          <BottomActionBar />
+          <ActiveOrderWidget />
+          <SupportFab />
           <Toaster
             position="top-right"
             toastOptions={{

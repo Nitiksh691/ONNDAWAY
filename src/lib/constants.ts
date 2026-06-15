@@ -20,6 +20,8 @@ export const STORAGE_KEYS = {
   demo: "otw_demo",
   /** Demo orders for mock mode */
   demoOrders: "otw_demo_orders",
+  /** Active in-progress order ID — shown in floating track widget until delivered */
+  activeOrderId: "otw_active_order_id",
   /** Cached user profile for demo mode */
   demoProfile: "otw_demo_profile",
 } as const;

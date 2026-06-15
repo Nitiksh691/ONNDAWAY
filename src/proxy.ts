@@ -45,7 +45,7 @@ function pruneRateLimitMap() {
   }
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
   
   // Only apply rate limiting to API routes

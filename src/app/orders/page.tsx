@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
+import { setActiveOrderId, isActiveOrderStatus } from "@/lib/activeOrder";
 import { Package, Clock, MapPin, ChevronRight, RefreshCw } from "lucide-react";
 
 export default function OrdersPage() {
@@ -31,8 +32,10 @@ export default function OrdersPage() {
 
         const res = await fetch(`/api/orders?userId=${user.uid}`);
         if (res.ok) {
-          const data = await res.json();
+          const data: Order[] = await res.json();
           setOrders(data);
+          const inProgress = data.find(o => isActiveOrderStatus(o.status));
+          if (inProgress) setActiveOrderId(inProgress.id);
         }
       } catch (err) {
         console.error("Error fetching orders:", err);

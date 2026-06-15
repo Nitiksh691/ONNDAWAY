@@ -15,12 +15,13 @@ const _GET = async () => {
 
   // Check DB connection state without making a real query
   const dbState = mongoose.connection.readyState;
-  const dbStatus = {
+  const dbStatusMap: Record<number, string> = {
     0: "disconnected",
     1: "connected",
     2: "connecting",
     3: "disconnecting",
-  }[dbState] ?? "unknown";
+  };
+  const dbStatus = dbStatusMap[dbState] ?? "unknown";
 
   // Memory usage
   const memRaw = process.memoryUsage();

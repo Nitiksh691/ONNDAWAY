@@ -39,6 +39,8 @@ export function normalizeCartLine(line: CartItem): CartItem {
       image: line.item.image ?? "",
       category: line.item.category ?? "",
       description: line.item.description ?? "",
+      orderCount: line.item.orderCount ?? 0,
+      available: line.item.available ?? true,
     },
     quantity: line.quantity || 1,
     unitPrice,

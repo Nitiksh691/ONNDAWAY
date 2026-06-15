@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Camera, MessageCircle, Mail, MapPin, Phone } from "lucide-react";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, SUPPORT_EMAIL, COMPANY_BLURB } from "@/lib/company";
 
 export default function Footer() {
   return (
@@ -36,7 +37,7 @@ export default function Footer() {
               </div>
             </div>
             <p style={{ fontSize: "0.88rem", opacity: 0.8, lineHeight: 1.7, maxWidth: 260 }}>
-              Coffee & food delivery, reimagined. Fresh, fast, and delivered right to your doorstep.
+              {COMPANY_BLURB}
             </p>
             <div style={{ display: "flex", gap: "12px", marginTop: "20px" }}>
               {[
@@ -65,7 +66,7 @@ export default function Footer() {
               {[
                 { label: "Menu", href: "/" },
                 { label: "My Orders", href: "/orders" },
-                { label: "Track Order", href: "/orders" },
+                { label: "About Us", href: "/about" },
                 { label: "Delivery Partner", href: "/delivery/login" },
               ].map(l => (
                 <Link key={l.label} href={l.href} style={{
@@ -86,12 +87,16 @@ export default function Footer() {
             <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
               {[
                 { icon: <MapPin size={15}/>, text: "Delivering fresh food daily" },
-                { icon: <Phone size={15}/>, text: "+91 8130939274" },
-                { icon: <Mail size={15}/>, text: "nitikshpal@gmail.com" },
+                { icon: <Phone size={15}/>, text: SUPPORT_PHONE_DISPLAY, href: SUPPORT_TEL },
+                { icon: <Mail size={15}/>, text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
               ].map((c, i) => (
                 <div key={i} style={{ display: "flex", gap: "10px", alignItems: "flex-start", fontSize: "0.88rem", opacity: 0.85 }}>
                   <span style={{ marginTop: 1, flexShrink: 0 }}>{c.icon}</span>
-                  <span>{c.text}</span>
+                  {"href" in c && c.href ? (
+                    <a href={c.href} style={{ color: "inherit", textDecoration: "none" }}>{c.text}</a>
+                  ) : (
+                    <span>{c.text}</span>
+                  )}
                 </div>
               ))}
             </div>

@@ -95,7 +95,7 @@ export default function AnalyticsPage() {
               <YAxis tick={{ fill: "#71717a", fontSize: 11 }} />
               <Tooltip
                 contentStyle={{ background: "#09090b", border: "1px solid #27272a", borderRadius: 10, color: "white" }}
-                formatter={(v: number) => [`₹${v}`, "Revenue"]}
+                formatter={(v) => [`₹${Number(v ?? 0)}`, "Revenue"]}
               />
               <Area type="monotone" dataKey="revenue" stroke="#3B82F6" strokeWidth={2}
                 fill="url(#revenueGrad)" dot={false} activeDot={{ r: 5, fill: "#3B82F6" }} />

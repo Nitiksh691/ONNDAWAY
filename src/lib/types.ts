@@ -67,6 +67,9 @@ export interface Order {
   userPhone: string;
   items: CartItem[];
   location: string;
+  locationNotes?: string;
+  latitude?: number | null;
+  longitude?: number | null;
   total: number;
   couponCode?: string;
   discount?: number;

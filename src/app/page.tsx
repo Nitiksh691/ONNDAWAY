@@ -2,7 +2,7 @@
 import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Search, ChevronLeft, ChevronRight, ShoppingBag, MapPin } from "lucide-react";
+import { ArrowRight, Search, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { useApp } from "@/lib/context";
@@ -29,7 +29,7 @@ export default function HomePage() {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { cartCount, cartTotal, profile } = useApp();
+  const { profile } = useApp();
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
@@ -151,7 +151,7 @@ export default function HomePage() {
                 }}>
                   <Image
                     src={slide.image} alt={slide.text || "Banner"} fill
-                    sizes="(max-width: 768px) calc(100vw - 40px), 1200px"
+                    sizes="(max-width: 768px) 100vw, 1200px"
                     className="home-banner-slide-img"
                     priority={idx === 0}
                   />
@@ -162,38 +162,15 @@ export default function HomePage() {
                   }} />
 
                   {/* Text content */}
-                  <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2,
-                    padding: "clamp(24px, 5vw, 48px)", display: "flex", flexDirection: "column", gap: "10px"
-                  }}>
+                  <div className="home-banner-content">
                     {slide.text && (
-                      <h3 style={{
-                        fontFamily: "'Outfit', sans-serif", fontWeight: 900,
-                        fontSize: "clamp(1.4rem, 5vw, 3.2rem)", lineHeight: 1.05,
-                        color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em",
-                        textShadow: "0 4px 16px rgba(0,0,0,0.8)",
-                        maxWidth: "80%", wordBreak: "break-word", overflowWrap: "anywhere"
-                      }}>
-                        {slide.text}
-                      </h3>
+                      <h3 className="home-banner-title">{slide.text}</h3>
                     )}
                     {slide.subText && (
-                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.9rem, 2.2vw, 1.15rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                        {slide.subText}
-                      </p>
+                      <p className="home-banner-sub">{slide.subText}</p>
                     )}
                     {slide.link && (
-                      <Link href={slide.link} style={{
-                        display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "8px",
-                        background: "var(--primary)", color: "#fff", padding: "12px 28px",
-                        borderRadius: "99px", fontWeight: 800, fontSize: "0.95rem",
-                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px",
-                        width: "fit-content", boxShadow: "0 8px 24px rgba(1,53,251,0.5)",
-                        transition: "transform 0.2s",
-                      }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.05)")}
-                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                      >
+                      <Link href={slide.link} className="home-banner-cta">
                         ORDER NOW <ArrowRight size={16} />
                       </Link>
                     )}
@@ -407,36 +384,6 @@ export default function HomePage() {
         onSave={saveLocation}
       />
 
-      {/* ─── MOBILE STICKY CART BAR ─── */}
-      {cartCount > 0 && (
-        <div className="mobile-only" style={{
-          position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 50,
-          background: "var(--primary)", padding: "12px 20px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          boxShadow: "0 -4px 20px rgba(0,0,0,0.2)",
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{
-              width: 40, height: 40, borderRadius: "10px", background: "rgba(255,255,255,0.15)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <ShoppingBag size={20} color="#fff" />
-            </div>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>{cartCount} item{cartCount > 1 ? 's' : ''}</div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, fontSize: "0.8rem" }}>₹{cartTotal}</div>
-            </div>
-          </div>
-          <Link href="/cart" style={{
-            background: "#fff", color: "var(--primary)", padding: "10px 20px",
-            borderRadius: "10px", fontWeight: 800, fontSize: "0.9rem",
-            textDecoration: "none", display: "flex", alignItems: "center", gap: "6px",
-            textTransform: "uppercase", letterSpacing: "0.5px",
-          }}>
-            Checkout <ArrowRight size={16} />
-          </Link>
-        </div>
-      )}
     </>
   );
 }
