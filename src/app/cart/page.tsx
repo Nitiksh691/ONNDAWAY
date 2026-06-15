@@ -6,7 +6,7 @@ import { useApp } from "@/lib/context";
 import { setActiveOrderId, getActiveOrderId } from "@/lib/activeOrder";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { normalizeCartLines } from "@/lib/orderLine";
-import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, Phone, CheckCircle } from "lucide-react";
+import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 
@@ -73,7 +73,7 @@ export default function CartPage() {
   const isCustomLoc = location === "Other (Type below)";
   const phoneDigits = phone.replace(/\D/g, "");
   const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
-  
+
   const isTimeValid = () => {
     if (scheduledTime !== "Custom Time") return true;
     if (!customTime) return false;
@@ -96,14 +96,14 @@ export default function CartPage() {
       if (res.ok) {
         const coupon = await res.json();
         setAppliedCoupon(coupon);
-        toast.success("Coupon applied!", { style: { background: '#333', color: '#fff' } });
+        toast.success("Coupon applied!");
       } else {
         setAppliedCoupon(null);
-        toast.error("Invalid or expired coupon code", { style: { background: '#333', color: '#fff' } });
+        toast.error("Invalid or expired coupon code");
       }
     } catch {
       setAppliedCoupon(null);
-      toast.error("Failed to verify coupon", { style: { background: '#333', color: '#fff' } });
+      toast.error("Failed to verify coupon");
     }
   };
 
@@ -116,7 +116,7 @@ export default function CartPage() {
     setPlacing(true);
     try {
       const finalLoc = isCustomLoc ? customLocation.trim() : location;
-      const finalUserId = phoneDigits; // Use phone number as the unique user ID
+      const finalUserId = phoneDigits;
 
       let latitude: number | null = null;
       let longitude: number | null = null;
@@ -131,7 +131,7 @@ export default function CartPage() {
           /* GPS optional — campus location string is still saved */
         }
       }
-      
+
       const orderData = {
         userId: finalUserId,
         userName: name.trim(),
@@ -157,14 +157,13 @@ export default function CartPage() {
       if (!res.ok) throw new Error("Failed to place order");
       const orderResult = await res.json();
 
-      // Auto-create/update user profile so "My Orders" works via phone number
+      // Auto-create/update user profile
       await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: name.trim(), phone: phoneDigits, location: finalLoc, userId: finalUserId }),
       });
 
-      // Log them in silently and sync profile into app context
       localStorage.setItem("otw_user_id", finalUserId);
       setActiveOrderId(orderResult.id);
       await syncProfile(finalUserId);
@@ -189,16 +188,17 @@ export default function CartPage() {
 
     } catch (e) {
       console.error(e);
-      toast.error("Failed to place order", { style: { background: '#333', color: '#fff' } });
+      toast.error("Failed to place order");
     } finally { setPlacing(false); }
   };
 
   // Cleanup polling on unmount
   useEffect(() => () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); }, []);
 
+  /* ─── POST-ORDER SCREEN ─── */
   if (placedOrderId) {
     return (
-      <div style={{ background: "#111", minHeight: "100vh", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 24px" }}>
+      <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
         <style>{`
           @keyframes phone-ring {
             0%, 100% { transform: rotate(0deg) scale(1); }
@@ -213,60 +213,46 @@ export default function CartPage() {
             90% { transform: rotate(0deg); }
           }
           @keyframes pulse-ring-green {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34,197,94,0.5); }
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
             70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(34,197,94,0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
           }
-          @keyframes dots {
-            0%, 20% { content: '.'; }
-            40% { content: '..'; }
-            60%, 100% { content: '...'; }
-          }
-          @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes spin-slow { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+          @keyframes slide-up-post { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes spin-wait { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         `}</style>
 
         {isConfirmed ? (
-          // ── CONFIRMED STATE ──
-          <div style={{ textAlign: "center", animation: "slide-up 0.5s ease" }}>
-            <div style={{ fontSize: "5rem", marginBottom: "16px" }}>🎉</div>
-            <div style={{ width: 96, height: 96, borderRadius: "50%", background: "rgba(34,197,94,0.15)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulse-ring-green 1.5s ease-in-out infinite" }}>
-              <CheckCircle size={48} color="#22C55E" />
+          <div style={{ textAlign: "center", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "48px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
+            <div style={{ fontSize: "4rem", marginBottom: "12px" }}>🎉</div>
+            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulse-ring-green 1.5s ease-in-out infinite" }}>
+              <CheckCircle size={40} color="#22C55E" />
             </div>
-            <h2 style={{ fontSize: "2.5rem", fontWeight: 900, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px", color: "#22C55E" }}>Order Confirmed!</h2>
-            <p style={{ color: "#a0a0a0", marginBottom: "32px", fontSize: "1.05rem", maxWidth: "440px", lineHeight: 1.7, textAlign: "center" }}>
-              Your order has been <strong style={{ color: "#fff" }}>verified and accepted</strong>. Our team is now preparing it. Track your order live!
+            <h2 style={{ fontSize: "1.9rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px", color: "#22C55E" }}>Order Confirmed!</h2>
+            <p style={{ color: "#6B7280", marginBottom: "32px", fontSize: "0.95rem", lineHeight: 1.7 }}>
+              Your order has been <strong style={{ color: "#0A0F2E" }}>verified and accepted</strong>. Our team is now preparing it — track it live!
             </p>
             <Link
               href={`/track/${placedOrderId}`}
-              style={{ background: "#0044ff", color: "#fff", padding: "16px 40px", borderRadius: "8px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "1.05rem" }}
+              style={{ background: "#0135FB", color: "#fff", padding: "16px 36px", borderRadius: "10px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "1rem", boxShadow: "0 4px 0 #0028D4" }}
             >
               Track My Order <ArrowRight size={20} />
             </Link>
           </div>
         ) : (
-          // ── AWAITING CONFIRMATION STATE ──
-          <div style={{ textAlign: "center", maxWidth: "480px", animation: "slide-up 0.5s ease" }}>
-            {/* Pulsing phone */}
-            <div style={{ fontSize: "5rem", marginBottom: "24px", display: "inline-block", animation: "phone-ring 2s ease-in-out infinite" }}>📞</div>
-            <h2 style={{ fontSize: "2rem", fontWeight: 900, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>Order Received!</h2>
-            <p style={{ color: "#a0a0a0", marginBottom: "32px", fontSize: "1rem", lineHeight: 1.7 }}>
-              Thanks <strong style={{ color: "#fff" }}>{name}</strong>! Our team will call you at{" "}
-              <strong style={{ color: "#4ade80" }}>+91 {phoneDigits}</strong> shortly to confirm your order is genuine.
+          <div style={{ textAlign: "center", maxWidth: "460px", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "40px 32px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
+            <div style={{ fontSize: "4rem", marginBottom: "20px", display: "inline-block", animation: "phone-ring 2s ease-in-out infinite" }}>📞</div>
+            <h2 style={{ fontSize: "1.7rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px", color: "#0A0F2E" }}>Order Received!</h2>
+            <p style={{ color: "#6B7280", marginBottom: "24px", fontSize: "0.9rem", lineHeight: 1.7 }}>
+              Thanks <strong style={{ color: "#0A0F2E" }}>{name}</strong>! Our team will call you at{" "}
+              <strong style={{ color: "#0135FB" }}>+91 {phoneDigits}</strong> shortly to confirm.
             </p>
 
-            {/* Waiting pill */}
-            <div style={{
-              background: "#18181b", border: "1px solid #27272a", borderRadius: "999px",
-              padding: "14px 28px", display: "inline-flex", alignItems: "center", gap: "12px",
-              marginBottom: "32px",
-            }}>
-              <div style={{ width: 20, height: 20, borderRadius: "50%", border: "3px solid #27272a", borderTop: "3px solid #0055ff", animation: "spin-slow 1s linear infinite" }} />
-              <span style={{ fontWeight: 700, fontSize: "0.95rem", color: "#a0a0a0" }}>Waiting for admin confirmation</span>
+            <div style={{ background: "#EEF1FF", borderRadius: "999px", padding: "12px 22px", display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
+              <div style={{ width: 18, height: 18, borderRadius: "50%", border: "3px solid #c7d2fe", borderTop: "3px solid #0135FB", animation: "spin-wait 1s linear infinite" }} />
+              <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "#2A3060" }}>Waiting for admin confirmation</span>
             </div>
 
-            {/* Steps */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", textAlign: "left", background: "#18181b", border: "1px solid #27272a", borderRadius: "12px", padding: "20px 24px" }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px", textAlign: "left", background: "#F5F7FF", borderRadius: "12px", padding: "18px 20px" }}>
               {[
                 { icon: "✅", text: "Order placed successfully", done: true },
                 { icon: "📞", text: "Awaiting admin call & confirmation", done: false, active: true },
@@ -274,25 +260,24 @@ export default function CartPage() {
                 { icon: "🛵", text: "Rider assigned & dispatched", done: false },
                 { icon: "📍", text: "Delivered to your location", done: false },
               ].map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "14px", opacity: step.done || step.active ? 1 : 0.35 }}>
-                  <div style={{ fontSize: "1.3rem", width: 32, textAlign: "center" }}>{step.icon}</div>
-                  <span style={{ fontWeight: step.active ? 700 : 600, color: step.active ? "#fff" : step.done ? "#4ade80" : "#6b7280", fontSize: "0.92rem" }}>
-                    {step.text}
-                    {step.active && <span style={{ color: "#6b7280" }}> …</span>}
+                <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", opacity: step.done || step.active ? 1 : 0.35 }}>
+                  <div style={{ fontSize: "1.1rem", width: 26, textAlign: "center", flexShrink: 0 }}>{step.icon}</div>
+                  <span style={{ fontWeight: step.active ? 700 : 600, color: step.active ? "#0135FB" : step.done ? "#22C55E" : "#9ca3af", fontSize: "0.88rem" }}>
+                    {step.text}{step.active && <span style={{ color: "#9ca3af" }}> …</span>}
                   </span>
-                  {step.done && <CheckCircle size={16} color="#4ade80" style={{ marginLeft: "auto" }} />}
+                  {step.done && <CheckCircle size={15} color="#22C55E" style={{ marginLeft: "auto", flexShrink: 0 }} />}
                 </div>
               ))}
             </div>
 
             <Link
               href={`/track/${placedOrderId}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "24px", background: "#0044ff", color: "#fff", padding: "14px 28px", borderRadius: "8px", fontWeight: 800, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.9rem" }}
+              style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "24px", background: "#0135FB", color: "#fff", padding: "14px 28px", borderRadius: "10px", fontWeight: 800, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.88rem", boxShadow: "0 4px 0 #0028D4" }}
             >
               Track Order Live <ArrowRight size={18} />
             </Link>
-            <p style={{ marginTop: "16px", fontSize: "0.78rem", color: "#555", lineHeight: 1.6 }}>
-              This page auto-updates every 3 seconds. You can also browse the menu — tracking stays in the bottom corner.
+            <p style={{ marginTop: "14px", fontSize: "0.75rem", color: "#9ca3af", lineHeight: 1.6 }}>
+              This page auto-updates every 3 seconds.
             </p>
           </div>
         )}
@@ -300,126 +285,183 @@ export default function CartPage() {
     );
   }
 
+  /* ─── EMPTY CART ─── */
   if (cart.length === 0) {
     return (
-      <div style={{ background: "#111", minHeight: "100vh", color: "#fff", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center" }}>
-        <div style={{ fontSize: "4rem", marginBottom: "16px", opacity: 0.5 }}>🛒</div>
-        <h2 style={{ fontSize: "2rem", fontWeight: 900, marginBottom: "12px", textTransform: "uppercase", letterSpacing: "1px" }}>Your cart is empty</h2>
-        <p style={{ color: "#a0a0a0", marginBottom: "32px" }}>Looks like you haven't added any items yet.</p>
-        <Link href="/" style={{ background: "#0044ff", color: "#fff", padding: "14px 32px", borderRadius: "6px", fontWeight: "bold", textDecoration: "none", textTransform: "uppercase" }}>
+      <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
+        <div style={{ fontSize: "4rem", marginBottom: "16px", opacity: 0.3 }}>🛒</div>
+        <h2 style={{ fontSize: "1.9rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px" }}>Your cart is empty</h2>
+        <p style={{ color: "#6B7280", marginBottom: "32px", textAlign: "center" }}>Looks like you haven't added any items yet.</p>
+        <Link href="/" style={{ background: "#0135FB", color: "#fff", padding: "14px 32px", borderRadius: "10px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", boxShadow: "0 4px 0 #0028D4" }}>
           Browse Menu
         </Link>
       </div>
     );
   }
 
-  const inputStyle = {
-    width: "100%", padding: "14px 16px", background: "#1a1a1a", border: "1px solid #333",
-    borderRadius: "6px", color: "#fff", outline: "none", fontSize: "0.95rem", transition: "border 0.2s"
+  /* ─── SHARED STYLES ─── */
+  const inputStyle: React.CSSProperties = {
+    width: "100%", padding: "13px 14px",
+    background: "#fff", border: "1.5px solid #e5e7eb",
+    borderRadius: "8px", color: "#0A0F2E", outline: "none",
+    fontSize: "0.93rem", transition: "border-color 0.2s, box-shadow 0.2s",
+    fontFamily: "inherit",
   };
-
-  const labelStyle = { display: "block", fontSize: "0.75rem", fontWeight: 700, color: "#888", marginBottom: "8px", textTransform: "uppercase" as const, letterSpacing: "1px" };
-  const cardStyle = { background: "#18181b", border: "1px solid #27272a", borderRadius: "12px", padding: "24px" };
+  const labelStyle: React.CSSProperties = {
+    display: "block", fontSize: "0.72rem", fontWeight: 700,
+    color: "#2A3060", marginBottom: "7px",
+    textTransform: "uppercase", letterSpacing: "0.8px",
+  };
+  const cardStyle: React.CSSProperties = {
+    background: "#fff", borderRadius: "16px",
+    padding: "22px 20px", boxShadow: "0 2px 16px rgba(1,53,251,0.06)",
+  };
   const isLoggedIn = !!user;
 
   return (
-    <div style={{ background: "#111", minHeight: "100vh", color: "#e4e4e7", padding: "40px 0", fontFamily: "inherit", position: "relative" }}>
+    <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", padding: "28px 0 100px", fontFamily: "inherit", position: "relative" }}>
+      <style>{`
+        @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        .otw-cart-input:focus { border-color: #0135FB !important; box-shadow: 0 0 0 3px rgba(1,53,251,0.1) !important; }
+        .otw-qty-btn:hover { background: #EEF1FF !important; }
+        .otw-del-btn:hover { background: #FEE2E2 !important; border-color: #fca5a5 !important; }
+        .otw-apply-btn:hover { background: #0028D4 !important; }
+        .otw-back-btn:hover { background: #EEF1FF !important; }
+      `}</style>
+
       {/* ── Phone Confirmation Modal ── */}
       {showConfirm && (
         <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.8)", backdropFilter: "blur(4px)" }} onClick={() => setPlacing(false)} />
-          <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "32px", width: "100%", maxWidth: "400px", position: "relative", zIndex: 101, animation: "slide-up 0.3s ease", textAlign: "center" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "16px" }}>📱</div>
-            <h3 style={{ fontSize: "1.4rem", fontWeight: 900, marginBottom: "8px", color: "#fff" }}>Confirm Your Number</h3>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#0055ff", letterSpacing: "1px", marginBottom: "16px" }}>+91 {phoneDigits}</div>
-            <div style={{ background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", borderRadius: "8px", padding: "12px", fontSize: "0.85rem", color: "#fcd34d", lineHeight: 1.5, textAlign: "left", marginBottom: "24px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-              <span>⚠️</span>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,46,0.55)", backdropFilter: "blur(6px)" }} onClick={() => setShowConfirm(false)} />
+          <div style={{ background: "#fff", borderRadius: "20px", padding: "32px 28px", width: "100%", maxWidth: "390px", position: "relative", zIndex: 101, animation: "slide-up 0.3s ease", textAlign: "center", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 24px 48px rgba(0,0,0,0.2)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: "14px" }}>📱</div>
+            <h3 style={{ fontSize: "1.35rem", fontWeight: 900, marginBottom: "8px", color: "#0A0F2E" }}>Confirm Your Number</h3>
+            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#0135FB", letterSpacing: "2px", marginBottom: "16px" }}>+91 {phoneDigits}</div>
+            <div style={{ background: "#FEF3C7", borderRadius: "10px", padding: "12px 14px", fontSize: "0.84rem", color: "#92400E", lineHeight: 1.55, textAlign: "left", marginBottom: "24px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
+              <span style={{ flexShrink: 0 }}>⚠️</span>
               <div>Our rider will call this exact number for delivery. <strong>Wrong numbers will cause your order to be cancelled and your account to be blocked.</strong></div>
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
-              <button disabled={placing} onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: "14px", background: "#27272a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>Edit Number</button>
-              <button disabled={placing} onClick={handleConfirmAndPlace} style={{ flex: 1, padding: "14px", background: "#0055ff", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer" }}>{placing ? "Placing..." : "Yes, it's correct"}</button>
+              <button disabled={placing} onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: "14px", background: "#f3f4f6", color: "#0A0F2E", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "0.9rem" }}>Edit Number</button>
+              <button disabled={placing} onClick={handleConfirmAndPlace} style={{ flex: 1, padding: "14px", background: "#0135FB", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 0 #0028D4", fontFamily: "inherit", fontSize: "0.9rem" }}>
+                {placing ? "Placing..." : "Yes, correct!"}
+              </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="cart-grid" style={{ maxWidth: "1200px", margin: "0 auto", padding: "0 24px", display: "grid", gridTemplateColumns: "1fr 400px", gap: "32px", alignItems: "start" }}>
-        
-        {/* Left Col - Cart Items & Location */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
-            <Link href="/" style={{ color: "#888", display: "flex", alignItems: "center", transition: "color 0.2s" }} onMouseOver={(e) => e.currentTarget.style.color = "#fff"} onMouseOut={(e) => e.currentTarget.style.color = "#888"}><ArrowLeft size={20}/></Link>
-            <h1 style={{ fontSize: "2.5rem", fontWeight: 900, textTransform: "uppercase", letterSpacing: "1px", margin: 0, color: "#fff" }}>Checkout</h1>
+      {/* ── Main Grid ── */}
+      <div className="cart-grid" style={{ maxWidth: "1160px", margin: "0 auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 370px", gap: "24px", alignItems: "start" }}>
+
+        {/* ── Left Column ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+
+          {/* Page Header */}
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <Link
+              href="/"
+              className="otw-back-btn"
+              style={{ width: 40, height: 40, borderRadius: "10px", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 2px 8px rgba(0,0,0,0.08)", color: "#0A0F2E", textDecoration: "none", transition: "background 0.2s" }}
+            >
+              <ArrowLeft size={18} />
+            </Link>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ fontSize: "clamp(1.4rem, 4vw, 1.9rem)", fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.5px", margin: 0, color: "#0A0F2E", lineHeight: 1.1 }}>My Cart</h1>
+              <p style={{ fontSize: "0.8rem", color: "#6B7280", margin: "2px 0 0", fontWeight: 500 }}>Review your order and place</p>
+            </div>
           </div>
 
-          {/* Items */}
+          {/* ── Cart Items Card ── */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: "20px", borderBottom: "1px solid #27272a", paddingBottom: "12px", textTransform: "uppercase", color: "#fff", letterSpacing: "1px" }}>
-              Order Summary ({cart.length} items)
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-              {cart.map((c) => (
-                <div key={c.cartItemId} style={{ display: "flex", gap: "20px", alignItems: "center" }}>
-                  <div style={{ width: 80, height: 80, borderRadius: "8px", background: "#fff", position: "relative", overflow: "hidden", flexShrink: 0 }}>
-                    <Image src={c.item.image} alt={c.item.name} fill style={{ objectFit: "cover" }} />
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2A3060", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "16px", paddingBottom: "12px", borderBottom: "1px solid #f3f4f6" }}>
+              Order Summary &nbsp;·&nbsp; {cart.length} {cart.length === 1 ? "item" : "items"}
+            </p>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {cart.map((c, idx) => (
+                <div
+                  key={c.cartItemId ?? `cart-${c.item.id}-${idx}`}
+                  style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "14px 0", borderBottom: idx < cart.length - 1 ? "1px solid #f9fafb" : "none" }}
+                >
+                  {/* Product image */}
+                  <div style={{ width: 68, height: 68, borderRadius: "10px", background: "#f3f4f6", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                    <Image src={c.item.image} alt={c.item.name} fill style={{ objectFit: "cover" }} sizes="68px" />
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#fff", textTransform: "uppercase", letterSpacing: "0.5px" }}>{c.item.name}</div>
-                    <div style={{ fontWeight: 600, color: "#a0a0a0", fontSize: "0.85rem", marginTop: "4px" }}>{c.item.category || "Item"}</div>
+
+                  {/* Details + controls (flex column keeps everything in-bounds) */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: "0.97rem", color: "#0A0F2E", letterSpacing: "0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.item.name}</div>
+                    <div style={{ color: "#9ca3af", fontSize: "0.78rem", marginTop: "2px", textTransform: "capitalize" }}>{c.item.category || "Item"}</div>
+
                     {c.lineDetails && (
-                      <div style={{ marginTop: "6px", fontSize: "0.82rem", color: "#93C5FD", lineHeight: 1.4 }}>
-                        {c.lineDetails}
-                      </div>
+                      <div style={{ marginTop: "4px", fontSize: "0.78rem", color: "#0135FB", lineHeight: 1.4 }}>{c.lineDetails}</div>
                     )}
                     {!c.lineDetails && c.selectedCustomizations && c.selectedCustomizations.length > 0 && (
-                      <div style={{ marginTop: "6px", fontSize: "0.82rem", color: "#93C5FD" }}>
+                      <div style={{ marginTop: "4px", fontSize: "0.78rem", color: "#0135FB" }}>
                         {c.selectedCustomizations.map(sc => `${sc.category}: ${sc.option}`).join(" · ")}
                       </div>
                     )}
                     {!c.lineDetails && c.specialInstructions && (
-                      <div style={{ marginTop: "6px", fontSize: "0.85rem", color: "#f59e0b", background: "rgba(245, 158, 11, 0.1)", padding: "6px 10px", borderRadius: "6px", display: "inline-block", fontWeight: 600 }}>
-                        <span style={{ color: "#d97706", marginRight: "4px" }}>Note:</span> {c.specialInstructions}
+                      <div style={{ marginTop: "5px", fontSize: "0.78rem", color: "#92400E", background: "#FEF3C7", padding: "3px 8px", borderRadius: "5px", display: "inline-block", fontWeight: 600 }}>
+                        <span style={{ color: "#D97706", marginRight: "3px" }}>Note:</span>{c.specialInstructions}
                       </div>
                     )}
-                    <div style={{ fontWeight: 800, fontSize: "1.1rem", marginTop: "8px" }}>₹{c.unitPrice ?? c.item.price}</div>
-                  </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", border: "1px solid #3f3f46", borderRadius: "6px", padding: "4px" }}>
-                      <button onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity - 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Minus size={16}/></button>
-                      <span style={{ fontWeight: 700, width: "20px", textAlign: "center", fontSize: "1rem" }}>{c.quantity}</span>
-                      <button onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity + 1)} style={{ width: 32, height: 32, border: "none", background: "transparent", color: "#fff", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Plus size={16}/></button>
+
+                    {/* Price + controls row — all inside the card, never overflows */}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", gap: "8px" }}>
+                      <div style={{ fontWeight: 900, fontSize: "1rem", color: "#0135FB", flexShrink: 0 }}>₹{c.unitPrice ?? c.item.price}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
+                        {/* Quantity stepper */}
+                        <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", background: "#fff" }}>
+                          <button
+                            className="otw-qty-btn"
+                            onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity - 1)}
+                            style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
+                          ><Minus size={13} /></button>
+                          <span style={{ fontWeight: 700, width: "26px", textAlign: "center", fontSize: "0.9rem", color: "#0A0F2E" }}>{c.quantity}</span>
+                          <button
+                            className="otw-qty-btn"
+                            onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity + 1)}
+                            style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
+                          ><Plus size={13} /></button>
+                        </div>
+                        {/* Delete button */}
+                        <button
+                          className="otw-del-btn"
+                          onClick={() => removeFromCart(c.cartItemId || c.item.id)}
+                          style={{ width: 32, height: 32, borderRadius: "8px", border: "1.5px solid #fecaca", background: "transparent", color: "#f87171", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", flexShrink: 0 }}
+                        ><Trash2 size={14} /></button>
+                      </div>
                     </div>
-                    <button onClick={() => removeFromCart(c.cartItemId || c.item.id)} style={{ width: 40, height: 40, borderRadius: "6px", border: "1px solid #3f3f46", background: "transparent", color: "#ef4444", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }} onMouseOver={(e) => e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"} onMouseOut={(e) => e.currentTarget.style.background = "transparent"}><Trash2 size={18}/></button>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Delivery Location */}
+          {/* ── Delivery Details Card ── */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: "24px", display: "flex", alignItems: "center", gap: "10px", textTransform: "uppercase", color: "#fff", letterSpacing: "1px" }}>
-              <MapPin size={20} color="#0055ff"/> Delivery Details
-            </h3>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2A3060", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "18px", display: "flex", alignItems: "center", gap: "7px" }}>
+              <MapPin size={14} color="#0135FB" /> Delivery Details
+            </p>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "14px" }}>
               {!isLoggedIn ? (
                 <>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>Your Name</label>
-                    <input type="text" style={inputStyle} placeholder="e.g. John Doe" value={name} onChange={e => setName(e.target.value)} />
+                    <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. John Doe" value={name} onChange={e => setName(e.target.value)} />
                   </div>
                   <div style={{ gridColumn: "1 / -1" }}>
                     <label style={labelStyle}>Phone Number</label>
-                    <div style={{ display: "flex", gap: "12px" }}>
-                      <div style={{ padding: "14px 16px", borderRadius: "6px", border: "1px solid #333", background: "#1a1a1a", fontWeight: 700, fontSize: "0.95rem", color: "#fff", flexShrink: 0 }}>🇮🇳 +91</div>
-                      <input type="tel" style={{...inputStyle, flex: 1}} placeholder="98765 43210" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} maxLength={10} />
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <div style={{ padding: "13px 12px", borderRadius: "8px", border: "1.5px solid #e5e7eb", background: "#f9fafb", fontWeight: 700, fontSize: "0.88rem", color: "#0A0F2E", flexShrink: 0 }}>🇮🇳 +91</div>
+                      <input type="tel" style={{ ...inputStyle, flex: 1 }} className="otw-cart-input" placeholder="98765 43210" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} maxLength={10} />
                     </div>
                   </div>
                 </>
               ) : (
-                <div style={{ gridColumn: "1 / -1", background: "#1a1a1a", border: "1px solid #333", borderRadius: "6px", padding: "16px", display: "flex", alignItems: "center", gap: "16px" }}>
-                  <div style={{ width: 44, height: 44, borderRadius: "50%", background: "#0055ff", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1.1rem", overflow: "hidden" }}>
+                <div style={{ gridColumn: "1 / -1", background: "#EEF1FF", borderRadius: "10px", padding: "14px 16px", display: "flex", alignItems: "center", gap: "12px" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#0135FB", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: "1rem", overflow: "hidden", flexShrink: 0 }}>
                     {(profile as any)?.image ? (
                       <img src={(profile as any).image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
@@ -427,107 +469,116 @@ export default function CartPage() {
                     )}
                   </div>
                   <div>
-                    <div style={{ fontWeight: 800, color: "white", fontSize: "1.05rem", textTransform: "capitalize" }}>{profile?.name || name}</div>
-                    <div style={{ fontSize: "0.85rem", color: "#888", marginTop: "4px" }}>+91 {profile?.phone || phone}</div>
+                    <div style={{ fontWeight: 800, color: "#0A0F2E", fontSize: "0.95rem", textTransform: "capitalize" }}>{profile?.name || name}</div>
+                    <div style={{ fontSize: "0.8rem", color: "#6B7280", marginTop: "2px" }}>+91 {profile?.phone || phone}</div>
                   </div>
                 </div>
               )}
+
               <div>
                 <label style={labelStyle}>Campus Location</label>
-                <select style={inputStyle} value={location} onChange={e => setLocation(e.target.value)}>
-                  <option value="" style={{color: "#888"}}>-- Select Spot --</option>
-                  {CAMPUS_LOCATIONS.map(l => <option key={l} value={l} style={{color: "#fff", background: "#1a1a1a"}}>{l}</option>)}
-                  <option value="Other (Type below)" style={{color: "#fff", background: "#1a1a1a"}}>Other (Type below)</option>
+                <select style={inputStyle} className="otw-cart-input" value={location} onChange={e => setLocation(e.target.value)}>
+                  <option value="">-- Select Spot --</option>
+                  {CAMPUS_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
+                  <option value="Other (Type below)">Other (Type below)</option>
                 </select>
               </div>
+
               <div>
                 <label style={labelStyle}>Scheduled Time</label>
-                <select style={inputStyle} value={scheduledTime} onChange={e => { setScheduledTime(e.target.value); setCustomTime(""); }}>
-                  <option value="ASAP" style={{color: "#fff", background: "#1a1a1a"}}>ASAP (~15 mins)</option>
-                  <option value="In 25 mins" style={{color: "#fff", background: "#1a1a1a"}}>In 25 mins</option>
-                  <option value="In 45 mins" style={{color: "#fff", background: "#1a1a1a"}}>In 45 mins</option>
-                  <option value="In 1 hr 15 mins" style={{color: "#fff", background: "#1a1a1a"}}>In 1 hr 15 mins</option>
-                  <option value="Custom Time" style={{color: "#fff", background: "#1a1a1a"}}>Custom Time</option>
+                <select style={inputStyle} className="otw-cart-input" value={scheduledTime} onChange={e => { setScheduledTime(e.target.value); setCustomTime(""); }}>
+                  <option value="ASAP">ASAP (~15 mins)</option>
+                  <option value="In 25 mins">In 25 mins</option>
+                  <option value="In 45 mins">In 45 mins</option>
+                  <option value="In 1 hr 15 mins">In 1 hr 15 mins</option>
+                  <option value="Custom Time">Custom Time</option>
                 </select>
                 {scheduledTime === "Custom Time" && (
-                  <div style={{ marginTop: "12px" }}>
-                    <input type="time" style={inputStyle} value={customTime} onChange={e => setCustomTime(e.target.value)} />
+                  <div style={{ marginTop: "10px" }}>
+                    <input type="time" style={inputStyle} className="otw-cart-input" value={customTime} onChange={e => setCustomTime(e.target.value)} />
                     {!isTimeValid() && customTime && (
-                      <p style={{ color: "#ef4444", fontSize: "0.75rem", marginTop: "6px" }}>Time must be within the next 3 hours.</p>
+                      <p style={{ color: "#EF4444", fontSize: "0.73rem", marginTop: "5px", fontWeight: 600 }}>Time must be within the next 3 hours.</p>
                     )}
                   </div>
                 )}
               </div>
+
               {isCustomLoc && (
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={labelStyle}>Specify Location</label>
-                  <input type="text" style={inputStyle} placeholder="e.g. Near Basketball Court" value={customLocation} onChange={e => setCustomLocation(e.target.value)} />
+                  <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Near Basketball Court" value={customLocation} onChange={e => setCustomLocation(e.target.value)} />
                 </div>
               )}
+
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Delivery Notes (optional)</label>
-                <input type="text" style={inputStyle} placeholder="e.g. Gate 2, call when you arrive, room 204" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
+                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Gate 2, call when you arrive, room 204" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
               </div>
             </div>
+
             {!isLoggedIn && (
-              <div style={{ marginTop: "24px", padding: "14px 16px", borderRadius: "6px", background: "rgba(245, 158, 11, 0.1)", border: "1px solid rgba(245, 158, 11, 0.2)", fontSize: "0.85rem", color: "#fcd34d", lineHeight: 1.5, display: "flex", gap: "12px", alignItems: "flex-start" }}>
-                <span style={{ fontSize: "1.2rem" }}>⚠️</span>
+              <div style={{ marginTop: "18px", padding: "12px 14px", borderRadius: "10px", background: "#FEF3C7", fontSize: "0.83rem", color: "#92400E", lineHeight: 1.55, display: "flex", gap: "10px", alignItems: "flex-start" }}>
+                <span style={{ fontSize: "1rem", flexShrink: 0 }}>⚠️</span>
                 <div>
-                  <strong style={{ color: "#f59e0b" }}>Please enter your real number.</strong> Our delivery partner will call this number to confirm your order. Fake numbers will result in a permanent block.
+                  <strong style={{ color: "#D97706" }}>Please enter your real number.</strong> Our delivery partner will call this number to confirm your order. Fake numbers result in a permanent block.
                 </div>
               </div>
             )}
           </div>
         </div>
 
-        {/* Right Col - Bill */}
-        <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
-          
+        {/* ── Right Column ── */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
+
           {/* Coupon */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "10px", textTransform: "uppercase", color: "#fff", letterSpacing: "1px" }}>
-              <Tag size={20} color="#0055ff"/> Offers
-            </h3>
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2A3060", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "14px", display: "flex", alignItems: "center", gap: "7px" }}>
+              <Tag size={14} color="#0135FB" /> Offers & Coupons
+            </p>
             {appliedCoupon ? (
-              <div style={{ background: "#1a1a1a", border: "1px solid #0055ff", padding: "16px", borderRadius: "6px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div style={{ background: "#EEF1FF", borderRadius: "10px", padding: "14px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
                 <div>
-                  <div style={{ fontWeight: 800, color: "#0055ff", fontSize: "0.95rem", letterSpacing: "0.5px" }}>{couponCode} APPLIED</div>
-                  <div style={{ fontSize: "0.8rem", color: "#a0a0a0", marginTop: "4px" }}>{appliedCoupon.label}</div>
+                  <div style={{ fontWeight: 800, color: "#0135FB", fontSize: "0.88rem" }}>{couponCode} APPLIED ✓</div>
+                  <div style={{ fontSize: "0.78rem", color: "#6B7280", marginTop: "2px" }}>{appliedCoupon.label}</div>
                 </div>
-                <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} style={{ border: "none", background: "none", color: "#ef4444", cursor: "pointer", fontSize: "0.8rem", fontWeight: 700, letterSpacing: "1px" }}>REMOVE</button>
+                <button onClick={() => { setAppliedCoupon(null); setCouponCode(""); }} style={{ border: "none", background: "none", color: "#EF4444", cursor: "pointer", fontSize: "0.78rem", fontWeight: 800, whiteSpace: "nowrap" }}>REMOVE</button>
               </div>
             ) : (
-              <div style={{ display: "flex", gap: "12px" }}>
-                <input type="text" style={{...inputStyle, flex: 1}} placeholder="Promo code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
-                <button onClick={handleApplyCoupon} style={{ background: "#27272a", color: "#fff", border: "1px solid #3f3f46", padding: "0 24px", borderRadius: "6px", fontWeight: "bold", cursor: "pointer", transition: "background 0.2s" }} onMouseOver={(e) => e.currentTarget.style.background = "#3f3f46"} onMouseOut={(e) => e.currentTarget.style.background = "#27272a"}>Apply</button>
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input type="text" style={{ ...inputStyle, flex: 1 }} className="otw-cart-input" placeholder="Promo code" value={couponCode} onChange={e => setCouponCode(e.target.value)} />
+                <button
+                  className="otw-apply-btn"
+                  onClick={handleApplyCoupon}
+                  style={{ background: "#0135FB", color: "#fff", border: "none", padding: "0 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", whiteSpace: "nowrap", fontFamily: "inherit", boxShadow: "0 3px 0 #0028D4", transition: "background 0.15s" }}
+                >Apply</button>
               </div>
             )}
           </div>
 
           {/* Bill Details */}
           <div style={cardStyle}>
-            <h3 style={{ fontSize: "1rem", fontWeight: 800, marginBottom: "24px", borderBottom: "1px solid #27272a", paddingBottom: "12px", textTransform: "uppercase", color: "#fff", letterSpacing: "1px" }}>
+            <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2A3060", textTransform: "uppercase", letterSpacing: "1px", paddingBottom: "12px", borderBottom: "1px solid #f3f4f6", marginBottom: "16px" }}>
               Bill Details
-            </h3>
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", fontSize: "0.95rem" }}>
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "13px", fontSize: "0.92rem" }}>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#a0a0a0" }}>Item Total</span>
-                <span style={{ fontWeight: 600, color: "#fff" }}>₹{cartTotal}</span>
+                <span style={{ color: "#6B7280" }}>Item Total</span>
+                <span style={{ fontWeight: 600, color: "#0A0F2E" }}>₹{cartTotal}</span>
               </div>
               <div style={{ display: "flex", justifyContent: "space-between" }}>
-                <span style={{ color: "#a0a0a0" }}>Delivery Fee</span>
-                <span style={{ fontWeight: 600, color: "#fff" }}>₹{deliveryFee}</span>
+                <span style={{ color: "#6B7280" }}>Delivery Fee</span>
+                <span style={{ fontWeight: 600, color: "#0A0F2E" }}>₹{deliveryFee}</span>
               </div>
               {appliedCoupon && (
-                <div style={{ display: "flex", justifyContent: "space-between", color: "#22c55e" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", color: "#22C55E" }}>
                   <span>Discount ({couponCode})</span>
-                  <span style={{ fontWeight: 600 }}>-₹{finalDiscount.toFixed(2)}</span>
+                  <span style={{ fontWeight: 700 }}>-₹{finalDiscount.toFixed(2)}</span>
                 </div>
               )}
-              <div style={{ borderTop: "1px dashed #3f3f46", margin: "8px 0" }} />
-              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.2rem", fontWeight: 800 }}>
-                <span style={{ color: "#fff" }}>To Pay</span>
-                <span style={{ color: "#0055ff" }}>₹{grandTotal.toFixed(2)}</span>
+              <div style={{ borderTop: "1px dashed #e5e7eb", margin: "2px 0" }} />
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: "1.1rem", fontWeight: 900 }}>
+                <span style={{ color: "#0A0F2E" }}>To Pay</span>
+                <span style={{ color: "#0135FB" }}>₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
 
@@ -536,18 +587,27 @@ export default function CartPage() {
               onClick={() => { if (canPlace) setShowConfirm(true); }}
               disabled={!canPlace || placing}
               style={{
-                width: "100%", marginTop: "32px", padding: "18px", fontSize: "1.05rem", fontWeight: "bold",
-                background: canPlace ? "#0044ff" : "#27272a", color: canPlace ? "#fff" : "#a0a0a0",
-                border: "none", borderRadius: "6px", cursor: canPlace ? "pointer" : "not-allowed",
+                width: "100%", marginTop: "22px", padding: "16px", fontSize: "0.97rem", fontWeight: 900,
+                background: canPlace ? "#0135FB" : "#e5e7eb",
+                color: canPlace ? "#fff" : "#9ca3af",
+                border: "none", borderRadius: "10px",
+                cursor: canPlace ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                textTransform: "uppercase", letterSpacing: "1px", transition: "background 0.2s"
+                textTransform: "uppercase", letterSpacing: "1px",
+                transition: "all 0.15s",
+                boxShadow: canPlace ? "0 4px 0 #0028D4" : "none",
+                fontFamily: "inherit",
               }}
-              onMouseOver={(e) => { if(canPlace) e.currentTarget.style.background = "#0033cc" }}
-              onMouseOut={(e) => { if(canPlace) e.currentTarget.style.background = "#0044ff" }}
+              onMouseOver={(e) => { if (canPlace) { e.currentTarget.style.background = "#0028D4"; e.currentTarget.style.transform = "translateY(2px)"; e.currentTarget.style.boxShadow = "0 2px 0 #0028D4"; } }}
+              onMouseOut={(e) => { if (canPlace) { e.currentTarget.style.background = "#0135FB"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 0 #0028D4"; } }}
             >
-              {placing ? "Processing..." : <>Place Order <ArrowRight size={18}/></>}
+              {placing ? "Processing..." : <>Place Order <ArrowRight size={18} /></>}
             </button>
-            {!location && <p style={{ textAlign: "center", fontSize: "0.8rem", color: "#ef4444", marginTop: "12px", fontWeight: 600 }}>Please select delivery location</p>}
+            {!location && (
+              <p style={{ textAlign: "center", fontSize: "0.77rem", color: "#EF4444", marginTop: "10px", fontWeight: 600 }}>
+                Please select a delivery location
+              </p>
+            )}
           </div>
         </div>
 

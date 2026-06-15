@@ -32,6 +32,7 @@ export default function HomePage() {
   const { profile } = useApp();
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
+  const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
   const sliderRef = useRef<HTMLDivElement>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -281,17 +282,37 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ─── CATEGORY PILLS ─── */}
-      <div className="category-scroll">
-        {categories.map(cat => (
+      {/* ─── CATEGORY PILLS & VIEW TOGGLE (single sticky bar) ─── */}
+      <div style={{ display: "flex", alignItems: "center", background: "#fff", borderBottom: "1px solid #f0f0f0", position: "sticky", top: 63, zIndex: 40, padding: "0 16px" }}>
+        {/* Scrollable pills */}
+        <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "10px 0", scrollbarWidth: "none" as any }}>
+          {categories.map(cat => (
+            <button
+              key={cat}
+              className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(cat)}
+            >
+              {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
+            </button>
+          ))}
+        </div>
+        {/* Toggle */}
+        <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 8, marginLeft: 12, flexShrink: 0 }}>
           <button
-            key={cat}
-            className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
-            onClick={() => setSelectedCategory(cat)}
+            title="List view"
+            onClick={() => setMenuLayout("horizontal")}
+            style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
           >
-            {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
           </button>
-        ))}
+          <button
+            title="Grid view"
+            onClick={() => setMenuLayout("vertical")}
+            style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
+          >
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          </button>
+        </div>
       </div>
 
       {/* ─── MENU CONTENT ─── */}
@@ -308,13 +329,13 @@ export default function HomePage() {
                 <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Trending picks — order what everyone&apos;s loving</p>
               </div>
               <div style={{
-                display: "grid", gridAutoFlow: "column", gridAutoColumns: "220px",
+                display: "grid", gridAutoFlow: "column", gridAutoColumns: menuLayout === "horizontal" ? "280px" : "200px",
                 gap: "14px", overflowX: "auto", paddingBottom: "8px",
                 WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
               }}>
                 {popularItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard item={item} compact />
+                    <FoodCard item={item} layout={menuLayout} />
                   </div>
                 ))}
               </div>
@@ -331,13 +352,13 @@ export default function HomePage() {
                 <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Hand-picked by us — great pairings & hidden gems</p>
               </div>
               <div style={{
-                display: "grid", gridAutoFlow: "column", gridAutoColumns: "220px",
+                display: "grid", gridAutoFlow: "column", gridAutoColumns: menuLayout === "horizontal" ? "280px" : "200px",
                 gap: "14px", overflowX: "auto", paddingBottom: "8px",
                 WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
               }}>
                 {recommendedItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard item={item} compact />
+                    <FoodCard item={item} layout={menuLayout} />
                   </div>
                 ))}
               </div>
@@ -354,18 +375,29 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="bento-grid">
+          <div style={{ width: "100%" }}>
             {loadingMenu ? (
-              Array.from({ length: 6 }).map((_, i) => (
-                <div key={i} className="skeleton" style={{ height: 260, borderRadius: "12px" }} />
-              ))
+              <div style={{ display: "grid", gridTemplateColumns: menuLayout === "vertical" ? "repeat(auto-fill, minmax(150px, 1fr))" : "1fr", gap: 12 }}>
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="skeleton" style={{ height: menuLayout === "vertical" ? 220 : 90, borderRadius: 14 }} />
+                ))}
+              </div>
             ) : (
-              gridItems.map(item => (
-                <FoodCard key={item.id} item={item} />
-              ))
+              <div style={{
+                display: "grid",
+                gridTemplateColumns: menuLayout === "vertical"
+                  ? "repeat(auto-fill, minmax(150px, 1fr))"
+                  : "repeat(auto-fill, minmax(300px, 1fr))",
+                gap: menuLayout === "vertical" ? 16 : 10,
+                width: "100%"
+              }}>
+                {gridItems.map(item => (
+                  <FoodCard key={item.id} item={item} layout={menuLayout} />
+                ))}
+              </div>
             )}
             {!loadingMenu && gridItems.length === 0 && (
-              <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ textAlign: "center", padding: "60px 20px" }}>
                 <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
                 <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
                 <p style={{ color: "var(--text-muted)", marginTop: "4px", fontSize: "0.9rem" }}>Try a different category or search.</p>

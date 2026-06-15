@@ -12,8 +12,6 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
   { href: "/orders", label: "Orders" },
-  { href: "/cart", label: "Cart" },
-  { href: "/about", label: "About" },
 ];
 
 export default function Navbar() {
@@ -132,12 +130,20 @@ export default function Navbar() {
                 background: "var(--primary)", display: "flex", alignItems: "center", justifyContent: "center",
                 boxShadow: "0 2px 10px rgba(0,74,173,0.3)", flexShrink: 0,
               }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="5" r="2.5" fill="white" />
-                  <path d="M12 8.5 L9 12 L12 11 L15 12 Z" fill="white" />
-                  <path d="M12 11 L10 16 M12 11 L14 16" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M10 16 L8.5 20 M14 16 L15.5 20" stroke="white" strokeWidth="1.5" strokeLinecap="round" />
-                </svg>
+              <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                {/* Head */}
+                <circle cx="16" cy="5.5" r="3" fill="white"/>
+                {/* Body/Torso */}
+                <path d="M16 9 L13.5 17 L18.5 17 Z" fill="white"/>
+                {/* Left arm swinging forward */}
+                <path d="M13.5 11 L10 15" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                {/* Right arm swinging back */}
+                <path d="M18.5 11 L22 13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
+                {/* Left leg forward */}
+                <path d="M14 17 L11 23 L9 27" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+                {/* Right leg back */}
+                <path d="M18 17 L20 22 L22 26" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
               </div>
               <div className="hide-mobile">
                 <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--primary)", lineHeight: 1.1 }}>ONN D A WAY</div>
@@ -324,7 +330,7 @@ export default function Navbar() {
             display: "flex", flexDirection: "column",
           }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--primary)" }}>ONN D A WAY</div>
+              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--primary)" }}>ONN DA WAY</div>
               <button onClick={() => setMobileOpen(false)} style={{
                 width: 36, height: 36, border: "none", background: "var(--accent-2)",
                 borderRadius: "10px", color: "var(--primary)", cursor: "pointer",

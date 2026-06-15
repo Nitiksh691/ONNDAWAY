@@ -39,12 +39,13 @@ function getTimeOfDay(): string {
 }
 
 /* Horizontal scroll row for a list of items */
-function HScrollRow({ items, label, emoji, viewAllHref, emptyText }: {
+function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout }: {
   items: MenuItem[];
   label: string;
   emoji: string;
   viewAllHref: string;
   emptyText?: string;
+  layout: "horizontal" | "vertical";
 }) {
   if (items.length === 0) {
     return emptyText ? (
@@ -84,8 +85,8 @@ function HScrollRow({ items, label, emoji, viewAllHref, emptyText }: {
         scrollbarWidth: "none", msOverflowStyle: "none",
       }}>
         {items.map(item => (
-          <div key={item.id} style={{ minWidth: "185px", maxWidth: "185px", flexShrink: 0 }}>
-            <FoodCard item={item} compact />
+          <div key={item.id} style={{ minWidth: layout === "horizontal" ? "280px" : "185px", maxWidth: layout === "horizontal" ? "280px" : "185px", flexShrink: 0 }}>
+            <FoodCard item={item} layout={layout} />
           </div>
         ))}
 
@@ -118,6 +119,7 @@ function HScrollRow({ items, label, emoji, viewAllHref, emptyText }: {
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
+  const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
 
   const timeOfDay = getTimeOfDay();
 
@@ -330,35 +332,29 @@ export default function MenuPage() {
       {/* ─── Sticky Category Filters ─── */}
       <div style={{
         position: "sticky", top: "60px", zIndex: 100,
-        background: "rgba(248,250,255,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid rgba(1,53,251,0.1)", padding: "10px 0",
+        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #f0f0f0",
       }}>
-        <div className="otw-container">
-          <div className="hscroll" style={{
-            display: "flex", gap: "8px", overflowX: "auto",
-            paddingBottom: "2px", WebkitOverflowScrolling: "touch",
-            scrollbarWidth: "none",
-          }}>
+        <div className="otw-container" style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px" }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "10px 0", scrollbarWidth: "none" as any }}>
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
                 id={`filter-${cat}`}
                 onClick={() => setActiveCategory(cat)}
-                style={{
-                  padding: "8px 16px", borderRadius: "999px",
-                  border: "1.5px solid",
-                  borderColor: activeCategory === cat ? "var(--primary)" : "rgba(1,53,251,0.15)",
-                  background: activeCategory === cat ? "var(--primary)" : "white",
-                  color: activeCategory === cat ? "white" : "var(--text-mid)",
-                  fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
-                  transition: "all 0.2s", textTransform: "capitalize",
-                  fontFamily: "inherit", whiteSpace: "nowrap", flexShrink: 0,
-                  boxShadow: activeCategory === cat ? "0 3px 10px rgba(1,53,251,0.25)" : "none",
-                }}
+                className={`cat-btn ${activeCategory === cat ? "active" : ""}`}
               >
                 {CAT_EMOJI[cat]} {CAT_LABEL[cat]}
               </button>
             ))}
+          </div>
+          <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 8, flexShrink: 0 }}>
+            <button title="List" onClick={() => setMenuLayout("horizontal")} style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            </button>
+            <button title="Grid" onClick={() => setMenuLayout("vertical")} style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
           </div>
         </div>
       </div>
@@ -386,6 +382,7 @@ export default function MenuPage() {
                   label="Popular Right Now"
                   emoji="🔥"
                   viewAllHref="/menu?category=all"
+                  layout={menuLayout}
                 />
               )}
 
@@ -396,6 +393,7 @@ export default function MenuPage() {
                   label={`Perfect for ${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}`}
                   emoji="🎯"
                   viewAllHref="/menu?category=all"
+                  layout={menuLayout}
                 />
               )}
 
@@ -416,6 +414,7 @@ export default function MenuPage() {
                   label={CAT_LABEL[cat]}
                   emoji={CAT_EMOJI[cat]}
                   viewAllHref={`/menu?category=${cat}`}
+                  layout={menuLayout}
                 />
               ))}
             </>
@@ -442,10 +441,13 @@ export default function MenuPage() {
               ) : (
                 <div className="food-grid-filtered" style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))",
-                  gap: "16px",
+                  gridTemplateColumns: menuLayout === "vertical"
+                    ? "repeat(auto-fill, minmax(150px, 1fr))"
+                    : "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: menuLayout === "vertical" ? 16 : 10,
+                  width: "100%",
                 }}>
-                  {filtered.map(item => <FoodCard key={item.id} item={item} />)}
+                  {filtered.map(item => <FoodCard key={item.id} item={item} layout={menuLayout} />)}
                 </div>
               )}
             </div>

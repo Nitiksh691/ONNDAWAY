@@ -71,6 +71,7 @@ export default function SupportFab() {
         onPointerDown={e => { e.preventDefault(); onDragStart(e.clientX, e.clientY); }}
         onClick={handleTap}
       >
+        <div className="otw-fab__pulse" />
         <Phone size={22} />
       </button>
     </div>

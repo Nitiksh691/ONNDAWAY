@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
-import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Navigation, Clock, Tag } from "lucide-react";
+import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Navigation, Clock, Tag, X, ChevronRight } from "lucide-react";
 import { getOrderMapsUrl, getOrderMapsEmbedUrl } from "@/lib/maps";
 import toast from "react-hot-toast";
 
@@ -20,11 +20,13 @@ export default function DeliveryDashboard() {
   const { user, profile, loading } = useApp();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
-  const [otpInputs, setOtpInputs] = useState<Record<string, string>>({});
-  const [showOtpInput, setShowOtpInput] = useState<Record<string, boolean>>({});
-  const [showChatPanel, setShowChatPanel] = useState<Record<string, boolean>>({});
-  const [sendingMsg, setSendingMsg] = useState<Record<string, boolean>>({});
-  const messagesEndRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  
+  // Modal State
+  const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
+  const [otpInput, setOtpInput] = useState("");
+  const [sendingMsg, setSendingMsg] = useState(false);
+  
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     if (!loading && (!user || profile?.role !== "delivery") && !localStorage.getItem("otw_delivery_id")) {
@@ -54,28 +56,29 @@ export default function DeliveryDashboard() {
     return () => clearInterval(interval);
   }, []);
 
-  // Auto-scroll to bottom of each chat
+  const selectedOrder = orders.find(o => o.id === selectedOrderId);
+
+  // Auto-scroll chat
   useEffect(() => {
-    Object.entries(showChatPanel).forEach(([orderId, visible]) => {
-      if (visible && messagesEndRefs.current[orderId]) {
-        messagesEndRefs.current[orderId]?.scrollIntoView({ behavior: "smooth" });
-      }
-    });
-  }, [orders, showChatPanel]);
+    if (selectedOrder && messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [selectedOrder?.messages]);
 
   const handleUpdateStatus = async (orderId: string, newStatus: Order["status"]) => {
     try {
-      const otp = otpInputs[orderId] || "";
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus, otp }),
+        body: JSON.stringify({ status: newStatus, otp: otpInput }),
       });
       if (res.ok) {
-        fetchOrders();
+        await fetchOrders();
         toast.success(`Order marked as ${newStatus.replace(/_/g, " ")}`);
-        setOtpInputs(prev => ({ ...prev, [orderId]: "" }));
-        setShowOtpInput(prev => ({ ...prev, [orderId]: false }));
+        if (newStatus === "delivered") {
+          setSelectedOrderId(null);
+        }
+        setOtpInput("");
       } else {
         const err = await res.json();
         toast.error(err.error || "Failed to update status");
@@ -86,8 +89,8 @@ export default function DeliveryDashboard() {
   };
 
   const sendRiderMessage = async (orderId: string, text: string) => {
-    if (sendingMsg[orderId]) return;
-    setSendingMsg(prev => ({ ...prev, [orderId]: true }));
+    if (sendingMsg) return;
+    setSendingMsg(true);
     try {
       await fetch(`/api/orders/${orderId}/message`, {
         method: "POST",
@@ -98,7 +101,7 @@ export default function DeliveryDashboard() {
     } catch {
       toast.error("Could not send message");
     } finally {
-      setSendingMsg(prev => ({ ...prev, [orderId]: false }));
+      setSendingMsg(false);
     }
   };
 
@@ -111,339 +114,293 @@ export default function DeliveryDashboard() {
     <div style={{ background: "#F1F5F9", minHeight: "100vh" }}>
       <style>{`
         @keyframes chat-pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes otp-shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-4px); } 40%, 80% { transform: translateX(4px); } }
-        .otp-shake { animation: otp-shake 0.4s ease; }
+        @keyframes slide-up { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
+        .queue-row:hover { background: #f8fafc; }
       `}</style>
 
       {/* Header */}
-      <div style={{ background: "var(--primary)", color: "white", padding: "20px 24px", position: "sticky", top: 0, zIndex: 10 }}>
+      <div style={{ background: "var(--primary)", color: "white", padding: "16px 20px", position: "sticky", top: 0, zIndex: 10 }}>
         <div className="otw-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            <div style={{ width: 40, height: 40, background: "rgba(255,255,255,0.15)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Truck size={20} />
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <div style={{ width: 36, height: 36, background: "rgba(255,255,255,0.15)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Truck size={18} />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem" }}>Partner Dashboard</div>
-              <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>{profile?.name || "Demo Partner"}</div>
+              <div style={{ fontWeight: 800, fontSize: "1rem" }}>Partner Dashboard</div>
+              <div style={{ fontSize: "0.75rem", opacity: 0.8 }}>{profile?.name || "Demo Partner"}</div>
             </div>
           </div>
-          <button onClick={handleLogout} style={{ background: "transparent", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem", fontWeight: 600 }}>
-            <LogOut size={16} /> <span className="hide-mobile">Logout</span>
+          <button onClick={handleLogout} style={{ background: "transparent", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
+            <LogOut size={14} /> <span className="hide-mobile">Logout</span>
           </button>
         </div>
       </div>
 
-      <div className="otw-container" style={{ padding: "32px 24px" }}>
-
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "16px", marginBottom: "32px", overflowX: "auto", paddingBottom: "8px" }}>
-          <div className="otw-card" style={{ flex: 1, minWidth: 150, padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "12px", background: "#FEF3C7", color: "#92400E", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Package size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>To Pickup</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 900 }}>{orders.filter(o => o.status === "preparing").length}</div>
-            </div>
-          </div>
-          <div className="otw-card" style={{ flex: 1, minWidth: 150, padding: "20px", display: "flex", alignItems: "center", gap: "16px" }}>
-            <div style={{ width: 48, height: 48, borderRadius: "12px", background: "#E0F2FE", color: "#0369A1", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Truck size={24} />
-            </div>
-            <div>
-              <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>In Transit</div>
-              <div style={{ fontSize: "1.6rem", fontWeight: 900 }}>{orders.filter(o => o.status === "out_for_delivery").length}</div>
-            </div>
-          </div>
-        </div>
+      <div className="otw-container" style={{ padding: "20px" }}>
 
         {/* Quick Actions */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "32px", flexWrap: "wrap" }}>
-          <button onClick={() => router.push('/')} style={{ flex: 1, minWidth: "160px", padding: "14px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.2)" }}>
-            <MapPin size={18} /> Explore Main Site
+        <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
+          <button onClick={() => router.push('/')} style={{ flex: 1, minWidth: "140px", padding: "12px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.2)", fontSize: "0.85rem" }}>
+            <MapPin size={16} /> Explore Site
           </button>
-          <button onClick={() => router.push('/delivery/walkin')} style={{ flex: 1, minWidth: "160px", padding: "14px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(245,158,11,0.2)" }}>
-            <User size={18} /> Walk-in Customers
+          <button onClick={() => router.push('/delivery/walkin')} style={{ flex: 1, minWidth: "140px", padding: "12px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(245,158,11,0.2)", fontSize: "0.85rem" }}>
+            <User size={16} /> Walk-in
           </button>
         </div>
 
-        <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "20px" }}>Active Assignments</h2>
-
-        {orders.length === 0 ? (
-          <div className="otw-card" style={{ padding: "60px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "16px" }}>☕</div>
-            <h3 style={{ fontSize: "1.2rem", fontWeight: 700, marginBottom: "8px" }}>No active orders</h3>
-            <p style={{ color: "var(--text-muted)" }}>Grab a coffee, waiting for new orders to arrive.</p>
+        {/* Stats */}
+        <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
+          <div style={{ flex: 1, background: "#fff", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "10px", background: "#FEF3C7", color: "#92400E", display: "flex", alignItems: "center", justifyContent: "center" }}><Package size={20} /></div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>To Pickup</div>
+              <div style={{ fontSize: "1.3rem", fontWeight: 900 }}>{orders.filter(o => o.status === "preparing").length}</div>
+            </div>
           </div>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {orders.map(order => {
-              const chatVisible = !!showChatPanel[order.id];
-              const otpVisible = !!showOtpInput[order.id];
-              const currentOtp = otpInputs[order.id] || "";
-              const isTransit = order.status === "out_for_delivery";
-
-              return (
-                <div key={order.id} className="otw-card" style={{ padding: "24px", display: "flex", flexDirection: "column", gap: "16px" }}>
-
-                  {/* Order Header */}
-                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                        <span style={{ fontWeight: 800, fontSize: "1.1rem" }}>#{order.id.slice(-6).toUpperCase()}</span>
-                        {order.status === "preparing" ?
-                          <span className="otw-badge otw-badge-yellow">Preparing</span> :
-                          <span className="otw-badge otw-badge-blue">Out for Delivery</span>
-                        }
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "12px", fontSize: "0.9rem", color: "var(--text-muted)" }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><User size={14} /> {order.userName}</span>
-                        <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Phone size={14} /> {order.userPhone}</span>
-                      </div>
-                      {order.scheduledTime && order.scheduledTime !== "ASAP" && (
-                        <div style={{ marginTop: "6px", fontSize: "0.82rem", color: "#f59e0b", fontWeight: 700 }}>
-                          🕐 Requested: {order.scheduledTime}
-                        </div>
-                      )}
-                    </div>
-                    <div style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--primary)" }}>
-                      ₹{order.total}
-                    </div>
-                  </div>
-
-                  {/* Customer contact */}
-                  <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                    <a
-                      href={`tel:+91${order.userPhone}`}
-                      style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", background: "#ecfdf5", border: "1.5px solid #86efac", borderRadius: 12, color: "#166534", fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}
-                    >
-                      <Phone size={18} /> Call Customer
-                    </a>
-                    <a
-                      href={getOrderMapsUrl(order)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      style={{ flex: 1, minWidth: 140, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "12px 16px", background: "#eff6ff", border: "1.5px solid #93c5fd", borderRadius: 12, color: "#1d4ed8", fontWeight: 800, textDecoration: "none", fontSize: "0.9rem" }}
-                    >
-                      <Navigation size={18} /> Open in Maps
-                    </a>
-                  </div>
-
-                  {/* Location details */}
-                  <div style={{ background: "var(--accent)", padding: "16px", borderRadius: "12px" }}>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 12 }}>
-                      <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: "0.8rem", color: "var(--primary)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Delivery Location</div>
-                        <div style={{ fontWeight: 700, fontSize: "1.1rem", color: "var(--text-dark)", lineHeight: 1.4 }}>{order.location}</div>
-                        {order.locationNotes && (
-                          <div style={{ marginTop: 8, padding: "10px 12px", background: "#fff", borderRadius: 8, fontSize: "0.88rem", color: "#475569", border: "1px solid #e2e8f0" }}>
-                            <strong style={{ color: "#0f172a" }}>Notes:</strong> {order.locationNotes}
-                          </div>
-                        )}
-                        {order.latitude != null && order.longitude != null && (
-                          <div style={{ marginTop: 8, fontSize: "0.78rem", color: "#64748b", fontFamily: "monospace" }}>
-                            GPS: {order.latitude.toFixed(5)}, {order.longitude.toFixed(5)}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    {getOrderMapsEmbedUrl(order) && (
-                      <iframe
-                        title={`Map for order ${order.id}`}
-                        src={getOrderMapsEmbedUrl(order)!}
-                        width="100%"
-                        height="200"
-                        style={{ border: 0, borderRadius: 10, display: "block" }}
-                        loading="lazy"
-                      />
-                    )}
-                  </div>
-
-                  {/* Order meta */}
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 10 }}>
-                    <div style={{ background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: 10, padding: "12px 14px" }}>
-                      <div style={{ fontSize: "0.72rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Clock size={12} /> Scheduled</div>
-                      <div style={{ fontWeight: 700, fontSize: "0.9rem" }}>{order.scheduledTime || "ASAP"}</div>
-                    </div>
-                    {order.discount ? (
-                      <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: "12px 14px" }}>
-                        <div style={{ fontSize: "0.72rem", color: "#166534", fontWeight: 700, textTransform: "uppercase", marginBottom: 4, display: "flex", alignItems: "center", gap: 4 }}><Tag size={12} /> Discount</div>
-                        <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#15803d" }}>-₹{order.discount} {order.couponCode ? `(${order.couponCode})` : ""}</div>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {/* Items */}
-                  <div style={{ borderTop: "1px dashed var(--border)", paddingTop: "16px", display: "flex", flexDirection: "column", gap: "8px" }}>
-                    <div style={{ fontSize: "0.85rem", fontWeight: 700, color: "var(--text-muted)" }}>ITEMS TO DELIVER</div>
-                    {order.items.map((item, idx) => {
-                      const details = item.lineDetails || buildLineDetails(item.selectedCustomizations, item.specialInstructions);
-                      const unit = item.unitPrice ?? item.item.price ?? 0;
-                      return (
-                        <div key={item.cartItemId || idx} style={{ padding: "10px 0", borderBottom: idx < order.items.length - 1 ? "1px solid var(--border)" : "none" }}>
-                          <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem", gap: "12px" }}>
-                            <span style={{ fontWeight: 700 }}>{item.quantity}× {item.item.name}</span>
-                            <span style={{ fontWeight: 800, color: "var(--primary)", flexShrink: 0 }}>₹{unit * item.quantity}</span>
-                          </div>
-                          {details && (
-                            <div style={{ fontSize: "0.82rem", color: "var(--text-muted)", marginTop: "4px", lineHeight: 1.45 }}>
-                              {details}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* ── Chat Panel (Transit Only) ── */}
-                  {isTransit && (
-                    <div>
-                      <button
-                        onClick={() => setShowChatPanel(prev => ({ ...prev, [order.id]: !prev[order.id] }))}
-                        style={{ background: chatVisible ? "#e8f4fd" : "transparent", border: "1px solid #3b82f6", color: "#3b82f6", padding: "8px 16px", borderRadius: "8px", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", width: "100%", justifyContent: "center" }}
-                      >
-                        <MessageCircle size={16} />
-                        {chatVisible ? "Hide Chat" : `Chat with Customer ${order.messages && order.messages.length > 0 ? `(${order.messages.length})` : ""}`}
-                      </button>
-
-                      {chatVisible && (
-                        <div style={{ marginTop: "12px", border: "1px solid #e2e8f0", borderRadius: "12px", overflow: "hidden" }}>
-                          {/* Messages */}
-                          <div style={{ maxHeight: "180px", overflowY: "auto", padding: "12px", display: "flex", flexDirection: "column", gap: "8px", background: "#f8fafc" }}>
-                            {(!order.messages || order.messages.length === 0) ? (
-                              <div style={{ color: "#94a3b8", fontSize: "0.82rem", textAlign: "center", padding: "12px" }}>No messages yet</div>
-                            ) : (
-                              order.messages.map((msg, i) => (
-                                <div key={i} style={{
-                                  alignSelf: msg.sender === "delivery" ? "flex-end" : "flex-start",
-                                  background: msg.sender === "delivery" ? "var(--primary)" : "#fff",
-                                  color: msg.sender === "delivery" ? "#fff" : "#1e293b",
-                                  padding: "7px 12px", borderRadius: msg.sender === "delivery" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
-                                  fontSize: "0.85rem", fontWeight: 600, maxWidth: "80%",
-                                  boxShadow: "0 1px 3px rgba(0,0,0,0.08)",
-                                  animation: "chat-pop 0.2s ease",
-                                }}>
-                                  {msg.text}
-                                  <div style={{ fontSize: "0.66rem", opacity: 0.6, marginTop: "2px" }}>
-                                    {msg.sender === "delivery" ? "You" : "Customer"} · {new Date(msg.timestamp).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
-                                  </div>
-                                </div>
-                              ))
-                            )}
-                            <div ref={el => { messagesEndRefs.current[order.id] = el; }} />
-                          </div>
-
-                          {/* Quick Replies */}
-                          <div style={{ padding: "10px 12px", background: "#fff", borderTop: "1px solid #e2e8f0", display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                            {RIDER_QUICK_MESSAGES.map(msg => (
-                              <button
-                                key={msg}
-                                onClick={() => sendRiderMessage(order.id, msg)}
-                                disabled={sendingMsg[order.id]}
-                                style={{
-                                  background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#334155",
-                                  padding: "6px 12px", borderRadius: "999px", fontSize: "0.78rem",
-                                  fontWeight: 600, cursor: "pointer", transition: "all 0.15s",
-                                }}
-                                onMouseOver={e => { e.currentTarget.style.background = "#dbeafe"; e.currentTarget.style.borderColor = "#3b82f6"; }}
-                                onMouseOut={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#e2e8f0"; }}
-                              >
-                                {msg}
-                              </button>
-                            ))}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ── Action Buttons ── */}
-                  <div style={{ marginTop: "4px" }}>
-                    {order.status === "preparing" ? (
-                      <button
-                        onClick={() => handleUpdateStatus(order.id, "out_for_delivery")}
-                        className="otw-btn otw-btn-primary"
-                        style={{ width: "100%", padding: "14px", justifyContent: "center" }}
-                      >
-                        Mark as Picked Up <ArrowRight size={18} />
-                      </button>
-                    ) : (
-                      <div>
-                        {!otpVisible ? (
-                          <button
-                            onClick={() => setShowOtpInput(prev => ({ ...prev, [order.id]: true }))}
-                            className="otw-btn"
-                            style={{ width: "100%", padding: "14px", justifyContent: "center", background: "var(--success)", color: "white", boxShadow: "0 4px 14px rgba(34, 197, 94, 0.3)" }}
-                          >
-                            <Lock size={16} /> Enter Delivery OTP
-                          </button>
-                        ) : (
-                          <div style={{ background: "#f0fdf4", border: "1px solid #86efac", borderRadius: "12px", padding: "16px" }}>
-                            <div style={{ fontSize: "0.8rem", color: "#166534", fontWeight: 700, marginBottom: "10px", textAlign: "center", letterSpacing: "0.5px" }}>
-                              🔐 Enter 4-digit OTP from Customer
-                            </div>
-                            <div style={{ display: "flex", gap: "8px", justifyContent: "center", marginBottom: "12px" }}>
-                              {[0, 1, 2, 3].map(i => (
-                                <input
-                                  key={i}
-                                  type="tel"
-                                  maxLength={1}
-                                  value={currentOtp[i] || ""}
-                                  onChange={e => {
-                                    const val = e.target.value.replace(/\D/g, "");
-                                    const newOtp = currentOtp.split("");
-                                    newOtp[i] = val;
-                                    setOtpInputs(prev => ({ ...prev, [order.id]: newOtp.join("").slice(0, 4) }));
-                                    // Auto-focus next
-                                    if (val && i < 3) {
-                                      const next = document.getElementById(`otp-${order.id}-${i + 1}`);
-                                      next?.focus();
-                                    }
-                                  }}
-                                  id={`otp-${order.id}-${i}`}
-                                  style={{
-                                    width: 52, height: 60, textAlign: "center", fontSize: "1.6rem", fontWeight: 900,
-                                    border: "2px solid #86efac", borderRadius: "10px", background: "#fff",
-                                    color: "#166534", outline: "none",
-                                  }}
-                                  onFocus={e => e.currentTarget.style.borderColor = "#16a34a"}
-                                  onBlur={e => e.currentTarget.style.borderColor = "#86efac"}
-                                />
-                              ))}
-                            </div>
-                            <div style={{ display: "flex", gap: "8px" }}>
-                              <button
-                                onClick={() => { setShowOtpInput(prev => ({ ...prev, [order.id]: false })); setOtpInputs(prev => ({ ...prev, [order.id]: "" })); }}
-                                style={{ flex: 1, padding: "12px", background: "#f1f5f9", border: "1px solid #e2e8f0", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.9rem" }}
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={() => { if (currentOtp.length === 4) handleUpdateStatus(order.id, "delivered"); }}
-                                disabled={currentOtp.length !== 4}
-                                style={{
-                                  flex: 2, padding: "12px", background: currentOtp.length === 4 ? "#16a34a" : "#d1d5db",
-                                  color: "white", border: "none", borderRadius: "8px", fontWeight: 700, cursor: currentOtp.length === 4 ? "pointer" : "not-allowed", fontSize: "0.9rem",
-                                  display: "flex", alignItems: "center", justifyContent: "center", gap: "6px"
-                                }}
-                              >
-                                <Check size={16} /> Confirm Delivered
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                </div>
-              );
-            })}
+          <div style={{ flex: 1, background: "#fff", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+            <div style={{ width: 40, height: 40, borderRadius: "10px", background: "#E0F2FE", color: "#0369A1", display: "flex", alignItems: "center", justifyContent: "center" }}><Truck size={20} /></div>
+            <div>
+              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>In Transit</div>
+              <div style={{ fontSize: "1.3rem", fontWeight: 900 }}>{orders.filter(o => o.status === "out_for_delivery").length}</div>
+            </div>
           </div>
-        )}
+        </div>
 
+        {/* Queue View */}
+        <div style={{ background: "#fff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <h2 style={{ fontSize: "1rem", fontWeight: 800, margin: 0, color: "#1e293b" }}>Order Queue</h2>
+            <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600 }}>{orders.length} Active</span>
+          </div>
+
+          {orders.length === 0 ? (
+            <div style={{ padding: "40px 20px", textAlign: "center" }}>
+              <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>☕</div>
+              <h3 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "4px", color: "#334155" }}>Queue is empty</h3>
+              <p style={{ color: "#94a3b8", fontSize: "0.85rem", margin: 0 }}>Waiting for new orders to arrive.</p>
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {orders.map((order, idx) => {
+                const isTransit = order.status === "out_for_delivery";
+                return (
+                  <div
+                    key={order.id}
+                    className="queue-row"
+                    onClick={() => { setSelectedOrderId(order.id); setOtpInput(""); }}
+                    style={{
+                      padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
+                      borderBottom: idx < orders.length - 1 ? "1px solid #f1f5f9" : "none",
+                      cursor: "pointer", transition: "background 0.2s"
+                    }}
+                  >
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                        <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0f172a" }}>#{order.id.slice(-6).toUpperCase()}</span>
+                        <span style={{
+                          fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase", padding: "2px 6px", borderRadius: "4px",
+                          background: isTransit ? "#dbeafe" : "#fef3c7",
+                          color: isTransit ? "#1e40af" : "#b45309"
+                        }}>
+                          {isTransit ? "Transit" : "Preparing"}
+                        </span>
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {order.userName} • {order.location}
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+                      <div style={{ textAlign: "right" }}>
+                        <div style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.95rem" }}>₹{order.total}</div>
+                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 600 }}>{order.items.length} items</div>
+                      </div>
+                      <ChevronRight size={18} color="#94a3b8" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
+
+      {/* ── Order Detail Modal ── */}
+      {selectedOrder && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end", background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)", animation: "fade-in 0.2s ease" }}>
+          
+          {/* Backdrop click to close */}
+          <div style={{ position: "absolute", inset: 0 }} onClick={() => setSelectedOrderId(null)} />
+          
+          {/* Modal Content */}
+          <div style={{ background: "#f8fafc", width: "100%", maxHeight: "90vh", borderTopLeftRadius: "24px", borderTopRightRadius: "24px", position: "relative", zIndex: 101, display: "flex", flexDirection: "column", animation: "slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
+            
+            {/* Modal Header */}
+            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e2e8f0", background: "#fff", borderTopLeftRadius: "24px", borderTopRightRadius: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 10 }}>
+              <div>
+                <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "2px" }}>
+                  {selectedOrder.status === "preparing" ? "Pickup Task" : "Delivery Task"}
+                </div>
+                <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0f172a" }}>#{selectedOrder.id.slice(-6).toUpperCase()}</div>
+              </div>
+              <button onClick={() => setSelectedOrderId(null)} style={{ width: 36, height: 36, borderRadius: "50%", background: "#f1f5f9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Scrollable Body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
+              
+              {/* Customer Contact Card */}
+              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#475569" }}><User size={20} /></div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a" }}>{selectedOrder.userName}</div>
+                      <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>+91 {selectedOrder.userPhone}</div>
+                    </div>
+                  </div>
+                  <a href={`tel:+91${selectedOrder.userPhone}`} style={{ width: 40, height: 40, borderRadius: "50%", background: "#ecfdf5", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
+                    <Phone size={18} />
+                  </a>
+                </div>
+              </div>
+
+              {/* Location Card */}
+              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "12px" }}>
+                  <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: "2px" }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>Delivery Address</div>
+                    <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a", lineHeight: 1.4 }}>{selectedOrder.location}</div>
+                    {selectedOrder.locationNotes && (
+                      <div style={{ marginTop: "8px", padding: "8px 12px", background: "#fef3c7", borderRadius: "8px", fontSize: "0.85rem", color: "#92400e", fontWeight: 600 }}>
+                        Note: {selectedOrder.locationNotes}
+                      </div>
+                    )}
+                  </div>
+                  <a href={getOrderMapsUrl(selectedOrder)} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 12px", background: "#eff6ff", borderRadius: "8px", color: "#3b82f6", textDecoration: "none", fontWeight: 700, fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <Navigation size={14} /> Maps
+                  </a>
+                </div>
+                {getOrderMapsEmbedUrl(selectedOrder) && (
+                  <iframe title={`Map ${selectedOrder.id}`} src={getOrderMapsEmbedUrl(selectedOrder)!} width="100%" height="140" style={{ border: 0, borderRadius: "10px", display: "block" }} loading="lazy" />
+                )}
+              </div>
+
+              {/* Items Card */}
+              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "12px" }}>Order Items ({selectedOrder.items.length})</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  {selectedOrder.items.map((item, idx) => {
+                    const details = item.lineDetails || buildLineDetails(item.selectedCustomizations, item.specialInstructions);
+                    const unit = item.unitPrice ?? item.item.price ?? 0;
+                    return (
+                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", borderBottom: idx < selectedOrder.items.length - 1 ? "1px solid #f1f5f9" : "none", paddingBottom: idx < selectedOrder.items.length - 1 ? "12px" : "0" }}>
+                        <div>
+                          <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{item.quantity}× {item.item.name}</span>
+                          {details && <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "2px" }}>{details}</div>}
+                        </div>
+                        <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.95rem" }}>₹{unit * item.quantity}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ borderTop: "1px dashed #cbd5e1", marginTop: "12px", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#64748b" }}>To Collect (Cash)</span>
+                  <span style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a" }}>₹{selectedOrder.total}</span>
+                </div>
+              </div>
+
+              {/* Chat Card (In Transit) */}
+              {selectedOrder.status === "out_for_delivery" && (
+                <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+                  <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <MessageCircle size={14} /> Chat with Customer
+                  </div>
+                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px", maxHeight: "150px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px", border: "1px solid #e2e8f0" }}>
+                    {(!selectedOrder.messages || selectedOrder.messages.length === 0) ? (
+                      <div style={{ color: "#94a3b8", fontSize: "0.8rem", textAlign: "center" }}>Send a quick update to the customer</div>
+                    ) : (
+                      selectedOrder.messages.map((msg, i) => (
+                        <div key={i} style={{
+                          alignSelf: msg.sender === "delivery" ? "flex-end" : "flex-start",
+                          background: msg.sender === "delivery" ? "var(--primary)" : "#fff",
+                          color: msg.sender === "delivery" ? "#fff" : "#1e293b",
+                          padding: "6px 12px", borderRadius: msg.sender === "delivery" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
+                          fontSize: "0.85rem", fontWeight: 600, maxWidth: "85%",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                        }}>
+                          {msg.text}
+                        </div>
+                      ))
+                    )}
+                    <div ref={messagesEndRef} />
+                  </div>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
+                    {RIDER_QUICK_MESSAGES.slice(0, 4).map(msg => (
+                      <button key={msg} onClick={() => sendRiderMessage(selectedOrder.id, msg)} disabled={sendingMsg} style={{ background: "#f1f5f9", border: "none", color: "#475569", padding: "6px 10px", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}>
+                        {msg}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Sticky Footer Action */}
+            <div style={{ padding: "16px 24px 32px", background: "#fff", borderTop: "1px solid #e2e8f0", borderBottomLeftRadius: "24px", borderBottomRightRadius: "24px" }}>
+              {selectedOrder.status === "preparing" ? (
+                <button
+                  onClick={() => handleUpdateStatus(selectedOrder.id, "out_for_delivery")}
+                  style={{ width: "100%", padding: "16px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.3)" }}
+                >
+                  Confirm Pickup <ArrowRight size={18} />
+                </button>
+              ) : (
+                <div style={{ background: "#f0fdf4", border: "2px solid #86efac", borderRadius: "16px", padding: "20px", textAlign: "center" }}>
+                  <div style={{ fontSize: "0.9rem", color: "#166534", fontWeight: 800, marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                    <Lock size={16} /> Enter 4-Digit Delivery OTP
+                  </div>
+                  <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "16px" }}>
+                    {[0, 1, 2, 3].map(i => (
+                      <input
+                        key={i}
+                        type="tel"
+                        maxLength={1}
+                        value={otpInput[i] || ""}
+                        onChange={e => {
+                          const val = e.target.value.replace(/\D/g, "");
+                          const newOtp = otpInput.split("");
+                          newOtp[i] = val;
+                          setOtpInput(newOtp.join("").slice(0, 4));
+                          if (val && i < 3) {
+                            document.getElementById(`modal-otp-${i + 1}`)?.focus();
+                          }
+                        }}
+                        id={`modal-otp-${i}`}
+                        style={{ width: 56, height: 64, textAlign: "center", fontSize: "1.8rem", fontWeight: 900, border: "2px solid #4ade80", borderRadius: "12px", background: "#fff", color: "#166534", outline: "none" }}
+                        onFocus={e => e.currentTarget.style.borderColor = "#16a34a"}
+                        onBlur={e => e.currentTarget.style.borderColor = "#4ade80"}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={() => { if (otpInput.length === 4) handleUpdateStatus(selectedOrder.id, "delivered"); }}
+                    disabled={otpInput.length !== 4}
+                    style={{ width: "100%", padding: "16px", background: otpInput.length === 4 ? "#16a34a" : "#94a3b8", color: "white", border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "1rem", cursor: otpInput.length === 4 ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s" }}
+                  >
+                    <Check size={18} /> Complete Delivery
+                  </button>
+                </div>
+              )}
+            </div>
+            
+          </div>
+        </div>
+      )}
+
     </div>
   );
 }
