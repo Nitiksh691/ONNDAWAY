@@ -7,6 +7,7 @@ const MenuItemSchema = new Schema({
   image:         { type: String, required: true },
   category:      { type: String, enum: ["coffee", "snacks", "meals", "drinks", "desserts"], required: true },
   orderCount:    { type: Number, default: 0 },
+  stock:         { type: Number, default: 0, min: 0 },
   available:     { type: Boolean, default: true },
   isPopular:     { type: Boolean, default: false },
   isRecommended: { type: Boolean, default: false },

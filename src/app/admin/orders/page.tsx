@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Order, DeliveryPerson, CartItem } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
-import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package } from "lucide-react";
+import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package, ChevronDown, ChevronUp } from "lucide-react";
 import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
@@ -118,6 +118,7 @@ export default function AdminOrdersPage() {
   const [batchPartnerId, setBatchPartnerId] = useState("");
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
   const [alarmActive, setAlarmActive] = useState(false);
+  const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
 
   const prevPlacedIds = useRef<Set<string>>(new Set());
   const alarmIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -211,6 +212,7 @@ export default function AdminOrdersPage() {
         toast.success("✅ Order confirmed & moved to Preparing!", {
           style: { background: "#065F46", color: "#fff", fontWeight: 700 },
         });
+        setExpandedOrders(prev => new Set(prev).add(orderId));
       } else {
         toast.error("Failed to confirm order");
       }
@@ -222,6 +224,12 @@ export default function AdminOrdersPage() {
   };
 
   const handleUpdateStatus = async (orderId: string, status: Order["status"]) => {
+    // Optimistic UI update to hide instantly if it's set to delivered/cancelled in 'all' view
+    if (statusFilter === "all" && (status === "delivered" || status === "cancelled")) {
+      setOrders(prev => prev.filter(o => o.id !== orderId));
+      toast.success("Order removed from live view");
+    }
+
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
@@ -230,12 +238,16 @@ export default function AdminOrdersPage() {
       });
       if (res.ok) {
         fetchOrders();
-        toast.success("Status updated");
+        if (statusFilter !== "all" || (status !== "delivered" && status !== "cancelled")) {
+          toast.success("Status updated");
+        }
       } else {
         toast.error("Failed to update status");
+        fetchOrders();
       }
     } catch {
       toast.error("Failed to update status");
+      fetchOrders();
     }
   };
 
@@ -293,6 +305,15 @@ export default function AdminOrdersPage() {
 
   const toggleSelect = (orderId: string) => {
     setSelectedOrders(prev => prev.includes(orderId) ? prev.filter(id => id !== orderId) : [...prev, orderId]);
+  };
+
+  const toggleExpand = (orderId: string) => {
+    setExpandedOrders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(orderId)) newSet.delete(orderId);
+      else newSet.add(orderId);
+      return newSet;
+    });
   };
 
   const filtered = orders.filter(o => {
@@ -416,17 +437,17 @@ export default function AdminOrdersPage() {
           <div style={{ position: "relative", width: "220px" }}>
             <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", zIndex: 1 }} />
             <select style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
-              <option value="all">All Statuses</option>
-              <option value="placed">🔴 Placed (Pending)</option>
+              <option value="all">Live Orders (Pending)</option>
+              <option value="placed">🔴 Placed</option>
               <option value="preparing">🟡 Preparing</option>
               <option value="out_for_delivery">🔵 Out for Delivery</option>
-              <option value="delivered">🟢 Delivered</option>
-              <option value="cancelled">❌ Cancelled</option>
+              <option value="delivered">🟢 Delivered (History)</option>
+              <option value="cancelled">❌ Cancelled (History)</option>
             </select>
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)" }}>
               <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📭</div>
@@ -435,6 +456,7 @@ export default function AdminOrdersPage() {
           ) : filtered.map(order => {
             const isUnconfirmed = order.status === "placed" && !order.confirmed;
             const colors = STATUS_COLORS[order.status] || { bg: "white", border: "#E5E7EB" };
+            const isExpanded = expandedOrders.has(order.id) || isUnconfirmed;
 
             return (
               <div
@@ -460,20 +482,35 @@ export default function AdminOrdersPage() {
                   </div>
                 )}
 
-                {/* Header row */}
+                {/* Header row (Clickable to expand) */}
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: "12px", padding: "16px 20px",
-                  borderBottom: "1px solid #27272a", flexWrap: "wrap",
-                }}>
+                  borderBottom: isExpanded ? "1px solid #27272a" : "none", flexWrap: "wrap",
+                  cursor: "pointer",
+                }}
+                onClick={() => toggleExpand(order.id)}
+                >
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
-                    <button onClick={() => toggleSelect(order.id)} style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--primary)", flexShrink: 0 }}>
+                    <button 
+                      onClick={(e) => { e.stopPropagation(); toggleSelect(order.id); }} 
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--primary)", flexShrink: 0 }}
+                    >
                       {selectedOrders.includes(order.id) ? <CheckSquare size={20} /> : <Square size={20} color="#52525b" />}
                     </button>
+                    
+                    <button
+                      onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
+                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#a1a1aa", display: "flex", alignItems: "center" }}
+                    >
+                      {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+                    </button>
+
                     <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fafafa" }}>#{order.id?.slice(-8).toUpperCase()}</span>
                     <select
                       value={order.status}
-                      onChange={(e) => handleUpdateStatus(order.id, e.target.value as Order["status"])}
+                      onChange={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, e.target.value as Order["status"]); }}
+                      onClick={e => e.stopPropagation()}
                       style={{
                         padding: "6px 12px", borderRadius: "8px",
                         border: `1.5px solid ${(STATUS_SELECT_COLORS[order.status] || STATUS_SELECT_COLORS.placed).border}`,
@@ -494,6 +531,11 @@ export default function AdminOrdersPage() {
                         <CheckCircle size={12} /> Confirmed
                       </span>
                     )}
+                    {!isExpanded && (
+                       <span style={{ fontSize: "0.85rem", color: "#a1a1aa", marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <Package size={14} /> {order.items.length} items
+                       </span>
+                    )}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                     <span style={{ fontSize: "0.78rem", color: "#a1a1aa", display: "flex", alignItems: "center", gap: "4px" }}>
@@ -508,101 +550,105 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
-                {/* Body grid */}
-                <div style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                  gap: "20px",
-                  padding: "20px",
-                  alignItems: "start",
-                }}>
-                  {/* Customer */}
-                  <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
-                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
-                    <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#fafafa", marginBottom: "10px" }}>{order.userName}</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                      <Phone size={14} color="#71717a" />
-                      <a href={`tel:+91${order.userPhone}`} style={{ color: "#60a5fa", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>+91 {order.userPhone}</a>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#a1a1aa", fontSize: "0.88rem" }}>
-                      <MapPin size={14} color="#71717a" style={{ flexShrink: 0, marginTop: 2 }} />
-                      <span>{order.location}</span>
-                    </div>
-                  </div>
-
-                  {/* Items */}
-                  <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
-                    <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Package size={13} /> ORDER ITEMS ({order.items.length})
-                    </div>
-                    {order.items.map((line, idx) => (
-                      <OrderLineItem key={line.cartItemId || idx} line={line} />
-                    ))}
-                    {order.discount ? (
-                      <div style={{ fontSize: "0.82rem", color: "#86efac", marginTop: "8px" }}>Coupon discount: −₹{order.discount}</div>
-                    ) : null}
-                  </div>
-
-                  {/* Actions */}
-                  <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-                    {isUnconfirmed && (
-                      <>
-                        <button
-                          onClick={() => handleConfirmOrder(order.id)}
-                          disabled={confirmingId === order.id}
-                          style={{
-                            width: "100%", padding: "14px 16px",
-                            background: "linear-gradient(135deg, #059669, #047857)",
-                            color: "white", border: "none", borderRadius: "10px",
-                            fontWeight: 900, fontSize: "0.9rem",
-                            cursor: confirmingId === order.id ? "not-allowed" : "pointer",
-                            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                            boxShadow: "0 4px 12px rgba(5,150,105,0.4)",
-                            opacity: confirmingId === order.id ? 0.7 : 1,
-                          }}
-                        >
-                          <CheckCircle size={18} />
-                          {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
-                        </button>
-                        <button
-                          onClick={() => {
-                            if (confirm("Cancel this unconfirmed order?")) handleUpdateStatus(order.id, "cancelled");
-                          }}
-                          disabled={confirmingId === order.id}
-                          style={{
-                            width: "100%", padding: "10px 16px",
-                            background: "transparent", color: "#f87171",
-                            border: "1px solid #7f1d1d", borderRadius: "10px",
-                            fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-                          }}
-                        >
-                          ❌ Cancel Order
-                        </button>
-                      </>
-                    )}
-
-                    <div style={{ background: "#27272a", padding: "14px", borderRadius: "10px", border: "1px solid #3f3f46" }}>
-                      <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#a1a1aa", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
-                        <Truck size={14} /> ASSIGN PARTNER
+                {/* Body grid (Collapsible) */}
+                {isExpanded && (
+                  <div style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+                    gap: "20px",
+                    padding: "20px",
+                    alignItems: "start",
+                  }}>
+                    {/* Customer */}
+                    <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
+                      <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#fafafa", marginBottom: "10px" }}>{order.userName}</div>
+                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
+                        <Phone size={14} color="#71717a" />
+                        <a href={`tel:+91${order.userPhone}`} style={{ color: "#60a5fa", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>+91 {order.userPhone}</a>
                       </div>
-                      <select
-                        style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
-                        value={order.deliveryPersonId || ""}
-                        onChange={(e) => handleAssignPartner(order.id, e.target.value)}
-                      >
-                        <option value="">-- Unassigned --</option>
-                        {deliveryPersons.map(dp => (
-                          <option key={dp.uid} value={dp.uid}>{dp.name}</option>
-                        ))}
-                      </select>
-                      {order.deliveryPersonName && (
-                        <div style={{ fontSize: "0.78rem", color: "#86efac", fontWeight: 700, marginTop: "8px" }}>
-                          ✓ {order.deliveryPersonName}
-                        </div>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#a1a1aa", fontSize: "0.88rem" }}>
+                        <MapPin size={14} color="#71717a" style={{ flexShrink: 0, marginTop: 2 }} />
+                        <span>{order.location}</span>
+                      </div>
+                    </div>
+
+                    {/* Items */}
+                    <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                        <Package size={13} /> ORDER ITEMS ({order.items.length})
+                      </div>
+                      {order.items.map((line, idx) => (
+                        <OrderLineItem key={line.cartItemId || idx} line={line} />
+                      ))}
+                      {order.discount ? (
+                        <div style={{ fontSize: "0.82rem", color: "#86efac", marginTop: "8px" }}>Coupon discount: −₹{order.discount}</div>
+                      ) : null}
+                    </div>
+
+                    {/* Actions */}
+                    <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                      {isUnconfirmed && (
+                        <>
+                          <button
+                            onClick={(e) => { e.stopPropagation(); handleConfirmOrder(order.id); }}
+                            disabled={confirmingId === order.id}
+                            style={{
+                              width: "100%", padding: "14px 16px",
+                              background: "linear-gradient(135deg, #059669, #047857)",
+                              color: "white", border: "none", borderRadius: "10px",
+                              fontWeight: 900, fontSize: "0.9rem",
+                              cursor: confirmingId === order.id ? "not-allowed" : "pointer",
+                              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                              boxShadow: "0 4px 12px rgba(5,150,105,0.4)",
+                              opacity: confirmingId === order.id ? 0.7 : 1,
+                            }}
+                          >
+                            <CheckCircle size={18} />
+                            {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (confirm("Cancel this unconfirmed order?")) handleUpdateStatus(order.id, "cancelled");
+                            }}
+                            disabled={confirmingId === order.id}
+                            style={{
+                              width: "100%", padding: "10px 16px",
+                              background: "transparent", color: "#f87171",
+                              border: "1px solid #7f1d1d", borderRadius: "10px",
+                              fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                            }}
+                          >
+                            ❌ Cancel Order
+                          </button>
+                        </>
                       )}
+
+                      <div style={{ background: "#27272a", padding: "14px", borderRadius: "10px", border: "1px solid #3f3f46" }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#a1a1aa", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
+                          <Truck size={14} /> ASSIGN PARTNER
+                        </div>
+                        <select
+                          style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
+                          value={order.deliveryPersonId || ""}
+                          onClick={e => e.stopPropagation()}
+                          onChange={(e) => { e.stopPropagation(); handleAssignPartner(order.id, e.target.value); }}
+                        >
+                          <option value="">-- Unassigned --</option>
+                          {deliveryPersons.map(dp => (
+                            <option key={dp.uid} value={dp.uid}>{dp.name}</option>
+                          ))}
+                        </select>
+                        {order.deliveryPersonName && (
+                          <div style={{ fontSize: "0.78rem", color: "#86efac", fontWeight: 700, marginTop: "8px" }}>
+                            ✓ {order.deliveryPersonName}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             );
           })}

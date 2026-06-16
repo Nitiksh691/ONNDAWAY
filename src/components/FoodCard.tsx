@@ -1,9 +1,8 @@
 "use client";
-import { useState } from "react";
+import React, { useState } from "react";
 import Image from "next/image";
 import { Plus, Minus } from "lucide-react";
-import { MenuItem } from "@/lib/types";
-import { useApp } from "@/lib/context";
+import { MenuItem, SelectedCustomization } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -21,19 +20,27 @@ interface FoodCardProps {
   item: MenuItem;
   compact?: boolean;
   layout?: "vertical" | "horizontal";
+  cartItem?: any;
+  onAdd?: (item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => void;
+  onUpdateQuantity?: (cartItemId: string, qty: number) => void;
 }
 
-export default function FoodCard({ item, compact = false, layout = "horizontal" }: FoodCardProps) {
-  const { cart, addToCart, updateQuantity } = useApp();
+const FoodCard = ({ 
+  item, 
+  compact = false, 
+  layout = "horizontal",
+  cartItem,
+  onAdd,
+  onUpdateQuantity
+}: FoodCardProps) => {
   const router = useRouter();
-  const cartItem = cart.find(c => c.item.id === item.id);
   const [imgError, setImgError] = useState(false);
   const isHorizontal = layout === "horizontal";
   const bg = CATEGORY_BG[item.category] || "#E6F0FF";
 
   const handleAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
-    addToCart(item, "");
+    if (onAdd) onAdd(item);
     toast.success(`${item.name} added!`, { duration: 1200 });
   };
 
@@ -100,12 +107,12 @@ export default function FoodCard({ item, compact = false, layout = "horizontal" 
           {cartItem ? (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }} onClick={e => e.stopPropagation()}>
               <button
-                onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
+                onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
                 style={{ width: 28, height: 28, borderRadius: "50%", border: "1.5px solid #0135FB", background: "#fff", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", fontWeight: 800 }}
               ><Minus size={12} /></button>
               <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#0f172a", minWidth: 16, textAlign: "center" }}>{cartItem.quantity}</span>
               <button
-                onClick={e => { e.stopPropagation(); addToCart(item); }}
+                onClick={e => { e.stopPropagation(); if (onAdd) onAdd(item); }}
                 style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "#0135FB", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 3px 10px rgba(1,53,251,0.3)" }}
               ><Plus size={12} /></button>
             </div>
@@ -190,9 +197,9 @@ export default function FoodCard({ item, compact = false, layout = "horizontal" 
 
           {cartItem ? (
             <div style={{ display: "flex", alignItems: "center", gap: 6 }} onClick={e => e.stopPropagation()}>
-              <button onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)} style={{ width: 28, height: 28, borderRadius: "50%", border: "1.5px solid #0135FB", background: "#fff", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Minus size={12} /></button>
+              <button onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)} style={{ width: 28, height: 28, borderRadius: "50%", border: "1.5px solid #0135FB", background: "#fff", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}><Minus size={12} /></button>
               <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#0f172a", minWidth: 14, textAlign: "center" }}>{cartItem.quantity}</span>
-              <button onClick={e => { e.stopPropagation(); addToCart(item); }} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "#0135FB", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 3px 10px rgba(1,53,251,0.3)" }}><Plus size={12} /></button>
+              <button onClick={e => { e.stopPropagation(); if (onAdd) onAdd(item); }} style={{ width: 28, height: 28, borderRadius: "50%", border: "none", background: "#0135FB", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 3px 10px rgba(1,53,251,0.3)" }}><Plus size={12} /></button>
             </div>
           ) : (
             <button
@@ -207,4 +214,13 @@ export default function FoodCard({ item, compact = false, layout = "horizontal" 
       </div>
     </div>
   );
-}
+};
+
+export default React.memo(FoodCard, (prev, next) => {
+  return (
+    prev.item.id === next.item.id &&
+    prev.compact === next.compact &&
+    prev.layout === next.layout &&
+    prev.cartItem?.quantity === next.cartItem?.quantity
+  );
+});

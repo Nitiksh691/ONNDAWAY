@@ -31,6 +31,7 @@ const CartItemSchema = new Schema(
 
 const OrderSchema = new Schema(
   {
+    idempotencyKey:     { type: String, unique: true, sparse: true },
     userId:             { type: String, required: true },
     userName:           { type: String, required: true },
     userPhone:          { type: String, required: true },

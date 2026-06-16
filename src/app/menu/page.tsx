@@ -7,14 +7,8 @@ import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { MenuItem } from "@/lib/types";
 
-type BannerSlide = {
-  id: string;
-  text: string;
-  subText?: string;
-  image: string;
-  link: string;
-  active: boolean;
-};
+import BannerSlider from "@/components/BannerSlider";
+import { useApp } from "@/lib/context";
 
 const CATEGORIES = ["all", "coffee", "snacks", "meals", "drinks", "desserts"] as const;
 const CAT_EMOJI: Record<string, string> = {
@@ -39,13 +33,16 @@ function getTimeOfDay(): string {
 }
 
 /* Horizontal scroll row for a list of items */
-function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout }: {
+function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout, cart, onAdd, onUpdateQuantity }: {
   items: MenuItem[];
   label: string;
   emoji: string;
   viewAllHref: string;
   emptyText?: string;
   layout: "horizontal" | "vertical";
+  cart: any[];
+  onAdd: any;
+  onUpdateQuantity: any;
 }) {
   if (items.length === 0) {
     return emptyText ? (
@@ -86,7 +83,13 @@ function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout }: {
       }}>
         {items.map(item => (
           <div key={item.id} style={{ minWidth: layout === "horizontal" ? "280px" : "185px", maxWidth: layout === "horizontal" ? "280px" : "185px", flexShrink: 0 }}>
-            <FoodCard item={item} layout={layout} />
+            <FoodCard 
+              item={item} 
+              layout={layout}
+              cartItem={cart.find(c => c.item.id === item.id)}
+              onAdd={onAdd}
+              onUpdateQuantity={onUpdateQuantity}
+            />
           </div>
         ))}
 
@@ -125,29 +128,9 @@ export default function MenuPage() {
 
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
+  const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  // Autoplay slider
-  const startAutoplay = useCallback(() => {
-    if (autoplayRef.current) clearInterval(autoplayRef.current);
-    autoplayRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % Math.max(bannerSlides.length, 1));
-    }, 5000);
-  }, [bannerSlides.length]);
-
-  useEffect(() => {
-    if (bannerSlides.length > 1) startAutoplay();
-    return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
-  }, [bannerSlides.length, startAutoplay]);
-
-  const goToSlide = useCallback((idx: number) => {
-    setCurrentSlide(idx);
-    startAutoplay();
-  }, [startAutoplay]);
+  const { cart, addToCart, updateQuantity } = useApp();
 
   useEffect(() => {
     const fetchBanner = async () => {
@@ -157,7 +140,7 @@ export default function MenuPage() {
           const data = await res.json();
           setBannerEnabled(data.bannerEnabled ?? true);
           if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
-            setBannerSlides(data.bannerSlides.filter((s: BannerSlide) => s.active && s.image));
+            setBannerSlides(data.bannerSlides.filter((s: any) => s.active && s.image));
           }
         }
       } catch (err) {
@@ -220,106 +203,7 @@ export default function MenuPage() {
 
       {/* ─── BANNER SLIDER ─── */}
       {bannerEnabled && bannerSlides.length > 0 ? (
-        <div style={{ background: "var(--bg-cream)", padding: "20px 0 12px" }}>
-          <div className="otw-container">
-            <div ref={sliderRef} style={{
-              position: "relative", borderRadius: "20px", overflow: "hidden",
-              aspectRatio: "21/9", minHeight: "180px", maxHeight: "420px",
-              background: "#111", boxShadow: "0 16px 40px rgba(0,0,0,0.12)"
-            }}>
-              {bannerSlides.map((slide, idx) => (
-                <div key={slide.id} style={{
-                  position: "absolute", inset: 0,
-                  opacity: idx === currentSlide ? 1 : 0,
-                  transform: idx === currentSlide ? "scale(1)" : "scale(1.04)",
-                  transition: "opacity 0.7s ease, transform 0.7s ease",
-                  zIndex: idx === currentSlide ? 1 : 0,
-                }}>
-                  <Image
-                    src={slide.image} alt={slide.text || "Banner"} fill
-                    sizes="(max-width: 768px) 100vw, 1200px"
-                    style={{ objectFit: "cover" }}
-                    priority={idx === 0}
-                  />
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 1,
-                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)"
-                  }} />
-                  <div style={{
-                    position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2,
-                    padding: "clamp(18px, 4vw, 40px)", display: "flex", flexDirection: "column", gap: "8px"
-                  }}>
-                    {slide.text && (
-                      <h3 style={{
-                        fontFamily: "'Outfit', sans-serif", fontWeight: 900,
-                        fontSize: "clamp(1.2rem, 4vw, 2.8rem)", lineHeight: 1.05,
-                        color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em",
-                        textShadow: "0 4px 16px rgba(0,0,0,0.8)", maxWidth: "75%",
-                      }}>{slide.text}</h3>
-                    )}
-                    {slide.subText && (
-                      <p style={{ color: "rgba(255,255,255,0.9)", fontSize: "clamp(0.8rem, 2vw, 1.05rem)", fontWeight: 500, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>
-                        {slide.subText}
-                      </p>
-                    )}
-                    {slide.link && (
-                      <Link href={slide.link} style={{
-                        display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "4px",
-                        background: "var(--primary)", color: "#fff", padding: "10px 22px",
-                        borderRadius: "99px", fontWeight: 800, fontSize: "0.85rem",
-                        textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px",
-                        width: "fit-content", boxShadow: "0 6px 20px rgba(1,53,251,0.4)",
-                        transition: "transform 0.2s",
-                      }}
-                        onMouseEnter={e => (e.currentTarget.style.transform = "scale(1.04)")}
-                        onMouseLeave={e => (e.currentTarget.style.transform = "scale(1)")}
-                      >
-                        ORDER NOW <ArrowRight size={14} />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {bannerSlides.length > 1 && (
-                <>
-                  <button onClick={() => goToSlide((currentSlide - 1 + bannerSlides.length) % bannerSlides.length)}
-                    aria-label="Previous" className="desktop-only"
-                    style={{
-                      position: "absolute", left: 10, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 36, height: 36, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", color: "#fff",
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    }}
-                  ><ChevronLeft size={18} /></button>
-                  <button onClick={() => goToSlide((currentSlide + 1) % bannerSlides.length)}
-                    aria-label="Next" className="desktop-only"
-                    style={{
-                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 36, height: 36, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.45)", backdropFilter: "blur(6px)", color: "#fff",
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                    }}
-                  ><ChevronRight size={18} /></button>
-                  <div style={{
-                    position: "absolute", bottom: 10, left: "50%", transform: "translateX(-50%)", zIndex: 3,
-                    display: "flex", gap: "5px",
-                  }}>
-                    {bannerSlides.map((_, idx) => (
-                      <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
-                        style={{
-                          width: idx === currentSlide ? 20 : 6, height: 6, borderRadius: "99px", border: "none",
-                          background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
-                          cursor: "pointer", transition: "all 0.3s ease", padding: 0,
-                        }}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        </div>
+        <BannerSlider slides={bannerSlides} variant="menu" />
       ) : (
         <div className="otw-page-header">
           <div className="otw-container">
@@ -383,6 +267,9 @@ export default function MenuPage() {
                   emoji="🔥"
                   viewAllHref="/menu?category=all"
                   layout={menuLayout}
+                  cart={cart}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
                 />
               )}
 
@@ -394,6 +281,9 @@ export default function MenuPage() {
                   emoji="🎯"
                   viewAllHref="/menu?category=all"
                   layout={menuLayout}
+                  cart={cart}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
                 />
               )}
 
@@ -415,6 +305,9 @@ export default function MenuPage() {
                   emoji={CAT_EMOJI[cat]}
                   viewAllHref={`/menu?category=${cat}`}
                   layout={menuLayout}
+                  cart={cart}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
                 />
               ))}
             </>
@@ -447,7 +340,16 @@ export default function MenuPage() {
                   gap: menuLayout === "vertical" ? 16 : 10,
                   width: "100%",
                 }}>
-                  {filtered.map(item => <FoodCard key={item.id} item={item} layout={menuLayout} />)}
+                  {filtered.map(item => (
+                    <FoodCard 
+                      key={item.id} 
+                      item={item} 
+                      layout={menuLayout}
+                      cartItem={cart.find(c => c.item.id === item.id)}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
+                  ))}
                 </div>
               )}
             </div>

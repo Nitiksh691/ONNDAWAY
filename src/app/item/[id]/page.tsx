@@ -857,7 +857,13 @@ export default function ItemPage() {
                 <div className="reco-scroll">
                   {boughtTogether.map(r => (
                     <div key={r.id} className="reco-scroll-item">
-                      <FoodCard item={r} compact />
+                      <FoodCard 
+                        item={r} 
+                        compact 
+                        cartItem={cart.find(c => c.item.id === r.id)}
+                        onAdd={addToCart}
+                        onUpdateQuantity={updateQuantity}
+                      />
                     </div>
                   ))}
                 </div>
@@ -874,7 +880,13 @@ export default function ItemPage() {
                 <div className="reco-scroll">
                   {relatedItems.map(r => (
                     <div key={r.id} className="reco-scroll-item">
-                      <FoodCard item={r} compact />
+                      <FoodCard 
+                        item={r} 
+                        compact 
+                        cartItem={cart.find(c => c.item.id === r.id)}
+                        onAdd={addToCart}
+                        onUpdateQuantity={updateQuantity}
+                      />
                     </div>
                   ))}
                 </div>
@@ -896,7 +908,13 @@ export default function ItemPage() {
               <div className="reco-scroll">
                 {boughtTogether.map(r => (
                   <div key={r.id} className="reco-scroll-item">
-                    <FoodCard item={r} compact />
+                    <FoodCard 
+                      item={r} 
+                      compact 
+                      cartItem={cart.find(c => c.item.id === r.id)}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
                   </div>
                 ))}
               </div>
@@ -912,7 +930,13 @@ export default function ItemPage() {
               <div className="reco-scroll">
                 {relatedItems.map(r => (
                   <div key={r.id} className="reco-scroll-item">
-                    <FoodCard item={r} compact />
+                    <FoodCard 
+                      item={r} 
+                      compact 
+                      cartItem={cart.find(c => c.item.id === r.id)}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
                   </div>
                 ))}
               </div>

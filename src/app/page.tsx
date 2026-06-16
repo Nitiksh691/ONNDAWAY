@@ -10,31 +10,21 @@ import OnboardingModal from "@/components/OnboardingModal";
 import AuthModal from "@/components/AuthModal";
 import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
 
-type BannerSlide = {
-  id: string;
-  text: string;
-  subText?: string;
-  image: string;
-  link: string;
-  active: boolean;
-};
+import BannerSlider from "@/components/BannerSlider";
 
 export default function HomePage() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
   const [categories, setCategories] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
-  const [bannerSlides, setBannerSlides] = useState<BannerSlide[]>([]);
+  const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const { profile } = useApp();
+  const { profile, cart, addToCart, updateQuantity } = useApp();
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
   const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load banner slides & menu
   useEffect(() => {
@@ -45,7 +35,7 @@ export default function HomePage() {
           const data = await res.json();
           setBannerEnabled(data.bannerEnabled ?? true);
           if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
-            setBannerSlides(data.bannerSlides.filter((s: BannerSlide) => s.active && s.image));
+            setBannerSlides(data.bannerSlides.filter((s: any) => s.active && s.image));
           }
         }
       } catch (err) {
@@ -84,24 +74,6 @@ export default function HomePage() {
   const combinedBannerSlides = useMemo(() => [...bannerItems, ...bannerSlides], [bannerItems, bannerSlides]);
   const hasBanner = bannerEnabled && combinedBannerSlides.length > 0;
 
-  // Autoplay slider
-  const startAutoplay = useCallback(() => {
-    if (autoplayRef.current) clearInterval(autoplayRef.current);
-    autoplayRef.current = setInterval(() => {
-      setCurrentSlide(prev => (prev + 1) % Math.max(combinedBannerSlides.length, 1));
-    }, 5000);
-  }, [combinedBannerSlides.length]);
-
-  useEffect(() => {
-    if (combinedBannerSlides.length > 1) startAutoplay();
-    return () => { if (autoplayRef.current) clearInterval(autoplayRef.current); };
-  }, [combinedBannerSlides.length, startAutoplay]);
-
-  const goToSlide = useCallback((idx: number) => {
-    setCurrentSlide(idx);
-    startAutoplay(); // reset autoplay timer on manual navigation
-  }, [startAutoplay]);
-
   const deferredSearch = useDeferredValue(searchQuery);
   const filteredItems = useMemo(() => menuItems.filter(i => {
     const matchesCategory = selectedCategory === "all" || i.category === selectedCategory;
@@ -138,103 +110,7 @@ export default function HomePage() {
 
       {/* ─── BANNER SLIDER ─── */}
       {hasBanner && (
-        <div className="home-banner-section">
-          <div className="otw-container">
-            <div ref={sliderRef} className="home-banner-slider">
-              {/* Slides */}
-              {combinedBannerSlides.map((slide, idx) => (
-                <div key={slide.id} style={{
-                  position: "absolute", inset: 0,
-                  opacity: idx === currentSlide ? 1 : 0,
-                  transform: idx === currentSlide ? "scale(1)" : "scale(1.02)",
-                  transition: "opacity 0.7s ease, transform 0.7s ease",
-                  zIndex: idx === currentSlide ? 1 : 0,
-                }}>
-                  <Image
-                    src={slide.image} alt={slide.text || "Banner"} fill
-                    sizes="(max-width: 768px) 100vw, 1200px"
-                    className="home-banner-slide-img"
-                    priority={idx === 0}
-                  />
-                  {/* Dark gradient overlay */}
-                  <div style={{
-                    position: "absolute", inset: 0, zIndex: 1,
-                    background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.05) 100%)"
-                  }} />
-
-                  {/* Text content */}
-                  <div className="home-banner-content">
-                    {slide.text && (
-                      <h3 className="home-banner-title">{slide.text}</h3>
-                    )}
-                    {slide.subText && (
-                      <p className="home-banner-sub">{slide.subText}</p>
-                    )}
-                    {slide.link && (
-                      <Link href={slide.link} className="home-banner-cta">
-                        ORDER NOW <ArrowRight size={16} />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              {/* Navigation arrows (desktop) */}
-              {combinedBannerSlides.length > 1 && (
-                <>
-                  <button onClick={() => goToSlide((currentSlide - 1 + combinedBannerSlides.length) % combinedBannerSlides.length)}
-                    aria-label="Previous slide"
-                    className="desktop-only"
-                    style={{
-                      position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 40, height: 40, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
-                  >
-                    <ChevronLeft size={20} />
-                  </button>
-                  <button onClick={() => goToSlide((currentSlide + 1) % combinedBannerSlides.length)}
-                    aria-label="Next slide"
-                    className="desktop-only"
-                    style={{
-                      position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3,
-                      width: 40, height: 40, borderRadius: "50%", border: "none",
-                      background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff",
-                      display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                    onMouseLeave={e => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}
-                  >
-                    <ChevronRight size={20} />
-                  </button>
-                </>
-              )}
-
-              {/* Dots */}
-              {combinedBannerSlides.length > 1 && (
-                <div style={{
-                  position: "absolute", bottom: 12, left: "50%", transform: "translateX(-50%)", zIndex: 3,
-                  display: "flex", gap: "6px"
-                }}>
-                  {combinedBannerSlides.map((_, idx) => (
-                    <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
-                      style={{
-                        width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none",
-                        background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)",
-                        cursor: "pointer", transition: "all 0.3s ease", padding: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <BannerSlider slides={combinedBannerSlides} variant="home" />
       )}
 
       {/* ─── HERO (only when NO banners) ─── */}
@@ -335,7 +211,13 @@ export default function HomePage() {
               }}>
                 {popularItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard item={item} layout={menuLayout} />
+                    <FoodCard 
+                      item={item} 
+                      layout={menuLayout} 
+                      cartItem={cart.find((c: any) => c.item.id === item.id)}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
                   </div>
                 ))}
               </div>
@@ -358,7 +240,13 @@ export default function HomePage() {
               }}>
                 {recommendedItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard item={item} layout={menuLayout} />
+                    <FoodCard 
+                      item={item} 
+                      layout={menuLayout} 
+                      cartItem={cart.find((c: any) => c.item.id === item.id)}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
                   </div>
                 ))}
               </div>
@@ -392,7 +280,14 @@ export default function HomePage() {
                 width: "100%"
               }}>
                 {gridItems.map(item => (
-                  <FoodCard key={item.id} item={item} layout={menuLayout} />
+                  <FoodCard 
+                    key={item.id} 
+                    item={item} 
+                    layout={menuLayout} 
+                    cartItem={cart.find((c: any) => c.item.id === item.id)}
+                    onAdd={addToCart}
+                    onUpdateQuantity={updateQuantity}
+                  />
                 ))}
               </div>
             )}

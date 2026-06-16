@@ -35,7 +35,12 @@ export default function CartPage() {
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
+  const [idempotencyKey, setIdempotencyKey] = useState("");
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  useEffect(() => {
+    setIdempotencyKey(crypto.randomUUID());
+  }, []);
 
   // Restore post-checkout screen after refresh (only when cart is empty)
   useEffect(() => {
@@ -150,12 +155,23 @@ export default function CartPage() {
 
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Idempotency-Key": idempotencyKey
+        },
         body: JSON.stringify(orderData),
       });
 
-      if (!res.ok) throw new Error("Failed to place order");
+      if (!res.ok) {
+        if (res.status === 409) {
+          throw new Error("One or more items are out of stock or currently unavailable. Please refresh your cart.");
+        }
+        throw new Error("Failed to place order");
+      }
       const orderResult = await res.json();
+      
+      // Rotate idempotency key on success
+      setIdempotencyKey(crypto.randomUUID());
 
       // Auto-create/update user profile
       await fetch("/api/users", {
@@ -186,9 +202,9 @@ export default function CartPage() {
         } catch { /* silent */ }
       }, 3000);
 
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Failed to place order");
+      toast.error(e.message || "Failed to place order");
     } finally { setPlacing(false); }
   };
 
