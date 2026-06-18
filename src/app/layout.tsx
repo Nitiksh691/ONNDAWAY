@@ -10,11 +10,11 @@ import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "ONN D A WAY – Smart Campus Food Delivery",
-  description: "Order coffee, snacks, and meals delivered right to your campus spot. Fast, fresh, and campus-first.",
-  keywords: "campus food delivery, college food, campus coffee, student food app",
+  description: "Order meals, snacks, and beverages delivered right to your campus spot. Fast, fresh, and campus-first.",
+  keywords: "campus food delivery, college food, campus meals, student food app",
   openGraph: {
     title: "ONN D A WAY – Smart Campus Food Delivery",
-    description: "Order coffee, snacks, and meals delivered right to your campus spot.",
+    description: "Order meals, snacks, and beverages delivered right to your campus spot.",
     type: "website",
   },
 };

@@ -7,17 +7,17 @@ import toast from "react-hot-toast";
 
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
   placed:            { bg: "#271c19", border: "#522c22" },
-  preparing:         { bg: "#1a2436", border: "#1e3a5f" },
+  preparing:         { bg: "#1a2436", border: "#c7d2fe" },
   out_for_delivery:  { bg: "#143324", border: "#114c33" },
-  delivered:         { bg: "#18181b", border: "#27272a" },
+  delivered:         { bg: "#ffffff", border: "#e2e8f0" },
   cancelled:         { bg: "#3a1318", border: "#5c1923" },
 };
 
 const STATUS_SELECT_COLORS: Record<string, { bg: string; color: string; border: string }> = {
   placed:            { bg: "#450a0a", color: "#fca5a5", border: "#7f1d1d" },
-  preparing:         { bg: "#1a2436", color: "#93c5fd", border: "#1e3a5f" },
+  preparing:         { bg: "#1a2436", color: "#93c5fd", border: "#c7d2fe" },
   out_for_delivery:  { bg: "#143324", color: "#86efac", border: "#114c33" },
-  delivered:         { bg: "#18181b", color: "#a1a1aa", border: "#3f3f46" },
+  delivered:         { bg: "#ffffff", color: "#94a3b8", border: "#cbd5e1" },
   cancelled:         { bg: "#3a1318", color: "#fca5a5", border: "#5c1923" },
 };
 
@@ -30,7 +30,7 @@ function OrderLineItem({ line }: { line: CartItem }) {
 
   return (
     <div style={{
-      background: "#111", border: "1px solid #27272a", borderRadius: "10px",
+      background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "10px",
       padding: "12px 14px", marginBottom: "8px",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
@@ -39,21 +39,21 @@ function OrderLineItem({ line }: { line: CartItem }) {
             {line.quantity}× {line.item.name}
           </div>
           {line.item.category && (
-            <div style={{ fontSize: "0.72rem", color: "#71717a", marginTop: "2px", textTransform: "capitalize" }}>{line.item.category}</div>
+            <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "2px", textTransform: "capitalize" }}>{line.item.category}</div>
           )}
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
           <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#60a5fa" }}>₹{lineTotal}</div>
           {line.unitPrice != null && line.unitPrice !== line.item.price && (
-            <div style={{ fontSize: "0.68rem", color: "#71717a" }}>₹{unit} each</div>
+            <div style={{ fontSize: "0.68rem", color: "#64748b" }}>₹{unit} each</div>
           )}
         </div>
       </div>
 
       {details && (
         <div style={{
-          marginTop: "8px", fontSize: "0.8rem", color: "#e4e4e7", lineHeight: 1.5,
-          background: "#1a1a1e", border: "1px solid #3f3f46", borderRadius: "8px",
+          marginTop: "8px", fontSize: "0.8rem", color: "#334155", lineHeight: 1.5,
+          background: "#1a1a1e", border: "1px solid #cbd5e1", borderRadius: "8px",
           padding: "8px 10px",
         }}>
           {details}
@@ -65,7 +65,7 @@ function OrderLineItem({ line }: { line: CartItem }) {
           {line.selectedCustomizations.map((c, i) => (
             <span key={i} style={{
               fontSize: "0.72rem", fontWeight: 600, color: "#dbeafe",
-              background: "#1e3a5f", border: "1px solid #2563eb33",
+              background: "#c7d2fe", border: "1px solid #2563eb33",
               padding: "3px 10px", borderRadius: "999px",
             }}>
               {c.category}: {c.option}{c.price > 0 ? ` +₹${c.price}` : ""}
@@ -210,7 +210,7 @@ export default function AdminOrdersPage() {
       if (res.ok) {
         fetchOrders();
         toast.success("✅ Order confirmed & moved to Preparing!", {
-          style: { background: "#065F46", color: "#fff", fontWeight: 700 },
+          style: { background: "#065F46", color: "#0f172a", fontWeight: 700 },
         });
         setExpandedOrders(prev => new Set(prev).add(orderId));
       } else {
@@ -422,21 +422,21 @@ export default function AdminOrdersPage() {
         </div>
       )}
 
-      <div style={{ background: "#18181b", border: "1px solid #27272a", borderRadius: "16px", padding: "24px" }}>
+      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px" }}>
         <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
             <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
             <input
               type="text"
               placeholder="Search by Order ID, Name, or Phone..."
-              style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+              style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
           </div>
           <div style={{ position: "relative", width: "220px" }}>
             <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", zIndex: 1 }} />
-            <select style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <select style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">Live Orders (Pending)</option>
               <option value="placed">🔴 Placed</option>
               <option value="preparing">🟡 Preparing</option>
@@ -486,7 +486,7 @@ export default function AdminOrdersPage() {
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: "12px", padding: "16px 20px",
-                  borderBottom: isExpanded ? "1px solid #27272a" : "none", flexWrap: "wrap",
+                  borderBottom: isExpanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap",
                   cursor: "pointer",
                 }}
                 onClick={() => toggleExpand(order.id)}
@@ -501,7 +501,7 @@ export default function AdminOrdersPage() {
                     
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
-                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#a1a1aa", display: "flex", alignItems: "center" }}
+                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}
                     >
                       {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                     </button>
@@ -532,17 +532,17 @@ export default function AdminOrdersPage() {
                       </span>
                     )}
                     {!isExpanded && (
-                       <span style={{ fontSize: "0.85rem", color: "#a1a1aa", marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                       <span style={{ fontSize: "0.85rem", color: "#94a3b8", marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                           <Package size={14} /> {order.items.length} items
                        </span>
                     )}
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "0.78rem", color: "#a1a1aa", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <span style={{ fontSize: "0.78rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
                       <Clock size={13} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     {order.scheduledTime && (
-                      <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 700, background: "#1e3a5f", padding: "4px 10px", borderRadius: "6px" }}>
+                      <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 700, background: "#c7d2fe", padding: "4px 10px", borderRadius: "6px" }}>
                         🕒 {order.scheduledTime}
                       </span>
                     )}
@@ -560,22 +560,22 @@ export default function AdminOrdersPage() {
                     alignItems: "start",
                   }}>
                     {/* Customer */}
-                    <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
+                    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
                       <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#fafafa", marginBottom: "10px" }}>{order.userName}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
                         <Phone size={14} color="#71717a" />
                         <a href={`tel:+91${order.userPhone}`} style={{ color: "#60a5fa", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>+91 {order.userPhone}</a>
                       </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#a1a1aa", fontSize: "0.88rem" }}>
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#94a3b8", fontSize: "0.88rem" }}>
                         <MapPin size={14} color="#71717a" style={{ flexShrink: 0, marginTop: 2 }} />
                         <span>{order.location}</span>
                       </div>
                     </div>
 
                     {/* Items */}
-                    <div style={{ background: "#111", border: "1px solid #27272a", borderRadius: "12px", padding: "16px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#71717a", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                         <Package size={13} /> ORDER ITEMS ({order.items.length})
                       </div>
                       {order.items.map((line, idx) => (
@@ -625,12 +625,12 @@ export default function AdminOrdersPage() {
                         </>
                       )}
 
-                      <div style={{ background: "#27272a", padding: "14px", borderRadius: "10px", border: "1px solid #3f3f46" }}>
-                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#a1a1aa", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
+                      <div style={{ background: "#e2e8f0", padding: "14px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#94a3b8", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
                           <Truck size={14} /> ASSIGN PARTNER
                         </div>
                         <select
-                          style={{ background: "#111", border: "1px solid #3f3f46", color: "#fff", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
+                          style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
                           value={order.deliveryPersonId || ""}
                           onClick={e => e.stopPropagation()}
                           onChange={(e) => { e.stopPropagation(); handleAssignPartner(order.id, e.target.value); }}

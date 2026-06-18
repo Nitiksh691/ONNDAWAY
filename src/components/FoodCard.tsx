@@ -53,19 +53,20 @@ const FoodCard = ({
         onClick={go}
         style={{
           display: "flex", alignItems: "center", gap: 12,
-          background: "#fff", borderRadius: 14,
-          border: "1px solid #f0f2f5",
-          boxShadow: "0 1px 6px rgba(0,0,0,0.06)",
+          background: "#fff", borderRadius: 16,
+          border: "1px solid #e2e8f0",
+          borderLeft: "4px solid #0135FB",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
           padding: "10px 14px 10px 10px",
           cursor: "pointer",
-          transition: "box-shadow 0.18s, transform 0.18s",
+          transition: "box-shadow 0.2s, transform 0.2s, border-color 0.2s",
           overflow: "hidden",
         }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 6px 20px rgba(1,53,251,0.1)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 1px 6px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(1,53,251,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; e.currentTarget.style.borderColor = "#0135FB"; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = ""; e.currentTarget.style.borderColor = "#e2e8f0"; }}
       >
         {/* Image */}
-        <div style={{ position: "relative", width: 90, height: 90, borderRadius: 10, overflow: "hidden", background: bg, flexShrink: 0 }}>
+        <div style={{ position: "relative", width: 100, height: 100, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
           {!imgError ? (
             <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} />
           ) : (
@@ -147,7 +148,7 @@ const FoodCard = ({
       onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 10px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
     >
       {/* Image */}
-      <div style={{ position: "relative", height: 150, background: bg, overflow: "hidden" }}>
+      <div style={{ position: "relative", height: 170, background: bg, overflow: "hidden" }}>
         {!imgError ? (
           <Image src={item.image} alt={item.name} fill sizes="(max-width: 768px) 50vw, 250px" style={{ objectFit: "cover", transition: "transform 0.4s" }} onError={() => setImgError(true)}
             onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.06)"}
@@ -158,8 +159,9 @@ const FoodCard = ({
             {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
           </div>
         )}
+        <div style={{ position: "absolute", inset: 0, background: "linear-gradient(0deg, rgba(0,0,0,0.4) 0%, rgba(0,0,0,0) 40%)", pointerEvents: "none" }} />
         {/* Category badge */}
-        <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.92)", color: "#0135FB", fontSize: "0.6rem", fontWeight: 800, padding: "2px 7px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em", backdropFilter: "blur(4px)" }}>
+        <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.95)", color: "#0135FB", fontSize: "0.6rem", fontWeight: 800, padding: "3px 8px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em", backdropFilter: "blur(4px)" }}>
           {item.category}
         </span>
         {item.isPopular && (

@@ -802,9 +802,48 @@ body:has(.bottom-action-bar) main {
 }
 
 .featured-bento {
-  grid-column: 1 / -1;
   display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  margin-bottom: 24px;
+  grid-template-columns: repeat(4, 1fr);
+  grid-template-rows: repeat(2, 1fr);
+  grid-template-areas: 
+    "large large small1 small2"
+    "large large small3 small4";
+  gap: 16px;
+  width: 100%;
+  aspect-ratio: 21 / 9;
+  min-height: 400px;
+}
+
+.featured-bento > div {
+  height: 100%;
+  width: 100%;
+}
+
+.bento-placeholder {
+  width: 100%;
+  height: 100%;
+  background: #f1f5f9;
+  border-radius: 16px;
+  border: 2px dashed #cbd5e1;
+}
+
+@media (max-width: 900px) {
+  .featured-bento {
+    aspect-ratio: 16 / 9;
+    min-height: 320px;
+  }
+}
+
+@media (max-width: 768px) {
+  .featured-bento {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: repeat(3, 1fr);
+    grid-template-areas:
+      "large large"
+      "small1 small2"
+      "small3 small4";
+    aspect-ratio: auto;
+    height: 600px;
+    gap: 12px;
+  }
 }

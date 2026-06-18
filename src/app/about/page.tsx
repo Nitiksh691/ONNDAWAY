@@ -43,7 +43,7 @@ export default function AboutPage() {
             ONN D A WAY started with a simple frustration: great food was always just out of reach — long waits, closed canteens, and delivery apps that didn&apos;t understand campus life. We decided to build something better ourselves.
           </p>
           <p style={{ color: "#475569", lineHeight: 1.8, fontSize: "1rem" }}>
-            Today we&apos;re a lean, bootstrapped team serving freshly prepared coffee, snacks, and meals directly to hostels, PGs, and campus locations. No outside investors telling us to compromise — just a focus on quality, speed, and the people we serve every day.
+            Today we&apos;re a lean, bootstrapped team serving freshly prepared meals, snacks, and beverages directly to hostels, PGs, and campus locations. No outside investors telling us to compromise — just a focus on quality, speed, and the people we serve every day.
           </p>
         </div>
 

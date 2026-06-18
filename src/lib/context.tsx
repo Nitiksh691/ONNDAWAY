@@ -155,6 +155,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           (c.specialInstructions || "") === (specialInstructions || "") &&
           customizationKey(c.selectedCustomizations) === customizationKey(customizations)
       );
+
+      // Check Limits
+      const currentTotalQty = prev.reduce((sum, c) => sum + c.quantity, 0);
+      const currentItemQty = prev.filter(c => c.item.id === item.id).reduce((sum, c) => sum + c.quantity, 0);
+
+      if (currentTotalQty >= 5) {
+        import("react-hot-toast").then(mod => mod.default.error("You can only order a maximum of 5 items. If you want to order more, please place your order and request a support call, or contact the support team."));
+        return prev;
+      }
+      if (currentItemQty >= 3) {
+        import("react-hot-toast").then(mod => mod.default.error(`You can only order a maximum of 3 portions of ${item.name}. If you want to order more, please contact the support team.`));
+        return prev;
+      }
+
       const updated = existing
         ? prev.map((c) => c.cartItemId === existing.cartItemId ? { ...c, quantity: c.quantity + 1 } : c)
         : [...prev, normalizeCartLine({
@@ -185,7 +199,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       removeFromCart(cartItemId);
       return;
     }
+
     setCart((prev) => {
+      const targetItem = prev.find(c => c.cartItemId === cartItemId || c.item.id === cartItemId);
+      if (!targetItem) return prev;
+      
+      const otherTotalQty = prev.filter(c => c.cartItemId !== targetItem.cartItemId).reduce((sum, c) => sum + c.quantity, 0);
+      const otherSameItemQty = prev.filter(c => c.item.id === targetItem.item.id && c.cartItemId !== targetItem.cartItemId).reduce((sum, c) => sum + c.quantity, 0);
+
+      if (otherTotalQty + qty > 5) {
+        import("react-hot-toast").then(mod => mod.default.error("You can only order a maximum of 5 items. If you want to order more, please place your order and request a support call, or contact the support team."));
+        return prev;
+      }
+      if (otherSameItemQty + qty > 3) {
+        import("react-hot-toast").then(mod => mod.default.error(`You can only order a maximum of 3 portions of ${targetItem.item.name}. If you want to order more, please contact the support team.`));
+        return prev;
+      }
+
       const updated = prev.map((c) => (c.cartItemId === cartItemId || c.item.id === cartItemId) ? { ...c, quantity: qty } : c);
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;

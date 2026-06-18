@@ -33,7 +33,7 @@ export default function Footer() {
               </div>
               <div>
                 <div style={{ fontWeight: 800, fontSize: "1.1rem", lineHeight: 1.1 }}>ONN D A WAY</div>
-                <div style={{ fontSize: "0.65rem", opacity: 0.7, letterSpacing: "0.05em" }}>COFFEE</div>
+                <div style={{ fontSize: "0.65rem", opacity: 0.7, letterSpacing: "0.05em" }}>FOOD DELIVERY</div>
               </div>
             </div>
             <p style={{ fontSize: "0.88rem", opacity: 0.8, lineHeight: 1.7, maxWidth: 260 }}>
@@ -110,7 +110,7 @@ export default function Footer() {
           flexWrap: "wrap", gap: "12px",
         }}>
           <p style={{ fontSize: "0.82rem", opacity: 0.65 }}>
-            © {new Date().getFullYear()} ONN D A WAY Coffee. All rights reserved.
+            © {new Date().getFullYear()} ONN D A WAY. All rights reserved.
           </p>
           <div style={{ display: "flex", gap: "20px" }}>
             {["Privacy Policy", "Terms of Service"].map(l => (

@@ -341,9 +341,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [authorized, setAuthorized] = useState(false);
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
+  const [adminStats, setAdminStats] = useState<any>(null);
   const prevPendingRef = useRef(0);
 
   useEffect(() => {
@@ -360,6 +362,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     if (!authorized) return;
+
+    // Fetch stats for the sidebar
+    fetch("/api/admin/analytics")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => {
+        if (data && data.summary) {
+           setAdminStats({
+              orders: data.summary.totalOrders,
+              revenue: data.summary.totalRevenue,
+              users: data.summary.uniqueUsers
+           });
+        }
+      })
+      .catch(() => {});
 
     let eventSource: EventSource | null = null;
     let fallbackInterval: NodeJS.Timeout | null = null;
@@ -443,7 +459,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   if (loading || !authorized) return null;
 
   return (
-    <div className="admin-theme" style={{ display: "flex", minHeight: "100vh", background: "#0a0a0a", color: "#e4e4e7" }}>
+    <div className={`admin-theme ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`} style={{ display: "flex", minHeight: "100vh", background: "#f8fafc", color: "#0f172a" }}>
 
       {/* Mobile Header */}
       <div
@@ -454,18 +470,18 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           left: 0,
           right: 0,
           zIndex: 50,
-          background: "#111",
-          borderBottom: "1px solid #27272a",
+          background: "#ffffff",
+          borderBottom: "1px solid #e2e8f0",
           display: "none",
           alignItems: "center",
           justifyContent: "space-between",
           padding: "16px 20px",
         }}
       >
-        <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff", letterSpacing: "1px" }}>
+        <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0055ff", letterSpacing: "1px" }}>
           ONN ADMIN
         </div>
-        <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#fff", cursor: "pointer" }}>
+        <button onClick={() => setSidebarOpen(true)} style={{ background: "none", border: "none", color: "#0f172a", cursor: "pointer" }}>
           <MenuIcon size={24} />
         </button>
       </div>
@@ -489,9 +505,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       <div
         className={`admin-sidebar ${sidebarOpen ? "open" : ""}`}
         style={{
-          width: 260,
-          background: "#111",
-          borderRight: "1px solid #27272a",
+          width: sidebarCollapsed ? 80 : 260,
+          background: "#ffffff",
+          borderRight: "1px solid #e2e8f0",
           display: "flex",
           flexDirection: "column",
           flexShrink: 0,
@@ -499,29 +515,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           top: 0,
           height: "100vh",
           zIndex: 100,
+          transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          overflowX: "hidden"
         }}
       >
         <div
           style={{
-            padding: "28px 24px",
-            borderBottom: "1px solid #27272a",
+            padding: sidebarCollapsed ? "28px 0" : "28px 24px",
+            borderBottom: "1px solid #e2e8f0",
             display: "flex",
-            justifyContent: "space-between",
+            justifyContent: sidebarCollapsed ? "center" : "space-between",
             alignItems: "center",
           }}
         >
-          <div>
+          <div style={{ display: sidebarCollapsed ? "none" : "block" }}>
             <div style={{ fontWeight: 900, fontSize: "1.4rem", color: "#0055ff", letterSpacing: "1px" }}>
               ONN D A WAY
             </div>
-            <div style={{ fontSize: "0.75rem", color: "#e4e4e7", letterSpacing: "0.15em", fontWeight: 700, marginTop: "4px" }}>
+            <div style={{ fontSize: "0.75rem", color: "#64748b", letterSpacing: "0.15em", fontWeight: 700, marginTop: "4px" }}>
               ADMIN PORTAL
             </div>
           </div>
+          {sidebarCollapsed && <div style={{ fontWeight: 900, fontSize: "1.4rem", color: "#0055ff" }}>O</div>}
           <button className="show-mobile" onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", display: "none", cursor: "pointer" }}>
-            <X size={20} color="#fff" />
+            <X size={20} color="#0f172a" />
+          </button>
+          <button className="hide-mobile" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} style={{ background: "none", border: "none", cursor: "pointer", color: "#64748b" }}>
+            <MenuIcon size={20} />
           </button>
         </div>
+
+        {/* Sidebar Stats Summary */}
+        {!sidebarCollapsed && adminStats && (
+           <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", gap: "12px", justifyContent: "space-between" }}>
+              <div style={{ textAlign: "center" }}>
+                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>ORDERS</div>
+                 <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>{adminStats.orders}</div>
+              </div>
+              <div style={{ textAlign: "center", borderLeft: "1px solid #e2e8f0", paddingLeft: "12px" }}>
+                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>REVENUE</div>
+                 <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#10b981" }}>₹{adminStats.revenue}</div>
+              </div>
+           </div>
+        )}
 
         <div
           style={{
@@ -543,7 +579,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: "14px",
+                  justifyContent: sidebarCollapsed ? "center" : "flex-start",
+                  gap: sidebarCollapsed ? "0" : "14px",
                   padding: "12px 16px",
                   borderRadius: "10px",
                   textDecoration: "none",
@@ -551,48 +588,52 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   fontSize: "0.95rem",
                   transition: "all 0.2s",
                   background: isActive
-                    ? "linear-gradient(135deg, rgba(0,85,255,0.15), transparent)"
+                    ? "rgba(0,85,255,0.08)"
                     : "transparent",
-                  color: isActive ? "#0055ff" : "#e4e4e7",
-                  border: `1px solid ${isActive ? "rgba(0,85,255,0.3)" : "transparent"}`,
+                  color: isActive ? "#0055ff" : "#64748b",
+                  border: `1px solid ${isActive ? "rgba(0,85,255,0.15)" : "transparent"}`,
                 }}
                 onMouseEnter={(e) => {
-                  if (!isActive) e.currentTarget.style.color = "#fff";
+                  if (!isActive) e.currentTarget.style.color = "#0f172a";
+                  if (!isActive) e.currentTarget.style.background = "#f1f5f9";
                 }}
                 onMouseLeave={(e) => {
-                  if (!isActive) e.currentTarget.style.color = "#e4e4e7";
+                  if (!isActive) e.currentTarget.style.color = "#64748b";
+                  if (!isActive) e.currentTarget.style.background = "transparent";
                 }}
               >
-                <span style={{ opacity: isActive ? 1 : 0.7 }}>{link.icon}</span>
-                {link.label}
+                <span style={{ opacity: isActive ? 1 : 0.8, display: "flex", alignItems: "center" }}>{link.icon}</span>
+                {!sidebarCollapsed && link.label}
               </Link>
             );
           })}
         </div>
 
-        <div style={{ padding: "24px 16px", borderTop: "1px solid #27272a" }}>
+        <div style={{ padding: "24px 16px", borderTop: "1px solid #e2e8f0" }}>
           <button
             onClick={handleLogout}
+            title="Log Out"
             style={{
               display: "flex",
               alignItems: "center",
-              gap: "12px",
+              justifyContent: sidebarCollapsed ? "center" : "flex-start",
+              gap: sidebarCollapsed ? "0" : "12px",
               width: "100%",
               padding: "14px 16px",
               borderRadius: "10px",
-              border: "1px solid #3f1111",
-              background: "#180a0a",
-              color: "#ef4444",
+              border: "1px solid #fecdd3",
+              background: "#fff1f2",
+              color: "#e11d48",
               cursor: "pointer",
               fontWeight: 700,
               fontSize: "0.95rem",
               transition: "all 0.2s",
               fontFamily: "inherit",
             }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#2a0a0a")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#180a0a")}
+            onMouseEnter={(e) => (e.currentTarget.style.background = "#ffe4e6")}
+            onMouseLeave={(e) => (e.currentTarget.style.background = "#fff1f2")}
           >
-            <LogOut size={18} /> Log Out
+            <LogOut size={18} /> {!sidebarCollapsed && "Log Out"}
           </button>
         </div>
       </div>
@@ -624,10 +665,10 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       <style>{`
         .admin-theme {
-          --text-dark: #ffffff !important;
-          --text-mid: #e4e4e7 !important;
-          --text-muted: #a1a1aa !important;
-          --border: #3f3f46 !important;
+          --text-dark: #0f172a !important;
+          --text-mid: #334155 !important;
+          --text-muted: #64748b !important;
+          --border: #e2e8f0 !important;
         }
         .admin-content-pad {
           flex: 1;
@@ -635,21 +676,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           position: relative;
         }
         .admin-theme .otw-card {
-          background: #18181b !important;
-          border-color: #27272a !important;
-          box-shadow: 0 4px 16px rgba(0,0,0,0.4) !important;
+          background: #ffffff !important;
+          border-color: #e2e8f0 !important;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.05) !important;
         }
         .admin-theme .otw-input {
-          background: #111 !important;
-          border-color: #3f3f46 !important;
-          color: #ffffff !important;
+          background: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
         }
         .admin-theme .otw-input:focus {
           border-color: #0055ff !important;
           box-shadow: 0 0 0 3px rgba(0,85,255,0.2) !important;
+          background: #ffffff !important;
         }
         .admin-theme .otw-label {
-          color: #a1a1aa !important;
+          color: #64748b !important;
         }
         .admin-theme .otw-btn-primary {
           background: #0055ff !important;
@@ -662,8 +704,12 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           box-shadow: 0 2px 0 #0033cc !important;
           transform: translateY(2px) !important;
         }
+        @media(min-width: 901px) {
+           .hide-mobile { display: block; }
+        }
         @media(max-width: 900px) {
           .show-mobile { display: flex !important; }
+          .hide-mobile { display: none !important; }
           .admin-sidebar { position: fixed !important; transform: translateX(-100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
           .admin-sidebar.open { transform: translateX(0); }
           .admin-main { padding-top: 60px !important; }
@@ -671,9 +717,60 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         }
         /* Modern Scrollbar for Admin */
         ::-webkit-scrollbar { width: 8px; height: 8px; }
-        ::-webkit-scrollbar-track { background: #0a0a0a; }
-        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+        ::-webkit-scrollbar-track { background: #f8fafc; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* ── FORCE LIGHT THEME on all admin child pages ── */
+        /* All backgrounds inside admin content */
+        .admin-content-pad,
+        .admin-content-pad > div,
+        .admin-content-pad div[style] {
+          --admin-bg: #ffffff;
+          --admin-bg-subtle: #f8fafc;
+          --admin-border: #e2e8f0;
+          --admin-text: #0f172a;
+          --admin-text-mid: #334155;
+          --admin-text-muted: #64748b;
+        }
+
+        /* Headings */
+        .admin-content-pad h1 { color: #0f172a !important; }
+        .admin-content-pad h2 { color: #0f172a !important; }
+        .admin-content-pad h3 { color: #0f172a !important; }
+        .admin-content-pad p { color: #64748b !important; }
+
+        /* Table styling */
+        .admin-content-pad table { border-collapse: collapse; }
+        .admin-content-pad thead tr {
+          background: #f8fafc !important;
+        }
+        .admin-content-pad thead th {
+          color: #64748b !important;
+          border-bottom: 1px solid #e2e8f0 !important;
+        }
+        .admin-content-pad tbody tr {
+          border-bottom: 1px solid #f1f5f9 !important;
+        }
+        .admin-content-pad tbody td {
+          border-color: #f1f5f9 !important;
+        }
+
+        /* Inputs inside admin pages */
+        .admin-content-pad input,
+        .admin-content-pad select,
+        .admin-content-pad textarea {
+          background: #f8fafc !important;
+          border-color: #cbd5e1 !important;
+          color: #0f172a !important;
+        }
+        .admin-content-pad input:focus,
+        .admin-content-pad select:focus,
+        .admin-content-pad textarea:focus {
+          border-color: #0055ff !important;
+          box-shadow: 0 0 0 3px rgba(0,85,255,0.15) !important;
+          background: #ffffff !important;
+        }
       `}</style>
     </div>
   );

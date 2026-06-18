@@ -302,7 +302,7 @@ export default function WalkInCustomersPage() {
             duration: 5000,
             style: {
               background: "#064e3b",
-              color: "#fff",
+              color: "#0f172a",
               fontWeight: 800,
             },
           });
@@ -400,7 +400,7 @@ export default function WalkInCustomersPage() {
               fontSize: "1.8rem",
               fontWeight: 900,
               marginBottom: "6px",
-              color: "#fff",
+              color: "#0f172a",
               letterSpacing: "-0.02em",
               display: "flex",
               alignItems: "center",
@@ -410,7 +410,7 @@ export default function WalkInCustomersPage() {
             <Coffee size={28} color="#0055ff" />
             Walk-in Customers
           </h1>
-          <p style={{ color: "#71717a", fontSize: "0.9rem" }}>
+          <p style={{ color: "#64748b", fontSize: "0.9rem" }}>
             Manage in-store customers, track orders & loyalty rewards
           </p>
         </div>
@@ -429,10 +429,10 @@ export default function WalkInCustomersPage() {
           >
             <Users size={18} color="#0055ff" />
             <div>
-              <div style={{ fontSize: "0.65rem", color: "#71717a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Customers
               </div>
-              <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#fff" }}>
+              <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0f172a" }}>
                 {customers.length}
               </div>
             </div>
@@ -450,7 +450,7 @@ export default function WalkInCustomersPage() {
           >
             <Gift size={18} color="#34d399" />
             <div>
-              <div style={{ fontSize: "0.65rem", color: "#71717a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Free Drinks Given
               </div>
               <div style={{ fontSize: "1.15rem", fontWeight: 900, color: "#34d399" }}>
@@ -475,7 +475,7 @@ export default function WalkInCustomersPage() {
           onClick={() => setShowAddForm(true)}
           style={{
             background: "linear-gradient(135deg, #0055ff, #0033cc)",
-            color: "#fff",
+            color: "#0f172a",
             border: "none",
             padding: "12px 22px",
             borderRadius: "12px",
@@ -500,7 +500,7 @@ export default function WalkInCustomersPage() {
               left: "14px",
               top: "50%",
               transform: "translateY(-50%)",
-              color: "#71717a",
+              color: "#64748b",
             }}
           />
           <input
@@ -511,17 +511,17 @@ export default function WalkInCustomersPage() {
             style={{
               width: "100%",
               padding: "12px 16px 12px 42px",
-              background: "#18181b",
-              border: "1px solid #27272a",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "12px",
-              color: "#fff",
+              color: "#0f172a",
               fontSize: "0.9rem",
               fontFamily: "inherit",
               outline: "none",
               transition: "border-color 0.2s",
             }}
             onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-            onBlur={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+            onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
           />
         </div>
       </div>
@@ -529,18 +529,18 @@ export default function WalkInCustomersPage() {
       {/* ── Customer Table / Cards ──────────────────────────────────── */}
       <div
         style={{
-          background: "#18181b",
-          border: "1px solid #27272a",
+          background: "#ffffff",
+          border: "1px solid #e2e8f0",
           borderRadius: "16px",
           overflow: "hidden",
         }}
       >
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px", color: "#71717a" }}>
+          <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
             <div
               style={{
                 width: 32, height: 32,
-                border: "3px solid #27272a",
+                border: "3px solid #e2e8f0",
                 borderTop: "3px solid #0055ff",
                 borderRadius: "50%",
                 animation: "spin 0.8s linear infinite",
@@ -554,11 +554,11 @@ export default function WalkInCustomersPage() {
             style={{
               textAlign: "center",
               padding: "60px 20px",
-              color: "#71717a",
+              color: "#64748b",
             }}
           >
             <Coffee size={48} style={{ margin: "0 auto 16px", opacity: 0.3 }} />
-            <div style={{ fontWeight: 700, marginBottom: "8px", color: "#a0a0a0" }}>
+            <div style={{ fontWeight: 700, marginBottom: "8px", color: "#64748b" }}>
               {search ? "No customers match your search" : "No walk-in customers yet"}
             </div>
             <div style={{ fontSize: "0.85rem" }}>
@@ -573,7 +573,7 @@ export default function WalkInCustomersPage() {
             <div className="walkin-desktop-table" style={{ overflowX: "auto" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "750px" }}>
                 <thead>
-                  <tr style={{ borderBottom: "1px solid #27272a", background: "#111" }}>
+                  <tr style={{ borderBottom: "1px solid #e2e8f0", background: "#ffffff" }}>
                     <th style={thStyle}>Customer</th>
                     <th style={{ ...thStyle, textAlign: "center" }}>Orders</th>
                     <th style={{ ...thStyle, textAlign: "center" }}>Spent</th>
@@ -587,11 +587,11 @@ export default function WalkInCustomersPage() {
                     <tr
                       key={c.id}
                       style={{
-                        borderBottom: "1px solid #1f1f23",
+                        borderBottom: "1px solid #f8fafc",
                         cursor: "pointer",
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#1f1f23")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                       onClick={() => openDetail(c.id)}
                     >
@@ -605,7 +605,7 @@ export default function WalkInCustomersPage() {
                                 ? "linear-gradient(135deg, #059669, #047857)"
                                 : "linear-gradient(135deg, #0055ff, #0033cc)",
                               display: "flex", alignItems: "center", justifyContent: "center",
-                              color: "#fff", fontWeight: 800, fontSize: "0.95rem", flexShrink: 0,
+                              color: "#0f172a", fontWeight: 800, fontSize: "0.95rem", flexShrink: 0,
                               boxShadow: c.isEligibleForFree ? "0 0 16px rgba(5,150,105,0.4)" : "none",
                               animation: c.isEligibleForFree ? "loyaltyPulse 2s ease-in-out infinite" : "none",
                             }}
@@ -613,7 +613,7 @@ export default function WalkInCustomersPage() {
                             {c.isEligibleForFree ? <Gift size={18} /> : c.name.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, color: "#e4e4e7", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "8px" }}>
+                            <div style={{ fontWeight: 700, color: "#334155", fontSize: "0.95rem", display: "flex", alignItems: "center", gap: "8px" }}>
                               {c.name}
                               {c.isEligibleForFree && (
                                 <span
@@ -621,7 +621,7 @@ export default function WalkInCustomersPage() {
                                     fontSize: "0.65rem",
                                     fontWeight: 800,
                                     background: "linear-gradient(135deg, #059669, #047857)",
-                                    color: "#fff",
+                                    color: "#0f172a",
                                     padding: "2px 8px",
                                     borderRadius: "20px",
                                     animation: "loyaltyPulse 2s ease-in-out infinite",
@@ -633,7 +633,7 @@ export default function WalkInCustomersPage() {
                                 </span>
                               )}
                             </div>
-                            <div style={{ fontSize: "0.82rem", color: "#71717a" }}>{c.phone}</div>
+                            <div style={{ fontSize: "0.82rem", color: "#64748b" }}>{c.phone}</div>
                           </div>
                         </div>
                       </td>
@@ -660,7 +660,7 @@ export default function WalkInCustomersPage() {
                       <td style={{ padding: "14px 20px", textAlign: "center" }}>
                         <LoyaltyDots current={c.drinksInCycle} size="sm" />
                       </td>
-                      <td style={{ padding: "14px 20px", textAlign: "right", fontSize: "0.82rem", color: "#71717a" }}>
+                      <td style={{ padding: "14px 20px", textAlign: "right", fontSize: "0.82rem", color: "#64748b" }}>
                         {c.lastVisit
                           ? new Date(c.lastVisit).toLocaleDateString("en-IN", {
                               day: "numeric",
@@ -726,15 +726,15 @@ export default function WalkInCustomersPage() {
                   key={c.id}
                   onClick={() => openDetail(c.id)}
                   style={{
-                    background: "#111",
-                    border: "1px solid #27272a",
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "14px",
                     padding: "16px",
                     cursor: "pointer",
                     transition: "border-color 0.15s",
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#3f3f46")}
-                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+                  onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                  onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                 >
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "12px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
@@ -746,15 +746,15 @@ export default function WalkInCustomersPage() {
                             ? "linear-gradient(135deg, #059669, #047857)"
                             : "linear-gradient(135deg, #0055ff, #0033cc)",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          color: "#fff", fontWeight: 800, fontSize: "0.9rem",
+                          color: "#0f172a", fontWeight: 800, fontSize: "0.9rem",
                           animation: c.isEligibleForFree ? "loyaltyPulse 2s ease-in-out infinite" : "none",
                         }}
                       >
                         {c.isEligibleForFree ? <Gift size={16} /> : c.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, color: "#e4e4e7", fontSize: "0.9rem" }}>{c.name}</div>
-                        <div style={{ fontSize: "0.78rem", color: "#71717a" }}>{c.phone}</div>
+                        <div style={{ fontWeight: 700, color: "#334155", fontSize: "0.9rem" }}>{c.name}</div>
+                        <div style={{ fontSize: "0.78rem", color: "#64748b" }}>{c.phone}</div>
                       </div>
                     </div>
                     {c.isEligibleForFree && (
@@ -762,7 +762,7 @@ export default function WalkInCustomersPage() {
                         style={{
                           fontSize: "0.6rem", fontWeight: 800,
                           background: "linear-gradient(135deg, #059669, #047857)",
-                          color: "#fff", padding: "3px 8px", borderRadius: "20px",
+                          color: "#0f172a", padding: "3px 8px", borderRadius: "20px",
                           animation: "loyaltyPulse 2s ease-in-out infinite",
                           textTransform: "uppercase",
                         }}
@@ -774,18 +774,18 @@ export default function WalkInCustomersPage() {
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                     <div style={{ display: "flex", gap: "16px" }}>
                       <div>
-                        <div style={{ fontSize: "0.65rem", color: "#71717a", fontWeight: 700, textTransform: "uppercase" }}>Orders</div>
+                        <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Orders</div>
                         <div style={{ fontWeight: 800, color: "#4d8aff", fontSize: "0.9rem" }}>{c.totalOrders}</div>
                       </div>
                       <div>
-                        <div style={{ fontSize: "0.65rem", color: "#71717a", fontWeight: 700, textTransform: "uppercase" }}>Spent</div>
+                        <div style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>Spent</div>
                         <div style={{ fontWeight: 800, color: "#34d399", fontSize: "0.9rem" }}>₹{c.totalSpent}</div>
                       </div>
                     </div>
                     <LoyaltyDots current={c.drinksInCycle} size="sm" />
                   </div>
                   {/* Mobile action buttons */}
-                  <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid #1f1f23", paddingTop: "12px" }} onClick={(e) => e.stopPropagation()}>
+                  <div style={{ display: "flex", gap: "8px", marginTop: "12px", borderTop: "1px solid #f8fafc", paddingTop: "12px" }} onClick={(e) => e.stopPropagation()}>
                     <button
                       onClick={() => openOrderForm(c.id, c.name)}
                       style={{
@@ -849,8 +849,8 @@ export default function WalkInCustomersPage() {
               transform: "translate(-50%, -50%)",
               zIndex: 301,
               width: "95%", maxWidth: "440px",
-              background: "#18181b",
-              border: "1px solid #27272a",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "20px",
               padding: "0",
               boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
@@ -861,7 +861,7 @@ export default function WalkInCustomersPage() {
             <div
               style={{
                 padding: "24px 28px 20px",
-                borderBottom: "1px solid #27272a",
+                borderBottom: "1px solid #e2e8f0",
                 display: "flex", justifyContent: "space-between", alignItems: "center",
               }}
             >
@@ -878,15 +878,15 @@ export default function WalkInCustomersPage() {
                   <UserPlus size={20} color="white" />
                 </div>
                 <div>
-                  <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#fff" }}>New Customer</div>
-                  <div style={{ fontSize: "0.78rem", color: "#71717a" }}>Add a walk-in customer</div>
+                  <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#0f172a" }}>New Customer</div>
+                  <div style={{ fontSize: "0.78rem", color: "#64748b" }}>Add a walk-in customer</div>
                 </div>
               </div>
               <button
                 onClick={() => setShowAddForm(false)}
                 style={{
-                  background: "#27272a", border: "none", borderRadius: "8px",
-                  padding: "8px", color: "#a0a0a0", cursor: "pointer",
+                  background: "#e2e8f0", border: "none", borderRadius: "8px",
+                  padding: "8px", color: "#64748b", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -895,7 +895,7 @@ export default function WalkInCustomersPage() {
             </div>
             <form onSubmit={handleAddCustomer} style={{ padding: "24px 28px 28px" }}>
               <div style={{ marginBottom: "18px" }}>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#a0a0a0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
                   Full Name
                 </label>
                 <input
@@ -906,17 +906,17 @@ export default function WalkInCustomersPage() {
                   autoFocus
                   style={{
                     width: "100%", padding: "14px 16px",
-                    background: "#111", border: "1px solid #3f3f46",
-                    borderRadius: "10px", color: "#fff",
+                    background: "#ffffff", border: "1px solid #cbd5e1",
+                    borderRadius: "10px", color: "#0f172a",
                     fontSize: "1rem", fontFamily: "inherit", outline: "none",
                     transition: "border-color 0.2s",
                   }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#3f3f46")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                 />
               </div>
               <div style={{ marginBottom: "24px" }}>
-                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#a0a0a0", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
+                <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: "8px" }}>
                   Phone Number
                 </label>
                 <input
@@ -926,13 +926,13 @@ export default function WalkInCustomersPage() {
                   onChange={(e) => setNewPhone(e.target.value)}
                   style={{
                     width: "100%", padding: "14px 16px",
-                    background: "#111", border: "1px solid #3f3f46",
-                    borderRadius: "10px", color: "#fff",
+                    background: "#ffffff", border: "1px solid #cbd5e1",
+                    borderRadius: "10px", color: "#0f172a",
                     fontSize: "1rem", fontFamily: "inherit", outline: "none",
                     transition: "border-color 0.2s",
                   }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#3f3f46")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
                 />
               </div>
               <button
@@ -941,7 +941,7 @@ export default function WalkInCustomersPage() {
                 style={{
                   width: "100%", padding: "14px",
                   background: "linear-gradient(135deg, #0055ff, #0033cc)",
-                  color: "#fff", border: "none",
+                  color: "#0f172a", border: "none",
                   borderRadius: "12px", fontWeight: 900,
                   fontSize: "0.95rem", cursor: "pointer",
                   fontFamily: "inherit",
@@ -988,8 +988,8 @@ export default function WalkInCustomersPage() {
               zIndex: 301,
               width: "95%", maxWidth: "680px",
               maxHeight: "92vh",
-              background: "#111",
-              border: "1px solid #27272a",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "20px",
               boxShadow: "0 24px 64px rgba(0,0,0,0.7)",
               animation: "modalIn 0.25s cubic-bezier(0.16,1,0.3,1) both",
@@ -1001,26 +1001,26 @@ export default function WalkInCustomersPage() {
             <div
               style={{
                 padding: "20px 24px",
-                borderBottom: "1px solid #27272a",
-                background: "#18181b",
+                borderBottom: "1px solid #e2e8f0",
+                background: "#ffffff",
                 display: "flex", justifyContent: "space-between", alignItems: "center",
                 flexShrink: 0,
               }}
             >
               <div>
-                <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#fff", display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
                   <ShoppingBag size={20} color="#0055ff" />
                   New Order
                 </div>
-                <div style={{ fontSize: "0.82rem", color: "#71717a", marginTop: "2px" }}>
+                <div style={{ fontSize: "0.82rem", color: "#64748b", marginTop: "2px" }}>
                   for <span style={{ color: "#0055ff", fontWeight: 700 }}>{orderCustomerName}</span>
                 </div>
               </div>
               <button
                 onClick={() => setShowOrderForm(false)}
                 style={{
-                  background: "#27272a", border: "none", borderRadius: "8px",
-                  padding: "8px", color: "#a0a0a0", cursor: "pointer",
+                  background: "#e2e8f0", border: "none", borderRadius: "8px",
+                  padding: "8px", color: "#64748b", cursor: "pointer",
                   display: "flex", alignItems: "center", justifyContent: "center",
                 }}
               >
@@ -1038,7 +1038,7 @@ export default function WalkInCustomersPage() {
             >
               {/* Menu browser */}
               <div style={{ padding: "16px 24px 8px" }}>
-                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#a0a0a0", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+                <div style={{ fontWeight: 700, fontSize: "0.85rem", color: "#64748b", marginBottom: "10px", textTransform: "uppercase", letterSpacing: "0.06em" }}>
                   Select Items from Menu
                 </div>
                 <div style={{ display: "flex", gap: "8px", marginBottom: "12px", flexWrap: "wrap" }}>
@@ -1047,7 +1047,7 @@ export default function WalkInCustomersPage() {
                       size={15}
                       style={{
                         position: "absolute", left: "12px", top: "50%",
-                        transform: "translateY(-50%)", color: "#71717a",
+                        transform: "translateY(-50%)", color: "#64748b",
                       }}
                     />
                     <input
@@ -1057,12 +1057,12 @@ export default function WalkInCustomersPage() {
                       onChange={(e) => setMenuSearch(e.target.value)}
                       style={{
                         width: "100%", padding: "10px 12px 10px 36px",
-                        background: "#18181b", border: "1px solid #27272a",
-                        borderRadius: "10px", color: "#fff", fontSize: "0.85rem",
+                        background: "#ffffff", border: "1px solid #e2e8f0",
+                        borderRadius: "10px", color: "#0f172a", fontSize: "0.85rem",
                         fontFamily: "inherit", outline: "none",
                       }}
                       onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-                      onBlur={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+                      onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                     />
                   </div>
                 </div>
@@ -1076,8 +1076,8 @@ export default function WalkInCustomersPage() {
                         padding: "6px 14px",
                         borderRadius: "20px",
                         border: "1px solid",
-                        borderColor: menuCategory === cat ? "#0055ff" : "#27272a",
-                        background: menuCategory === cat ? "rgba(0,85,255,0.15)" : "#18181b",
+                        borderColor: menuCategory === cat ? "#0055ff" : "#e2e8f0",
+                        background: menuCategory === cat ? "rgba(0,85,255,0.15)" : "#ffffff",
                         color: menuCategory === cat ? "#4d8aff" : "#a0a0a0",
                         fontSize: "0.78rem",
                         fontWeight: 700,
@@ -1113,8 +1113,8 @@ export default function WalkInCustomersPage() {
                       key={item.id}
                       onClick={() => addToCart(item)}
                       style={{
-                        background: inCart ? "rgba(0,85,255,0.1)" : "#18181b",
-                        border: `1px solid ${inCart ? "rgba(0,85,255,0.3)" : "#27272a"}`,
+                        background: inCart ? "rgba(0,85,255,0.1)" : "#ffffff",
+                        border: `1px solid ${inCart ? "rgba(0,85,255,0.3)" : "#e2e8f0"}`,
                         borderRadius: "12px",
                         padding: "12px 14px",
                         cursor: "pointer",
@@ -1125,16 +1125,16 @@ export default function WalkInCustomersPage() {
                         gap: "8px",
                       }}
                       onMouseEnter={(e) => {
-                        if (!inCart) e.currentTarget.style.borderColor = "#3f3f46";
+                        if (!inCart) e.currentTarget.style.borderColor = "#cbd5e1";
                       }}
                       onMouseLeave={(e) => {
-                        if (!inCart) e.currentTarget.style.borderColor = "#27272a";
+                        if (!inCart) e.currentTarget.style.borderColor = "#e2e8f0";
                       }}
                     >
                       <div style={{ minWidth: 0 }}>
                         <div
                           style={{
-                            fontWeight: 700, fontSize: "0.85rem", color: "#e4e4e7",
+                            fontWeight: 700, fontSize: "0.85rem", color: "#334155",
                             whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
                           }}
                         >
@@ -1205,9 +1205,9 @@ export default function WalkInCustomersPage() {
                           style={{
                             width: 28, height: 28,
                             borderRadius: "8px",
-                            border: "1px solid #3f3f46",
+                            border: "1px solid #cbd5e1",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "#71717a", flexShrink: 0,
+                            color: "#64748b", flexShrink: 0,
                           }}
                         >
                           <Plus size={14} />
@@ -1223,8 +1223,8 @@ export default function WalkInCustomersPage() {
                 <div
                   style={{
                     margin: "0 24px 16px",
-                    background: "#18181b",
-                    border: "1px solid #27272a",
+                    background: "#ffffff",
+                    border: "1px solid #e2e8f0",
                     borderRadius: "14px",
                     overflow: "hidden",
                   }}
@@ -1232,14 +1232,14 @@ export default function WalkInCustomersPage() {
                   <div
                     style={{
                       padding: "12px 16px",
-                      borderBottom: "1px solid #27272a",
+                      borderBottom: "1px solid #e2e8f0",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                     }}
                   >
-                    <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#e4e4e7" }}>
+                    <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#334155" }}>
                       Order Summary
                     </span>
-                    <span style={{ fontSize: "0.75rem", color: "#71717a" }}>
+                    <span style={{ fontSize: "0.75rem", color: "#64748b" }}>
                       {cart.reduce((s, c) => s + c.quantity, 0)} items
                     </span>
                   </div>
@@ -1250,16 +1250,16 @@ export default function WalkInCustomersPage() {
                         style={{
                           display: "flex", justifyContent: "space-between", alignItems: "center",
                           padding: "8px 0",
-                          borderBottom: "1px solid #1f1f23",
+                          borderBottom: "1px solid #f8fafc",
                         }}
                       >
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#d4d4d8" }}>
+                          <span style={{ fontWeight: 600, fontSize: "0.85rem", color: "#334155" }}>
                             {c.quantity}× {c.menuItem.name}
                           </span>
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#71717a" }}>
+                          <span style={{ fontWeight: 700, fontSize: "0.85rem", color: "#64748b" }}>
                             ₹{c.menuItem.price * c.quantity}
                           </span>
                           <button
@@ -1280,12 +1280,12 @@ export default function WalkInCustomersPage() {
                   <div
                     style={{
                       padding: "12px 16px",
-                      borderTop: "1px solid #27272a",
+                      borderTop: "1px solid #e2e8f0",
                       display: "flex", justifyContent: "space-between", alignItems: "center",
                     }}
                   >
                     <div>
-                      <span style={{ fontWeight: 900, color: "#fff", fontSize: "1.05rem" }}>
+                      <span style={{ fontWeight: 900, color: "#0f172a", fontSize: "1.05rem" }}>
                         ₹{cartTotal}
                       </span>
                       {cartDrinkCount > 0 && (
@@ -1307,12 +1307,12 @@ export default function WalkInCustomersPage() {
                   onChange={(e) => setOrderNote(e.target.value)}
                   style={{
                     width: "100%", padding: "10px 14px",
-                    background: "#18181b", border: "1px solid #27272a",
-                    borderRadius: "10px", color: "#fff",
+                    background: "#ffffff", border: "1px solid #e2e8f0",
+                    borderRadius: "10px", color: "#0f172a",
                     fontSize: "0.85rem", fontFamily: "inherit", outline: "none",
                   }}
                   onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-                  onBlur={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+                  onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                 />
               </div>
             </div>
@@ -1321,8 +1321,8 @@ export default function WalkInCustomersPage() {
             <div
               style={{
                 padding: "16px 24px",
-                borderTop: "1px solid #27272a",
-                background: "#18181b",
+                borderTop: "1px solid #e2e8f0",
+                background: "#ffffff",
                 flexShrink: 0,
               }}
             >
@@ -1332,7 +1332,7 @@ export default function WalkInCustomersPage() {
                 style={{
                   width: "100%", padding: "14px",
                   background: cart.length === 0
-                    ? "#27272a"
+                    ? "#e2e8f0"
                     : "linear-gradient(135deg, #0055ff, #0033cc)",
                   color: cart.length === 0 ? "#71717a" : "#fff",
                   border: "none", borderRadius: "12px",
@@ -1382,8 +1382,8 @@ export default function WalkInCustomersPage() {
               position: "fixed",
               top: 0, right: 0, bottom: 0,
               width: "100%", maxWidth: "540px",
-              background: "#111",
-              borderLeft: "1px solid #27272a",
+              background: "#ffffff",
+              borderLeft: "1px solid #e2e8f0",
               zIndex: 201,
               display: "flex", flexDirection: "column",
               animation: "panelSlideIn 0.3s cubic-bezier(0.16,1,0.3,1) both",
@@ -1392,8 +1392,8 @@ export default function WalkInCustomersPage() {
           >
             {detailLoading ? (
               <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: "16px" }}>
-                <div style={{ width: 36, height: 36, border: "3px solid #27272a", borderTop: "3px solid #0055ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
-                <span style={{ color: "#71717a", fontSize: "0.9rem" }}>Loading...</span>
+                <div style={{ width: 36, height: 36, border: "3px solid #e2e8f0", borderTop: "3px solid #0055ff", borderRadius: "50%", animation: "spin 0.8s linear infinite" }} />
+                <span style={{ color: "#64748b", fontSize: "0.9rem" }}>Loading...</span>
               </div>
             ) : detail ? (
               <>
@@ -1401,22 +1401,22 @@ export default function WalkInCustomersPage() {
                 <div
                   style={{
                     padding: "20px 24px",
-                    borderBottom: "1px solid #27272a",
+                    borderBottom: "1px solid #e2e8f0",
                     display: "flex", justifyContent: "space-between", alignItems: "center",
                     position: "sticky", top: 0,
-                    background: "#111", zIndex: 10,
+                    background: "#ffffff", zIndex: 10,
                   }}
                 >
                   <button
                     onClick={closeDetail}
                     style={{
-                      background: "none", border: "none", color: "#a0a0a0",
+                      background: "none", border: "none", color: "#64748b",
                       cursor: "pointer", display: "flex", alignItems: "center", gap: "8px",
                       fontFamily: "inherit", fontWeight: 700, fontSize: "0.9rem",
                       padding: "8px 12px", borderRadius: "8px",
                       transition: "background 0.15s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#1f1f23")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <ArrowLeft size={18} /> Back
@@ -1426,7 +1426,7 @@ export default function WalkInCustomersPage() {
                       onClick={() => openOrderForm(detail.id, detail.name)}
                       style={{
                         background: "linear-gradient(135deg, #0055ff, #0033cc)",
-                        color: "#fff", border: "none",
+                        color: "#0f172a", border: "none",
                         padding: "8px 16px", borderRadius: "8px",
                         fontWeight: 700, fontSize: "0.82rem", cursor: "pointer",
                         fontFamily: "inherit",
@@ -1438,7 +1438,7 @@ export default function WalkInCustomersPage() {
                     <button
                       onClick={() => handleDelete(detail.id)}
                       style={{
-                        background: "#1f1f23", border: "none",
+                        background: "#f8fafc", border: "none",
                         borderRadius: "8px", padding: "8px",
                         color: "#ef4444", cursor: "pointer",
                         display: "flex", alignItems: "center", justifyContent: "center",
@@ -1453,8 +1453,8 @@ export default function WalkInCustomersPage() {
                   {/* Profile card */}
                   <div
                     style={{
-                      background: "linear-gradient(135deg, #0a0f2e 0%, #0f172a 100%)",
-                      border: "1px solid #1e3a5f",
+                      background: "linear-gradient(135deg, #eef1ff 0%, #dbeafe 100%)",
+                      border: "1px solid #c7d2fe",
                       borderRadius: "20px",
                       padding: "24px",
                       marginBottom: "20px",
@@ -1467,14 +1467,14 @@ export default function WalkInCustomersPage() {
                           borderRadius: "16px",
                           background: "linear-gradient(135deg, #0055ff, #0033cc)",
                           display: "flex", alignItems: "center", justifyContent: "center",
-                          color: "#fff", fontWeight: 900, fontSize: "1.4rem",
+                          color: "#0f172a", fontWeight: 900, fontSize: "1.4rem",
                           boxShadow: "0 8px 24px rgba(0,85,255,0.3)",
                         }}
                       >
                         {detail.name.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#fff" }}>
+                        <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a" }}>
                           {detail.name}
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "4px" }}>
@@ -1495,8 +1495,8 @@ export default function WalkInCustomersPage() {
                   {/* Loyalty tracker */}
                   <div
                     style={{
-                      background: "#18181b",
-                      border: `1px solid ${detail.isEligibleForFree ? "rgba(52,211,153,0.3)" : "#27272a"}`,
+                      background: "#ffffff",
+                      border: `1px solid ${detail.isEligibleForFree ? "rgba(52,211,153,0.3)" : "#e2e8f0"}`,
                       borderRadius: "16px",
                       padding: "20px",
                       marginBottom: "20px",
@@ -1505,11 +1505,11 @@ export default function WalkInCustomersPage() {
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                         <Sparkles size={18} color="#f59e0b" />
-                        <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#e4e4e7" }}>
+                        <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#334155" }}>
                           Loyalty Progress
                         </span>
                       </div>
-                      <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#71717a" }}>
+                      <span style={{ fontSize: "0.75rem", fontWeight: 700, color: "#64748b" }}>
                         {detail.totalDrinks} total drinks
                       </span>
                     </div>
@@ -1520,7 +1520,7 @@ export default function WalkInCustomersPage() {
                           onClick={() => handleRedeem(detail.id)}
                           style={{
                             background: "linear-gradient(135deg, #059669, #047857)",
-                            color: "#fff", border: "none",
+                            color: "#0f172a", border: "none",
                             padding: "12px 28px", borderRadius: "12px",
                             fontWeight: 900, fontSize: "0.9rem",
                             cursor: "pointer", fontFamily: "inherit",
@@ -1532,7 +1532,7 @@ export default function WalkInCustomersPage() {
                           <Gift size={18} /> Redeem Free Drink 🎉
                         </button>
                       ) : (
-                        <div style={{ fontSize: "0.82rem", color: "#71717a" }}>
+                        <div style={{ fontSize: "0.82rem", color: "#64748b" }}>
                           <span style={{ color: "#f59e0b", fontWeight: 800 }}>
                             {6 - detail.drinksInCycle}
                           </span>{" "}
@@ -1546,7 +1546,7 @@ export default function WalkInCustomersPage() {
                   <div>
                     <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "16px" }}>
                       <Clock size={18} color="#0055ff" />
-                      <span style={{ fontWeight: 800, fontSize: "1rem", color: "#e4e4e7" }}>
+                      <span style={{ fontWeight: 800, fontSize: "1rem", color: "#334155" }}>
                         Order History
                       </span>
                       <span style={{ fontSize: "0.72rem", fontWeight: 700, background: "rgba(0,85,255,0.12)", color: "#4d8aff", padding: "2px 10px", borderRadius: "20px" }}>
@@ -1555,7 +1555,7 @@ export default function WalkInCustomersPage() {
                     </div>
 
                     {detail.orders.length === 0 ? (
-                      <div style={{ textAlign: "center", padding: "40px 20px", color: "#71717a", background: "#18181b", borderRadius: "14px", border: "1px solid #27272a" }}>
+                      <div style={{ textAlign: "center", padding: "40px 20px", color: "#64748b", background: "#ffffff", borderRadius: "14px", border: "1px solid #e2e8f0" }}>
                         No orders yet
                       </div>
                     ) : (
@@ -1566,19 +1566,19 @@ export default function WalkInCustomersPage() {
                             style={{
                               background: order.isFreeRedeem
                                 ? "linear-gradient(135deg, rgba(5,150,105,0.08), rgba(5,150,105,0.03))"
-                                : "#18181b",
-                              border: `1px solid ${order.isFreeRedeem ? "rgba(52,211,153,0.2)" : "#27272a"}`,
+                                : "#ffffff",
+                              border: `1px solid ${order.isFreeRedeem ? "rgba(52,211,153,0.2)" : "#e2e8f0"}`,
                               borderRadius: "14px",
                               padding: "16px",
                               transition: "border-color 0.15s",
                             }}
-                            onMouseEnter={(e) => (e.currentTarget.style.borderColor = order.isFreeRedeem ? "rgba(52,211,153,0.4)" : "#3f3f46")}
-                            onMouseLeave={(e) => (e.currentTarget.style.borderColor = order.isFreeRedeem ? "rgba(52,211,153,0.2)" : "#27272a")}
+                            onMouseEnter={(e) => (e.currentTarget.style.borderColor = order.isFreeRedeem ? "rgba(52,211,153,0.4)" : "#cbd5e1")}
+                            onMouseLeave={(e) => (e.currentTarget.style.borderColor = order.isFreeRedeem ? "rgba(52,211,153,0.2)" : "#e2e8f0")}
                           >
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px" }}>
                               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                 <Calendar size={13} color="#71717a" />
-                                <span style={{ fontSize: "0.78rem", color: "#a0a0a0", fontWeight: 600 }}>
+                                <span style={{ fontSize: "0.78rem", color: "#64748b", fontWeight: 600 }}>
                                   {new Date(order.createdAt).toLocaleDateString("en-IN", {
                                     day: "numeric",
                                     month: "short",
@@ -1596,7 +1596,7 @@ export default function WalkInCustomersPage() {
                                   🎁 Free Drink
                                 </span>
                               ) : (
-                                <span style={{ fontWeight: 900, color: "#fff", fontSize: "0.95rem" }}>
+                                <span style={{ fontWeight: 900, color: "#0f172a", fontSize: "0.95rem" }}>
                                   ₹{order.amount}
                                 </span>
                               )}
@@ -1608,13 +1608,13 @@ export default function WalkInCustomersPage() {
                                   style={{
                                     display: "flex", justifyContent: "space-between",
                                     padding: "4px 0",
-                                    borderBottom: idx < order.items.length - 1 ? "1px solid #1f1f23" : "none",
+                                    borderBottom: idx < order.items.length - 1 ? "1px solid #f8fafc" : "none",
                                   }}
                                 >
-                                  <span style={{ color: "#d4d4d8", fontSize: "0.85rem", fontWeight: 600 }}>
+                                  <span style={{ color: "#334155", fontSize: "0.85rem", fontWeight: 600 }}>
                                     {item.quantity}× {item.name}
                                   </span>
-                                  <span style={{ color: "#71717a", fontSize: "0.82rem", fontWeight: 700 }}>
+                                  <span style={{ color: "#64748b", fontSize: "0.82rem", fontWeight: 700 }}>
                                     ₹{item.price * item.quantity}
                                   </span>
                                 </div>
@@ -1626,7 +1626,7 @@ export default function WalkInCustomersPage() {
                               </div>
                             )}
                             {order.drinkCount > 0 && !order.isFreeRedeem && (
-                              <div style={{ marginTop: "8px", fontSize: "0.72rem", color: "#71717a", display: "flex", alignItems: "center", gap: "4px" }}>
+                              <div style={{ marginTop: "8px", fontSize: "0.72rem", color: "#64748b", display: "flex", alignItems: "center", gap: "4px" }}>
                                 <Star size={11} color="#f59e0b" />
                                 +{order.drinkCount} drink{order.drinkCount > 1 ? "s" : ""} loyalty
                               </div>
@@ -1639,7 +1639,7 @@ export default function WalkInCustomersPage() {
                 </div>
               </>
             ) : (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a" }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
                 Failed to load customer details.
               </div>
             )}
@@ -1687,7 +1687,7 @@ const thStyle: React.CSSProperties = {
   textAlign: "left",
   fontSize: "0.75rem",
   fontWeight: 700,
-  color: "#71717a",
+  color: "#64748b",
   textTransform: "uppercase",
   letterSpacing: "0.08em",
 };
@@ -1734,8 +1734,8 @@ function LoyaltyDots({
                 ? {
                     background: isFilled || current >= 6
                       ? "linear-gradient(135deg, #059669, #047857)"
-                      : "#27272a",
-                    border: `2px solid ${isFilled || current >= 6 ? "#34d399" : "#3f3f46"}`,
+                      : "#e2e8f0",
+                    border: `2px solid ${isFilled || current >= 6 ? "#34d399" : "#cbd5e1"}`,
                     boxShadow: isFilled || current >= 6 ? "0 0 12px rgba(52,211,153,0.4)" : "none",
                   }
                 : isFilled
@@ -1750,8 +1750,8 @@ function LoyaltyDots({
                     border: "2px dashed #4d8aff",
                   }
                 : {
-                    background: "#27272a",
-                    border: "2px solid #3f3f46",
+                    background: "#e2e8f0",
+                    border: "2px solid #cbd5e1",
                   }),
             }}
             title={
@@ -1767,7 +1767,7 @@ function LoyaltyDots({
             ) : isFilled ? (
               <Check size={iconSize} color="#fff" />
             ) : size === "lg" ? (
-              <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#71717a" }}>
+              <span style={{ fontSize: "0.6rem", fontWeight: 700, color: "#64748b" }}>
                 {i + 1}
               </span>
             ) : null}

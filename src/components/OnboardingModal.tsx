@@ -93,7 +93,7 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
               Welcome to<br />ONN D A WAY
             </h2>
             <p style={{ color: "rgba(255,255,255,0.82)", fontSize: "0.9rem", lineHeight: 1.55 }}>
-              Fresh Coffee & Café Favourites,<br />delivered to your door in Rohini.
+              Fresh Meals & Café Favourites,<br />delivered to your door in Rohini.
             </p>
           </div>
 

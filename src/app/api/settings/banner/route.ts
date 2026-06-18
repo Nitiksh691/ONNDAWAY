@@ -11,7 +11,9 @@ export async function GET() {
     }
     return NextResponse.json({
       bannerEnabled: settings.bannerEnabled,
-      bannerSlides: settings.bannerSlides || []
+      bannerMode: settings.bannerMode || "single",
+      bannerSlides: settings.bannerSlides || [],
+      bentoSlides: settings.bentoSlides || []
     });
   } catch (error) {
     console.error("GET Banner Settings Error:", error);
@@ -22,7 +24,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     await dbConnect();
-    const { bannerEnabled, bannerSlides } = await req.json();
+    const { bannerEnabled, bannerMode, bannerSlides, bentoSlides } = await req.json();
     
     let settings = await Settings.findOne({});
     if (!settings) {
@@ -30,7 +32,9 @@ export async function POST(req: Request) {
     }
     
     if (typeof bannerEnabled === "boolean") settings.bannerEnabled = bannerEnabled;
+    if (bannerMode === "single" || bannerMode === "bento") settings.bannerMode = bannerMode;
     if (Array.isArray(bannerSlides)) settings.bannerSlides = bannerSlides;
+    if (Array.isArray(bentoSlides)) settings.bentoSlides = bentoSlides;
     settings.updatedAt = Date.now();
     
     await settings.save();
@@ -38,7 +42,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       success: true,
       bannerEnabled: settings.bannerEnabled,
-      bannerSlides: settings.bannerSlides
+      bannerMode: settings.bannerMode,
+      bannerSlides: settings.bannerSlides,
+      bentoSlides: settings.bentoSlides
     });
   } catch (error) {
     console.error("POST Banner Settings Error:", error);

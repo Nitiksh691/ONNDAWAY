@@ -860,6 +860,7 @@ export default function ItemPage() {
                       <FoodCard 
                         item={r} 
                         compact 
+                        layout="vertical"
                         cartItem={cart.find(c => c.item.id === r.id)}
                         onAdd={addToCart}
                         onUpdateQuantity={updateQuantity}
@@ -883,6 +884,7 @@ export default function ItemPage() {
                       <FoodCard 
                         item={r} 
                         compact 
+                        layout="vertical"
                         cartItem={cart.find(c => c.item.id === r.id)}
                         onAdd={addToCart}
                         onUpdateQuantity={updateQuantity}
@@ -911,6 +913,7 @@ export default function ItemPage() {
                     <FoodCard 
                       item={r} 
                       compact 
+                      layout="vertical"
                       cartItem={cart.find(c => c.item.id === r.id)}
                       onAdd={addToCart}
                       onUpdateQuantity={updateQuantity}
@@ -933,6 +936,7 @@ export default function ItemPage() {
                     <FoodCard 
                       item={r} 
                       compact 
+                      layout="vertical"
                       cartItem={cart.find(c => c.item.id === r.id)}
                       onAdd={addToCart}
                       onUpdateQuantity={updateQuantity}

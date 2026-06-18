@@ -146,8 +146,7 @@ export default function Navbar() {
               </svg>
               </div>
               <div className="hide-mobile">
-                <div style={{ fontWeight: 800, fontSize: "1rem", color: "var(--primary)", lineHeight: 1.1 }}>ONN D A WAY</div>
-                <div style={{ fontSize: "0.6rem", color: "var(--text-muted)", fontWeight: 500, letterSpacing: "0.05em" }}>COFFEE</div>
+                <div style={{ fontWeight: 900, fontSize: "1.1rem", color: "var(--primary)", lineHeight: 1.1, letterSpacing: "-0.02em" }}>ONN D A WAY</div>
               </div>
             </Link>
           </div>

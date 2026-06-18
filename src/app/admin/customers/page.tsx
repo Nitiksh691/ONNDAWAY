@@ -147,13 +147,13 @@ export default function CustomersPage() {
               fontSize: "2rem",
               fontWeight: 900,
               marginBottom: "8px",
-              color: "#fff",
+              color: "#0f172a",
               letterSpacing: "-0.02em",
             }}
           >
             Customers Database
           </h1>
-          <p style={{ color: "#a0a0a0", fontSize: "0.95rem" }}>
+          <p style={{ color: "#64748b", fontSize: "0.95rem" }}>
             Click on any customer to view their profile &amp; order history.
           </p>
         </div>
@@ -170,17 +170,17 @@ export default function CustomersPage() {
               alignItems: "center",
               gap: "12px",
               padding: "14px 22px",
-              background: "#18181b",
-              border: "1px solid #27272a",
+              background: "#ffffff",
+              border: "1px solid #e2e8f0",
               borderRadius: "14px",
             }}
           >
             <Users size={20} color="#0055ff" />
             <div>
-              <div style={{ fontSize: "0.7rem", color: "#71717a", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
+              <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.08em" }}>
                 Total Customers
               </div>
-              <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#fff" }}>
+              <div style={{ fontSize: "1.3rem", fontWeight: 900, color: "#0f172a" }}>
                 {customers.length}
               </div>
             </div>
@@ -204,7 +204,7 @@ export default function CustomersPage() {
             left: "16px",
             top: "50%",
             transform: "translateY(-50%)",
-            color: "#71717a",
+            color: "#64748b",
           }}
         />
         <input
@@ -215,36 +215,36 @@ export default function CustomersPage() {
           style={{
             width: "100%",
             padding: "14px 16px 14px 46px",
-            background: "#18181b",
-            border: "1px solid #27272a",
+            background: "#ffffff",
+            border: "1px solid #e2e8f0",
             borderRadius: "12px",
-            color: "#fff",
+            color: "#0f172a",
             fontSize: "0.95rem",
             fontFamily: "inherit",
             outline: "none",
             transition: "border-color 0.2s",
           }}
           onFocus={(e) => (e.currentTarget.style.borderColor = "#0055ff")}
-          onBlur={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+          onBlur={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
         />
       </div>
 
       {/* ── Customer Table ────────────────────────────────────────────── */}
       <div
         style={{
-          background: "#18181b",
-          border: "1px solid #27272a",
+          background: "#ffffff",
+          border: "1px solid #e2e8f0",
           borderRadius: "16px",
           overflow: "hidden",
         }}
       >
         {loading ? (
-          <div style={{ textAlign: "center", padding: "60px", color: "#71717a" }}>
+          <div style={{ textAlign: "center", padding: "60px", color: "#64748b" }}>
             <div
               style={{
                 width: 32,
                 height: 32,
-                border: "3px solid #27272a",
+                border: "3px solid #e2e8f0",
                 borderTop: "3px solid #0055ff",
                 borderRadius: "50%",
                 animation: "spin 0.8s linear infinite",
@@ -259,23 +259,23 @@ export default function CustomersPage() {
               <thead>
                 <tr
                   style={{
-                    borderBottom: "1px solid #27272a",
-                    background: "#111",
+                    borderBottom: "1px solid #e2e8f0",
+                    background: "#ffffff",
                   }}
                 >
-                  <th style={{ padding: "16px 20px", textAlign: "left", fontSize: "0.78rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  <th style={{ padding: "16px 20px", textAlign: "left", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Customer
                   </th>
-                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Orders
                   </th>
-                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Total Spent
                   </th>
-                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  <th style={{ padding: "16px 20px", textAlign: "center", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Top Item
                   </th>
-                  <th style={{ padding: "16px 20px", textAlign: "right", fontSize: "0.78rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  <th style={{ padding: "16px 20px", textAlign: "right", fontSize: "0.78rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.08em" }}>
                     Last Order
                   </th>
                   <th style={{ padding: "16px 20px", width: "44px" }}></th>
@@ -284,7 +284,7 @@ export default function CustomersPage() {
               <tbody>
                 {filteredCustomers.length === 0 ? (
                   <tr>
-                    <td colSpan={6} style={{ padding: "48px", textAlign: "center", color: "#71717a" }}>
+                    <td colSpan={6} style={{ padding: "48px", textAlign: "center", color: "#64748b" }}>
                       No customers found
                     </td>
                   </tr>
@@ -294,11 +294,11 @@ export default function CustomersPage() {
                       key={c.userId || i}
                       onClick={() => openDetail(c.userId)}
                       style={{
-                        borderBottom: "1px solid #1f1f23",
+                        borderBottom: "1px solid #f8fafc",
                         cursor: "pointer",
                         transition: "background 0.15s",
                       }}
-                      onMouseEnter={(e) => (e.currentTarget.style.background = "#1f1f23")}
+                      onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                       onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                     >
                       <td style={{ padding: "16px 20px" }}>
@@ -313,7 +313,7 @@ export default function CustomersPage() {
                               display: "flex",
                               alignItems: "center",
                               justifyContent: "center",
-                              color: "#fff",
+                              color: "#0f172a",
                               fontWeight: 800,
                               fontSize: "0.9rem",
                               flexShrink: 0,
@@ -322,10 +322,10 @@ export default function CustomersPage() {
                             {(c.name || "?").charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <div style={{ fontWeight: 700, color: "#e4e4e7", fontSize: "0.95rem" }}>
+                            <div style={{ fontWeight: 700, color: "#334155", fontSize: "0.95rem" }}>
                               {c.name || "Unknown"}
                             </div>
-                            <div style={{ fontSize: "0.82rem", color: "#71717a" }}>{c.phone || "—"}</div>
+                            <div style={{ fontSize: "0.82rem", color: "#64748b" }}>{c.phone || "—"}</div>
                           </div>
                         </div>
                       </td>
@@ -349,14 +349,14 @@ export default function CustomersPage() {
                       <td style={{ padding: "16px 20px", textAlign: "center", fontWeight: 800, color: "#34d399", fontSize: "0.95rem" }}>
                         ₹{c.totalSpent}
                       </td>
-                      <td style={{ padding: "16px 20px", textAlign: "center", fontWeight: 600, color: "#a0a0a0", fontSize: "0.9rem" }}>
+                      <td style={{ padding: "16px 20px", textAlign: "center", fontWeight: 600, color: "#64748b", fontSize: "0.9rem" }}>
                         {c.frequentItem || "—"}
                       </td>
-                      <td style={{ padding: "16px 20px", textAlign: "right", fontSize: "0.85rem", color: "#71717a" }}>
+                      <td style={{ padding: "16px 20px", textAlign: "right", fontSize: "0.85rem", color: "#64748b" }}>
                         {c.lastOrderDate ? new Date(c.lastOrderDate).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "—"}
                       </td>
                       <td style={{ padding: "16px 12px" }}>
-                        <ChevronRight size={16} color="#3f3f46" />
+                        <ChevronRight size={16} color="#cbd5e1" />
                       </td>
                     </tr>
                   ))
@@ -391,8 +391,8 @@ export default function CustomersPage() {
               bottom: 0,
               width: "100%",
               maxWidth: "560px",
-              background: "#111",
-              borderLeft: "1px solid #27272a",
+              background: "#ffffff",
+              borderLeft: "1px solid #e2e8f0",
               zIndex: 201,
               display: "flex",
               flexDirection: "column",
@@ -406,13 +406,13 @@ export default function CustomersPage() {
                   style={{
                     width: 36,
                     height: 36,
-                    border: "3px solid #27272a",
+                    border: "3px solid #e2e8f0",
                     borderTop: "3px solid #0055ff",
                     borderRadius: "50%",
                     animation: "spin 0.8s linear infinite",
                   }}
                 />
-                <span style={{ color: "#71717a", fontSize: "0.9rem" }}>Loading customer details...</span>
+                <span style={{ color: "#64748b", fontSize: "0.9rem" }}>Loading customer details...</span>
               </div>
             ) : detail ? (
               <>
@@ -420,13 +420,13 @@ export default function CustomersPage() {
                 <div
                   style={{
                     padding: "24px 28px",
-                    borderBottom: "1px solid #27272a",
+                    borderBottom: "1px solid #e2e8f0",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "space-between",
                     position: "sticky",
                     top: 0,
-                    background: "#111",
+                    background: "#ffffff",
                     zIndex: 10,
                   }}
                 >
@@ -435,7 +435,7 @@ export default function CustomersPage() {
                     style={{
                       background: "none",
                       border: "none",
-                      color: "#a0a0a0",
+                      color: "#64748b",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -447,7 +447,7 @@ export default function CustomersPage() {
                       borderRadius: "8px",
                       transition: "background 0.15s",
                     }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = "#1f1f23")}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = "#f8fafc")}
                     onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
                   >
                     <ArrowLeft size={18} /> Back
@@ -455,11 +455,11 @@ export default function CustomersPage() {
                   <button
                     onClick={closeDetail}
                     style={{
-                      background: "#1f1f23",
+                      background: "#f8fafc",
                       border: "none",
                       borderRadius: "8px",
                       padding: "8px",
-                      color: "#a0a0a0",
+                      color: "#64748b",
                       cursor: "pointer",
                       display: "flex",
                       alignItems: "center",
@@ -474,8 +474,8 @@ export default function CustomersPage() {
                 <div style={{ padding: "28px" }}>
                   <div
                     style={{
-                      background: "linear-gradient(135deg, #0a0f2e 0%, #0f172a 100%)",
-                      border: "1px solid #1e3a5f",
+                      background: "linear-gradient(135deg, #eef1ff 0%, #dbeafe 100%)",
+                      border: "1px solid #c7d2fe",
                       borderRadius: "20px",
                       padding: "28px",
                       marginBottom: "24px",
@@ -491,7 +491,7 @@ export default function CustomersPage() {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: "#fff",
+                          color: "#0f172a",
                           fontWeight: 900,
                           fontSize: "1.5rem",
                           boxShadow: "0 8px 24px rgba(0,85,255,0.3)",
@@ -500,7 +500,7 @@ export default function CustomersPage() {
                         {(detail.profile?.name || "?").charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "#fff" }}>
+                        <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0f172a" }}>
                           {detail.profile?.name || "Unknown Customer"}
                         </div>
                         <div style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 600, marginTop: "2px" }}>
@@ -564,7 +564,7 @@ export default function CustomersPage() {
                       }}
                     >
                       <Package size={18} color="#0055ff" />
-                      <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "#e4e4e7" }}>
+                      <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "#334155" }}>
                         Order History
                       </span>
                       <span
@@ -586,10 +586,10 @@ export default function CustomersPage() {
                         style={{
                           textAlign: "center",
                           padding: "40px 20px",
-                          color: "#71717a",
-                          background: "#18181b",
+                          color: "#64748b",
+                          background: "#ffffff",
                           borderRadius: "14px",
-                          border: "1px solid #27272a",
+                          border: "1px solid #e2e8f0",
                         }}
                       >
                         No orders yet.
@@ -602,14 +602,14 @@ export default function CustomersPage() {
                             <div
                               key={order.id}
                               style={{
-                                background: "#18181b",
-                                border: "1px solid #27272a",
+                                background: "#ffffff",
+                                border: "1px solid #e2e8f0",
                                 borderRadius: "14px",
                                 padding: "18px",
                                 transition: "border-color 0.15s",
                               }}
-                              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#3f3f46")}
-                              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#27272a")}
+                              onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#cbd5e1")}
+                              onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e2e8f0")}
                             >
                               {/* Order header */}
                               <div
@@ -622,7 +622,7 @@ export default function CustomersPage() {
                               >
                                 <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
                                   <Clock size={14} color="#71717a" />
-                                  <span style={{ fontSize: "0.82rem", color: "#a0a0a0", fontWeight: 600 }}>
+                                  <span style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 600 }}>
                                     {new Date(order.createdAt).toLocaleDateString("en-IN", {
                                       day: "numeric",
                                       month: "short",
@@ -660,13 +660,13 @@ export default function CustomersPage() {
                                       display: "flex",
                                       justifyContent: "space-between",
                                       padding: "6px 0",
-                                      borderBottom: idx < order.items.length - 1 ? "1px solid #1f1f23" : "none",
+                                      borderBottom: idx < order.items.length - 1 ? "1px solid #f8fafc" : "none",
                                     }}
                                   >
-                                    <span style={{ color: "#d4d4d8", fontSize: "0.88rem", fontWeight: 600 }}>
+                                    <span style={{ color: "#334155", fontSize: "0.88rem", fontWeight: 600 }}>
                                       {ci.quantity}× {ci.item?.name || "Unknown Item"}
                                     </span>
-                                    <span style={{ color: "#71717a", fontSize: "0.85rem", fontWeight: 700 }}>
+                                    <span style={{ color: "#64748b", fontSize: "0.85rem", fontWeight: 700 }}>
                                       ₹{(ci.item?.price || 0) * ci.quantity}
                                     </span>
                                   </div>
@@ -680,12 +680,12 @@ export default function CustomersPage() {
                                   justifyContent: "space-between",
                                   alignItems: "center",
                                   paddingTop: "10px",
-                                  borderTop: "1px solid #27272a",
+                                  borderTop: "1px solid #e2e8f0",
                                 }}
                               >
                                 <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                                   <MapPin size={13} color="#71717a" />
-                                  <span style={{ fontSize: "0.8rem", color: "#71717a" }}>{order.location}</span>
+                                  <span style={{ fontSize: "0.8rem", color: "#64748b" }}>{order.location}</span>
                                 </div>
                                 <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                   {order.discount > 0 && (
@@ -693,7 +693,7 @@ export default function CustomersPage() {
                                       −₹{order.discount}
                                     </span>
                                   )}
-                                  <span style={{ fontWeight: 900, color: "#fff", fontSize: "1rem" }}>
+                                  <span style={{ fontWeight: 900, color: "#0f172a", fontSize: "1rem" }}>
                                     ₹{order.total}
                                   </span>
                                 </div>
@@ -707,7 +707,7 @@ export default function CustomersPage() {
                 </div>
               </>
             ) : (
-              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#71717a" }}>
+              <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b" }}>
                 Failed to load customer details.
               </div>
             )}
@@ -790,8 +790,8 @@ function StatCard({
   return (
     <div
       style={{
-        background: "#18181b",
-        border: "1px solid #27272a",
+        background: "#ffffff",
+        border: "1px solid #e2e8f0",
         borderRadius: "14px",
         padding: "16px 12px",
         display: "flex",
@@ -806,14 +806,14 @@ function StatCard({
         style={{
           fontWeight: 900,
           fontSize: small ? "0.78rem" : "1.1rem",
-          color: "#fff",
+          color: "#0f172a",
           lineHeight: 1.2,
           wordBreak: "break-word",
         }}
       >
         {value}
       </div>
-      <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#71717a", textTransform: "uppercase", letterSpacing: "0.06em" }}>
+      <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>
         {label}
       </div>
     </div>

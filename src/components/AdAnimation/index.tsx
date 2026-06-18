@@ -7,7 +7,7 @@ import "./AdAnimation.css";
  * ONN DA WAY — Cinematic Ad Animation
  * ──────────────────────────────────────────────────────────────
  * A premium, multi-scene animated advertisement telling the
- * story of two college friends craving coffee — and discovering
+ * story of two college friends craving food — and discovering
  * ONN DA WAY. Built entirely with CSS animations and React
  * state orchestration. No external libraries needed.
  * ──────────────────────────────────────────────────────────────
@@ -16,7 +16,7 @@ import "./AdAnimation.css";
 // Scene definitions (step index → scene)
 // 0  — Opening: Dark screen with "Late Night..." text
 // 1  — Phone vibration notification
-// 2  — Chat: "Bro, I'm dying for a coffee ☕"
+// 2  — Chat: "Bro, I'm dying for some food 🍔"
 // 3  — Chat: "Same here 😩 but where?"
 // 4  — Chat: "Café down the road? They close early..."
 // 5  — Chat: "Food court? Too far, too expensive"
@@ -26,7 +26,7 @@ import "./AdAnimation.css";
 // 9  — Chat: "Have you guys heard of ONN DA WAY?"
 // 10 — Chat: "What's that?"
 // 11 — Chat: "It's this new place near campus!"
-// 12 — Product showcase — coffee, snacks, meals
+// 12 — Product showcase — food, snacks, meals
 // 13 — Chat: "Wait... they deliver too?! 🤯"
 // 14 — Chat: "Bro. Let's go. RIGHT NOW."
 // 15 — Transition to logo reveal
@@ -109,7 +109,7 @@ const AdAnimation = () => {
                 <div className="notif-icon">💬</div>
                 <div className="notif-body">
                   <div className="notif-app">Messages</div>
-                  <div className="notif-text">Arjun: Bro, I'm dying for a coffee ☕</div>
+                  <div className="notif-text">Arjun: Bro, I'm dying for some food 🍔</div>
                 </div>
               </div>
             </div>
@@ -136,7 +136,7 @@ const AdAnimation = () => {
                 <div className="msg-content">
                   <div className="msg-name">Arjun</div>
                   <div className="msg-bubble msg-bubble-other">
-                    Bro, I'm dying for a coffee ☕
+                    Bro, I'm dying for some food 🍔
                   </div>
                 </div>
               </div>
@@ -246,7 +246,7 @@ const AdAnimation = () => {
                 <div className="msg-content">
                   <div className="msg-name msg-name-highlight">Rahul</div>
                   <div className="msg-bubble msg-bubble-highlight">
-                    It's this amazing new place near campus! ☕🍟🍜 Great coffee, killer snacks, and affordable af! They're open late too!
+                    It's this amazing new place near campus! 🍔🍟🍜 Great food, killer snacks, and affordable af! They're open late too!
                   </div>
                 </div>
               </div>
@@ -257,7 +257,7 @@ const AdAnimation = () => {
               <div className="product-showcase anim-msg-in" style={{ animationDelay: "0.2s" }}>
                 <div className="product-card">
                   <div className="product-emoji">☕</div>
-                  <div className="product-label">Premium Coffee</div>
+                  <div className="product-label">Premium Meals</div>
                   <div className="product-price">from ₹49</div>
                 </div>
                 <div className="product-card">
@@ -332,7 +332,7 @@ const AdAnimation = () => {
             </div>
             <p className="finale-tagline">Your campus. Your cravings. Our way.</p>
             <div className="finale-features">
-              <span className="finale-chip">☕ Premium Coffee</span>
+              <span className="finale-chip">🍔 Premium Meals</span>
               <span className="finale-chip">🍟 Hot Snacks</span>
               <span className="finale-chip">🚀 Fast Delivery</span>
             </div>

@@ -11,6 +11,7 @@ import AuthModal from "@/components/AuthModal";
 import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
 
 import BannerSlider from "@/components/BannerSlider";
+// import CurvedMarquee from "@/components/CurvedMarquee";
 
 export default function HomePage() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
@@ -18,6 +19,8 @@ export default function HomePage() {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
+  const [bentoSlides, setBentoSlides] = useState<any[]>([]);
+  const [bannerMode, setBannerMode] = useState<"single" | "bento">("single");
   const [bannerEnabled, setBannerEnabled] = useState(true);
   const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -34,8 +37,12 @@ export default function HomePage() {
         if (res.ok) {
           const data = await res.json();
           setBannerEnabled(data.bannerEnabled ?? true);
+          setBannerMode(data.bannerMode || "single");
           if (data.bannerSlides && Array.isArray(data.bannerSlides)) {
             setBannerSlides(data.bannerSlides.filter((s: any) => s.active && s.image));
+          }
+          if (data.bentoSlides && Array.isArray(data.bentoSlides)) {
+            setBentoSlides(data.bentoSlides);
           }
         }
       } catch (err) {
@@ -109,8 +116,11 @@ export default function HomePage() {
 
 
       {/* ─── BANNER SLIDER ─── */}
-      {hasBanner && (
+      {hasBanner && bannerMode === "single" && (
         <BannerSlider slides={combinedBannerSlides} variant="home" />
+      )}
+      {hasBanner && bannerMode === "bento" && (
+        <BannerSlider bentoSlides={bentoSlides} variant="bento" />
       )}
 
       {/* ─── HERO (only when NO banners) ─── */}
@@ -123,7 +133,7 @@ export default function HomePage() {
               LIFE BEGINS <br /> AFTER <span style={{ color: "#93C5FD" }}>FLAVOR</span>.
             </h1>
             <p style={{ fontSize: "1.05rem", maxWidth: "500px", opacity: 0.85, marginBottom: "32px", fontWeight: 500, lineHeight: 1.6 }}>
-              Curated coffee, snacks, and meals — delivered straight to you in minutes.
+              Curated meals, snacks, and beverages — delivered straight to you in minutes.
             </p>
           </div>
         </section>
@@ -131,68 +141,102 @@ export default function HomePage() {
 
 
 
+
       {/* ─── MARQUEE ─── */}
       <div className="marquee">
-        <span>☕ FRESH COFFEE ⚡ FAST DELIVERY ☕ COLD COFFEE ⚡ BURGERS & SANDWICHES ☕ CAFÉ-STYLE FOOD ⚡ ROHINI DELIVERY ☕ ORDER NOW ⚡ ONN DA WAY ☕</span>
-        <span>☕ FRESH COFFEE ⚡ FAST DELIVERY ☕ COLD COFFEE ⚡ BURGERS & SANDWICHES ☕ CAFÉ-STYLE FOOD ⚡ ROHINI DELIVERY ☕ ORDER NOW ⚡ ONN DA WAY ☕</span>
+        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS & SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
+        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS & SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
       </div>
 
-      {/* ─── SEARCH BAR ─── */}
-      <div style={{ background: "#fff", padding: "16px 20px", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 63, zIndex: 41 }}>
-        <div style={{ position: "relative", maxWidth: "600px", margin: "0 auto" }}>
-          <Search size={18} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            placeholder="Search for coffee, meals, snacks..."
-            style={{
-              width: "100%", padding: "12px 16px 12px 42px", borderRadius: "10px",
-              border: "2px solid #e5e7eb", fontSize: "0.9rem", fontFamily: "'Outfit', sans-serif",
-              fontWeight: 600, outline: "none", background: "#f9fafb", color: "#0A0F2E",
-              transition: "border-color 0.2s, box-shadow 0.2s",
-            }}
-            onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
-            onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.boxShadow = "none"; }}
-          />
-        </div>
-      </div>
+      <style>{`
+        .menu-toolbar {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 16px;
+        }
+        .menu-search-wrapper {
+          flex: 1;
+          min-width: 250px;
+        }
+        .menu-pills-wrapper {
+          display: flex;
+          gap: 8px;
+          overflow-x: auto;
+          flex: 2;
+          padding: 4px 0;
+          scrollbar-width: none;
+        }
+        .menu-pills-wrapper::-webkit-scrollbar { display: none; }
+        @media (max-width: 768px) {
+          .menu-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+            gap: 10px;
+          }
+          .menu-search-wrapper { min-width: unset; }
+          .menu-pills-wrapper { flex: unset; }
+        }
+      `}</style>
 
-      {/* ─── CATEGORY PILLS & VIEW TOGGLE (single sticky bar) ─── */}
-      <div style={{ display: "flex", alignItems: "center", background: "#fff", borderBottom: "1px solid #f0f0f0", position: "sticky", top: 63, zIndex: 40, padding: "0 16px" }}>
-        {/* Scrollable pills */}
-        <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "10px 0", scrollbarWidth: "none" as any }}>
-          {categories.map(cat => (
+      {/* ─── UNIFIED SEARCH & CATEGORY BAR ─── */}
+      <div style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 60, zIndex: 41, padding: "12px 0" }}>
+        <div className="otw-container menu-toolbar">
+          
+          {/* Search */}
+          <div className="menu-search-wrapper" style={{ position: "relative" }}>
+            <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search meals, snacks..."
+              style={{
+                width: "100%", padding: "12px 16px 12px 42px", borderRadius: "99px",
+                border: "1.5px solid #e5e7eb", fontSize: "0.95rem", fontFamily: "'Outfit', sans-serif",
+                fontWeight: 600, outline: "none", background: "#f8fafc", color: "#0f172a",
+                transition: "all 0.2s",
+              }}
+              onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
+              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.boxShadow = "none"; }}
+            />
+          </div>
+
+          {/* Category Pills */}
+          <div className="menu-pills-wrapper">
+            {categories.map(cat => (
+              <button
+                key={cat}
+                className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
+                onClick={() => setSelectedCategory(cat)}
+              >
+                {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Toggle */}
+          <div className="desktop-only" style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 4, borderRadius: 12, flexShrink: 0 }}>
             <button
-              key={cat}
-              className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
-              onClick={() => setSelectedCategory(cat)}
+              title="List view"
+              onClick={() => setMenuLayout("horizontal")}
+              style={{ width: 34, height: 30, borderRadius: 8, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 2px 6px rgba(0,0,0,0.08)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
             >
-              {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
             </button>
-          ))}
-        </div>
-        {/* Toggle */}
-        <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 8, marginLeft: 12, flexShrink: 0 }}>
-          <button
-            title="List view"
-            onClick={() => setMenuLayout("horizontal")}
-            style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-          </button>
-          <button
-            title="Grid view"
-            onClick={() => setMenuLayout("vertical")}
-            style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
-          >
-            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-          </button>
+            <button
+              title="Grid view"
+              onClick={() => setMenuLayout("vertical")}
+              style={{ width: 34, height: 30, borderRadius: 8, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 2px 6px rgba(0,0,0,0.08)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+            </button>
+          </div>
         </div>
       </div>
 
       {/* ─── MENU CONTENT ─── */}
-      <section style={{ padding: "24px 0 40px", background: "var(--bg-cream)", minHeight: "60vh" }}>
+      <section style={{ padding: "16px 0 24px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
 
           {/* Popular — top: social proof & bestsellers */}
@@ -211,9 +255,9 @@ export default function HomePage() {
               }}>
                 {popularItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard 
-                      item={item} 
-                      layout={menuLayout} 
+                    <FoodCard
+                      item={item}
+                      layout={menuLayout}
                       cartItem={cart.find((c: any) => c.item.id === item.id)}
                       onAdd={addToCart}
                       onUpdateQuantity={updateQuantity}
@@ -240,9 +284,9 @@ export default function HomePage() {
               }}>
                 {recommendedItems.map(item => (
                   <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard 
-                      item={item} 
-                      layout={menuLayout} 
+                    <FoodCard
+                      item={item}
+                      layout={menuLayout}
                       cartItem={cart.find((c: any) => c.item.id === item.id)}
                       onAdd={addToCart}
                       onUpdateQuantity={updateQuantity}
@@ -280,10 +324,10 @@ export default function HomePage() {
                 width: "100%"
               }}>
                 {gridItems.map(item => (
-                  <FoodCard 
-                    key={item.id} 
-                    item={item} 
-                    layout={menuLayout} 
+                  <FoodCard
+                    key={item.id}
+                    item={item}
+                    layout={menuLayout}
                     cartItem={cart.find((c: any) => c.item.id === item.id)}
                     onAdd={addToCart}
                     onUpdateQuantity={updateQuantity}
@@ -301,6 +345,11 @@ export default function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* ─── CURVED MARQUEE (Moved above footer) ─── */}
+      {/* {!loadingMenu && menuItems.length > 0 && (
+        <CurvedMarquee items={menuItems.filter(i => i.image)} />
+      )} */}
 
       <Footer />
 

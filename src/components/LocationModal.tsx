@@ -80,18 +80,30 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
     setGeoLoading(true);
     setGeoError("");
     navigator.geolocation.getCurrentPosition(
-      () => {
-        // In production, you'd reverse-geocode here.
-        // For now, default to Rohini Sector 9 as representative center.
-        setGeoLoading(false);
-        onSave("Rohini Sector 9");
-        onClose();
+      async (pos) => {
+        try {
+          const { latitude, longitude } = pos.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          const data = await res.json();
+          let locationName = "Current Location";
+          if (data && data.address) {
+             const addr = data.address;
+             locationName = addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || addr.city || "Detected Location";
+          }
+          setGeoLoading(false);
+          onSave(locationName);
+          onClose();
+        } catch (e) {
+          setGeoLoading(false);
+          onSave("Detected Location");
+          onClose();
+        }
       },
-      () => {
+      (error) => {
         setGeoLoading(false);
-        setGeoError("Could not detect location. Please select manually.");
+        setGeoError(error.message || "Could not detect location. Please select manually.");
       },
-      { timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
