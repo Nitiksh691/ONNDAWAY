@@ -164,6 +164,8 @@ export default function BannerSlider({ slides = [], bentoSlides = [], variant = 
               maxHeight: "420px",
               background: "#111",
               boxShadow: "0 16px 40px rgba(0,0,0,0.12)",
+              width: "100%",
+              boxSizing: "border-box",
             }}
           >
             {slides.map((slide, idx) => (

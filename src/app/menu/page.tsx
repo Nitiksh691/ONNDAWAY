@@ -33,16 +33,17 @@ function getTimeOfDay(): string {
 }
 
 /* Horizontal scroll row for a list of items */
-function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout, cart, onAdd, onUpdateQuantity }: {
+function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, cart, onAdd, onUpdateQuantity, onViewAll }: {
   items: MenuItem[];
   label: string;
   emoji: string;
-  viewAllHref: string;
+  viewAllCategory?: string;
   emptyText?: string;
   layout: "horizontal" | "vertical";
   cart: any[];
   onAdd: any;
   onUpdateQuantity: any;
+  onViewAll: (cat: string) => void;
 }) {
   if (items.length === 0) {
     return emptyText ? (
@@ -59,20 +60,21 @@ function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout, cart,
             {emoji} {label}
           </h2>
         </div>
-        <Link
-          href={viewAllHref}
-          style={{
-            display: "flex", alignItems: "center", gap: "4px",
-            fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
-            textDecoration: "none", padding: "5px 10px",
-            borderRadius: "8px", background: "var(--accent-2)",
-            transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "#D6DDFF"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-2)"; }}
-        >
-          View All <ChevRight size={13} />
-        </Link>
+        {viewAllCategory && (
+          <button
+            onClick={() => onViewAll(viewAllCategory)}
+            style={{
+              display: "flex", alignItems: "center", gap: "4px", border: "none", cursor: "pointer",
+              fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
+              padding: "5px 10px", borderRadius: "8px", background: "var(--accent-2)",
+              transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#D6DDFF"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "var(--accent-2)"; }}
+          >
+            View All <ChevRight size={13} />
+          </button>
+        )}
       </div>
 
       {/* Horizontal scroll container */}
@@ -94,27 +96,29 @@ function HScrollRow({ items, label, emoji, viewAllHref, emptyText, layout, cart,
         ))}
 
         {/* "See all" end card */}
-        <Link
-          href={viewAllHref}
-          style={{
-            minWidth: "110px", maxWidth: "110px", flexShrink: 0,
-            display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-            gap: "8px", borderRadius: "12px", border: "2px dashed rgba(1,53,251,0.25)",
-            textDecoration: "none", color: "var(--primary)", fontWeight: 700,
-            fontSize: "0.8rem", background: "rgba(1,53,251,0.03)",
-            transition: "background 0.2s", padding: "16px 8px", textAlign: "center",
-          }}
-          onMouseEnter={e => { e.currentTarget.style.background = "rgba(1,53,251,0.06)"; }}
-          onMouseLeave={e => { e.currentTarget.style.background = "rgba(1,53,251,0.03)"; }}
-        >
-          <div style={{
-            width: 36, height: 36, borderRadius: "50%", background: "var(--accent-2)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-          }}>
-            <ArrowRight size={16} />
-          </div>
-          See all {label}
-        </Link>
+        {viewAllCategory && (
+          <button
+            onClick={() => onViewAll(viewAllCategory)}
+            style={{
+              minWidth: "110px", maxWidth: "110px", flexShrink: 0, border: "2px dashed rgba(1,53,251,0.25)", cursor: "pointer",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              gap: "8px", borderRadius: "12px", 
+              color: "var(--primary)", fontWeight: 700,
+              fontSize: "0.8rem", background: "rgba(1,53,251,0.03)",
+              transition: "background 0.2s", padding: "16px 8px", textAlign: "center",
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = "rgba(1,53,251,0.06)"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "rgba(1,53,251,0.03)"; }}
+          >
+            <div style={{
+              width: 36, height: 36, borderRadius: "50%", background: "var(--accent-2)",
+              display: "flex", alignItems: "center", justifyContent: "center",
+            }}>
+              <ArrowRight size={16} />
+            </div>
+            See all {label}
+          </button>
+        )}
       </div>
     </section>
   );
@@ -168,6 +172,11 @@ export default function MenuPage() {
       }
     };
     fetchMenu();
+  }, []);
+
+  const handleViewAll = useCallback((cat: string) => {
+    setActiveCategory(cat);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
 
   const popular = useMemo(() => menu.filter(i => i.isPopular), [menu]);
@@ -232,14 +241,16 @@ export default function MenuPage() {
               </button>
             ))}
           </div>
-          <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 8, flexShrink: 0 }}>
-            <button title="List" onClick={() => setMenuLayout("horizontal")} style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            </button>
-            <button title="Grid" onClick={() => setMenuLayout("vertical")} style={{ width: 32, height: 28, borderRadius: 6, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-            </button>
-          </div>
+          {activeCategory !== "all" && (
+            <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 10, flexShrink: 0, border: "1px solid #e2e8f0" }}>
+              <button title="List" onClick={() => setMenuLayout("horizontal")} style={{ width: 34, height: 32, borderRadius: 8, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+              </button>
+              <button title="Grid" onClick={() => setMenuLayout("vertical")} style={{ width: 34, height: 32, borderRadius: 8, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              </button>
+            </div>
+          )}
         </div>
       </div>
 
@@ -265,11 +276,11 @@ export default function MenuPage() {
                   items={popular}
                   label="Popular Right Now"
                   emoji="🔥"
-                  viewAllHref="/menu?category=all"
                   layout={menuLayout}
                   cart={cart}
                   onAdd={addToCart}
                   onUpdateQuantity={updateQuantity}
+                  onViewAll={handleViewAll}
                 />
               )}
 
@@ -279,11 +290,11 @@ export default function MenuPage() {
                   items={recommended}
                   label={`Perfect for ${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}`}
                   emoji="🎯"
-                  viewAllHref="/menu?category=all"
                   layout={menuLayout}
                   cart={cart}
                   onAdd={addToCart}
                   onUpdateQuantity={updateQuantity}
+                  onViewAll={handleViewAll}
                 />
               )}
 
@@ -303,11 +314,12 @@ export default function MenuPage() {
                   items={items}
                   label={CAT_LABEL[cat]}
                   emoji={CAT_EMOJI[cat]}
-                  viewAllHref={`/menu?category=${cat}`}
+                  viewAllCategory={cat}
                   layout={menuLayout}
                   cart={cart}
                   onAdd={addToCart}
                   onUpdateQuantity={updateQuantity}
+                  onViewAll={handleViewAll}
                 />
               ))}
             </>
