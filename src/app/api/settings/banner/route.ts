@@ -25,20 +25,19 @@ export async function POST(req: Request) {
   try {
     await dbConnect();
     const { bannerEnabled, bannerMode, bannerSlides, bentoSlides } = await req.json();
-    
-    let settings = await Settings.findOne({});
-    if (!settings) {
-      settings = new Settings();
-    }
-    
-    if (typeof bannerEnabled === "boolean") settings.bannerEnabled = bannerEnabled;
-    if (bannerMode === "single" || bannerMode === "bento") settings.bannerMode = bannerMode;
-    if (Array.isArray(bannerSlides)) settings.bannerSlides = bannerSlides;
-    if (Array.isArray(bentoSlides)) settings.bentoSlides = bentoSlides;
-    settings.updatedAt = Date.now();
-    
-    await settings.save();
-    
+
+    const updateFields: Record<string, unknown> = { updatedAt: Date.now() };
+    if (typeof bannerEnabled === "boolean") updateFields.bannerEnabled = bannerEnabled;
+    if (bannerMode === "single" || bannerMode === "bento") updateFields.bannerMode = bannerMode;
+    if (Array.isArray(bannerSlides)) updateFields.bannerSlides = bannerSlides;
+    if (Array.isArray(bentoSlides)) updateFields.bentoSlides = bentoSlides;
+
+    const settings = await Settings.findOneAndUpdate(
+      {},
+      { $set: updateFields },
+      { upsert: true, new: true }
+    );
+
     return NextResponse.json({
       success: true,
       bannerEnabled: settings.bannerEnabled,

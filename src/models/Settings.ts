@@ -26,9 +26,4 @@ const SettingsSchema = new Schema({
   updatedAt:   { type: Date, default: Date.now },
 });
 
-// Prevent Mongoose from caching the old schema during Next.js hot-reloads
-if (models.Settings) {
-  delete models.Settings;
-}
-
-export default model("Settings", SettingsSchema);
+export default models.Settings || model("Settings", SettingsSchema);
