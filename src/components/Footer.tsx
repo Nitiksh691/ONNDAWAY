@@ -64,7 +64,7 @@ export default function Footer() {
             <h4 style={{ fontWeight: 700, marginBottom: "16px", fontSize: "0.95rem" }}>Quick Links</h4>
             <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
               {[
-                { label: "Menu", href: "/" },
+                { label: "Menu", href: "/menu" },
                 { label: "My Orders", href: "/orders" },
                 { label: "About Us", href: "/about" },
                 { label: "Delivery Partner", href: "/delivery/login" },

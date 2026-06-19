@@ -10,6 +10,7 @@ const UserSchema = new Schema(
     accommodation: { type: String, default: "" },
     location:      { type: String, default: "" },
     phone:         { type: String, default: "" },
+    gender:        { type: String, enum: ["boy", "girl", ""], default: "" },
     role:          { type: String, enum: ["user", "admin", "delivery"], default: "user" },
     lastLoginAt:   { type: Date, default: null }, // updated on each successful login
     createdAt:     { type: Date, default: Date.now },

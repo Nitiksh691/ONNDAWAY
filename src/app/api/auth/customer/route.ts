@@ -12,7 +12,7 @@ import User from "@/models/User";
 export async function POST(req: NextRequest) {
   await dbConnect();
   try {
-    const { phone, name, image } = await req.json();
+    const { phone, name, image, gender } = await req.json();
 
     if (!phone) {
       return NextResponse.json(
@@ -45,6 +45,7 @@ export async function POST(req: NextRequest) {
         phone: cleanPhone,
         name: name.trim(),
         image: image || "",
+        gender: gender || "",
         role: "user",
       });
     } else {
@@ -57,6 +58,10 @@ export async function POST(req: NextRequest) {
       }
       if (image && image !== user.image) {
         updates.image = image;
+        updated = true;
+      }
+      if (gender && gender !== user.gender) {
+        updates.gender = gender;
         updated = true;
       }
       

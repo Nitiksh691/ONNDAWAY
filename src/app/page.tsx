@@ -343,6 +343,12 @@ export default function HomePage() {
               </div>
             )}
           </div>
+
+          <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
+            <Link href="/menu" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--primary)", color: "white", padding: "16px 32px", borderRadius: "99px", fontWeight: 800, fontSize: "1.1rem", textDecoration: "none", boxShadow: "0 4px 14px rgba(1,53,251,0.3)", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
+              Explore Full Menu <ArrowRight size={20} />
+            </Link>
+          </div>
         </div>
       </section>
 

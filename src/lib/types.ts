@@ -6,6 +6,8 @@ export interface UserProfile {
   college: string;
   year: string;
   phone: string;
+  image?: string;
+  gender?: string;
   role: UserRole;
   createdAt: string;
   orderCount?: number;

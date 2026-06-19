@@ -221,8 +221,10 @@ export default function Navbar() {
                     display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: "0.75rem", fontWeight: 700, overflow: "hidden", flexShrink: 0,
                   }}>
-                    {(profile as any)?.image ? (
-                      <img src={(profile as any).image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {profile?.image ? (
+                      <img src={profile.image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : profile?.gender ? (
+                      <img src={`/avatars/${profile.gender}.png`} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       profile?.name?.[0]?.toUpperCase() || "U"
                     )}
@@ -363,8 +365,10 @@ export default function Navbar() {
                     color: "white", display: "flex", alignItems: "center", justifyContent: "center",
                     fontSize: "0.95rem", fontWeight: 700, overflow: "hidden",
                   }}>
-                    {(profile as any)?.image ? (
-                      <img src={(profile as any).image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    {profile?.image ? (
+                      <img src={profile.image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : profile?.gender ? (
+                      <img src={`/avatars/${profile.gender}.png`} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                     ) : (
                       profile?.name?.[0]?.toUpperCase() || "U"
                     )}

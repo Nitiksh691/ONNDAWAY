@@ -1,7 +1,6 @@
 "use client";
 import { useState, useRef } from "react";
 import { X, Upload, User as UserIcon } from "lucide-react";
-import SignInButton from "./SignInButton";
 import toast from "react-hot-toast";
 
 interface AuthModalProps {
@@ -13,6 +12,7 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
   const [image, setImage] = useState("");
+  const [gender, setGender] = useState<"boy" | "girl" | "">("");
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -33,13 +33,24 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
     reader.readAsDataURL(file);
   };
 
-  const handleOTPVerify = async (user_json_url: string) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isPhoneValid) {
+      toast.error("Please enter a valid 10-digit Indian mobile number");
+      return;
+    }
+    
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      let finalImage = image;
+      if (!finalImage && gender) {
+        finalImage = `/avatars/${gender}.png`;
+      }
+
+      const res = await fetch("/api/auth/customer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_json_url, name, image }),
+        body: JSON.stringify({ phone: phoneDigits, name, image: finalImage, gender }),
       });
       
       const data = await res.json();
@@ -47,7 +58,11 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
         toast.success(name ? "Account verified!" : "Logged in successfully!");
         onSuccess(data.userId);
       } else {
-        toast.error(data.error || "Authentication failed");
+        if (data.error?.includes("Name is required")) {
+          toast.error("Looks like you are new! Please enter your name.");
+        } else {
+          toast.error(data.error || "Authentication failed");
+        }
       }
     } catch (err) {
       toast.error("Something went wrong");
@@ -77,16 +92,73 @@ export default function AuthModal({ onClose, onSuccess }: AuthModalProps) {
           <p style={{ color: "var(--text-muted)", fontSize: "0.95rem" }}>Login or create an account to track your orders faster.</p>
         </div>
 
-          <div>
-            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "var(--text-mid)", marginBottom: "8px", textTransform: "uppercase" }}>Verify with Phone/Email</label>
-            {loading ? (
-              <div style={{ textAlign: "center", padding: "20px", color: "var(--primary)", fontWeight: 700 }}>
-                 Verifying...
-              </div>
-            ) : (
-              <SignInButton onVerify={handleOTPVerify} />
-            )}
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+          
+          {/* Profile Image Upload */}
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px", marginBottom: "8px" }}>
+            <div 
+              onClick={() => fileInputRef.current?.click()}
+              style={{
+                width: 90, height: 90, borderRadius: "50%", border: "2px dashed var(--primary)",
+                background: image ? "transparent" : "var(--accent-2)", cursor: "pointer",
+                display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+                position: "relative"
+              }}
+            >
+              {image ? (
+                <img src={image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : gender ? (
+                <img src={`/avatars/${gender}.png`} alt="Avatar" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", color: "var(--primary)" }}>
+                  <Upload size={24} />
+                  <span style={{ fontSize: "0.65rem", fontWeight: 700, marginTop: "4px" }}>PHOTO</span>
+                </div>
+              )}
+            </div>
+            <input type="file" ref={fileInputRef} onChange={handleImageUpload} accept="image/*" style={{ display: "none" }} />
+            <span style={{ fontSize: "0.8rem", color: "var(--text-muted)", fontWeight: 600 }}>Optional</span>
           </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "var(--text-mid)", marginBottom: "8px", textTransform: "uppercase" }}>Mobile Number <span style={{color: "red"}}>*</span></label>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div style={{ padding: "14px 16px", borderRadius: "10px", border: "2px solid var(--border)", background: "var(--accent-2)", fontWeight: 800, fontSize: "0.95rem", color: "var(--primary)", flexShrink: 0 }}>🇮🇳 +91</div>
+              <input type="tel" className="otw-input" placeholder="98765 43210" value={phone} onChange={e => setPhone(e.target.value.replace(/\D/g, "").slice(0, 10))} maxLength={10} style={{ flex: 1, borderRadius: "10px" }} required />
+            </div>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "var(--text-mid)", marginBottom: "8px", textTransform: "uppercase" }}>Full Name</label>
+            <div style={{ position: "relative" }}>
+              <UserIcon size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+              <input type="text" className="otw-input" placeholder="e.g. John Doe" value={name} onChange={e => setName(e.target.value)} style={{ paddingLeft: "44px", borderRadius: "10px" }} />
+            </div>
+            <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "6px" }}>Only required if you are a new user.</p>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "var(--text-mid)", marginBottom: "8px", textTransform: "uppercase" }}>Avatar</label>
+            <div style={{ display: "flex", gap: "12px" }}>
+              <div 
+                onClick={() => setGender("boy")}
+                style={{ flex: 1, padding: "10px", borderRadius: "10px", border: gender === "boy" ? "2px solid var(--primary)" : "2px solid #e5e7eb", textAlign: "center", cursor: "pointer", background: gender === "boy" ? "rgba(1,53,251,0.05)" : "transparent" }}
+              >
+                👦 Boy
+              </div>
+              <div 
+                onClick={() => setGender("girl")}
+                style={{ flex: 1, padding: "10px", borderRadius: "10px", border: gender === "girl" ? "2px solid var(--primary)" : "2px solid #e5e7eb", textAlign: "center", cursor: "pointer", background: gender === "girl" ? "rgba(1,53,251,0.05)" : "transparent" }}
+              >
+                👧 Girl
+              </div>
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading || !isPhoneValid} className="otw-btn otw-btn-primary" style={{ width: "100%", padding: "16px", fontSize: "1.05rem", borderRadius: "12px", marginTop: "8px" }}>
+            {loading ? "Verifying..." : "Continue"}
+          </button>
+        </form>
       </div>
     </div>
   );
