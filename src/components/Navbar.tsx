@@ -114,16 +114,8 @@ export default function Navbar() {
       }}>
         <div className="otw-container nav-inner">
 
-          {/* Left: Hamburger (mobile) + Logo */}
+          {/* Left: Logo */}
           <div className="nav-left">
-            <button className="mobile-only" onClick={() => setMobileOpen(!mobileOpen)} style={{
-              width: 36, height: 36, border: "none", background: "var(--accent)",
-              borderRadius: "10px", color: "var(--primary)", cursor: "pointer",
-              display: "none", alignItems: "center", justifyContent: "center", flexShrink: 0,
-            }}>
-              {mobileOpen ? <X size={18} /> : <Menu size={18} />}
-            </button>
-
             <Link href="/" style={{ display: "flex", alignItems: "center", gap: "8px", textDecoration: "none", flexShrink: 0 }}>
               <div style={{
                 width: 36, height: 36, borderRadius: "10px",
@@ -153,14 +145,25 @@ export default function Navbar() {
 
           {/* Center: Desktop Nav Links */}
           <div style={{ display: "flex", alignItems: "center", gap: "4px" }} className="desktop-only">
-            {NAV_LINKS.map(l => (
-              <Link key={l.href} href={l.href} style={{
+            {NAV_LINKS.map(l => {
+              const active = l.href === "/" ? pathname === "/" : pathname.startsWith(l.href);
+              return (
+                <Link key={l.href} href={l.href} style={{
+                  padding: "8px 16px", borderRadius: "8px", textDecoration: "none",
+                  fontWeight: 600, fontSize: "0.88rem", transition: "all 0.15s",
+                  background: active ? "var(--accent-2)" : "transparent",
+                  color: active ? "var(--primary)" : "var(--text-mid)",
+                }}>{l.label}</Link>
+              );
+            })}
+            {user && (
+              <Link href="/profile" style={{
                 padding: "8px 16px", borderRadius: "8px", textDecoration: "none",
                 fontWeight: 600, fontSize: "0.88rem", transition: "all 0.15s",
-                background: pathname === l.href ? "var(--accent-2)" : "transparent",
-                color: pathname === l.href ? "var(--primary)" : "var(--text-mid)",
-              }}>{l.label}</Link>
-            ))}
+                background: pathname.startsWith("/profile") ? "var(--accent-2)" : "transparent",
+                color: pathname.startsWith("/profile") ? "var(--primary)" : "var(--text-mid)",
+              }}>Profile</Link>
+            )}
             {profile?.role === "admin" && (
               <Link href="/admin" style={{ padding: "8px 16px", borderRadius: "8px", textDecoration: "none", fontWeight: 600, fontSize: "0.88rem", color: "var(--text-mid)" }}>
                 Admin
@@ -317,99 +320,7 @@ export default function Navbar() {
         onSave={saveLocation}
       />
 
-      {/* Mobile Drawer */}
-      {mobileOpen && (
-        <>
-          <div onClick={() => setMobileOpen(false)} style={{
-            position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 998,
-            backdropFilter: "blur(2px)",
-          }} />
-          <div style={{
-            position: "fixed", top: 0, left: 0, bottom: 0, width: "280px",
-            background: "white", zIndex: 999, padding: "24px",
-            boxShadow: "8px 0 32px rgba(0,0,0,0.15)",
-            display: "flex", flexDirection: "column",
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px" }}>
-              <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "var(--primary)" }}>ONN DA WAY</div>
-              <button onClick={() => setMobileOpen(false)} style={{
-                width: 36, height: 36, border: "none", background: "var(--accent-2)",
-                borderRadius: "10px", color: "var(--primary)", cursor: "pointer",
-                display: "flex", alignItems: "center", justifyContent: "center",
-              }}><X size={18} /></button>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px", flex: 1 }}>
-              {NAV_LINKS.map(l => (
-                <Link key={l.href} href={l.href} onClick={() => setMobileOpen(false)} style={{
-                  padding: "14px 16px", borderRadius: "10px", textDecoration: "none",
-                  fontWeight: 600, fontSize: "0.95rem",
-                  color: pathname === l.href ? "var(--primary)" : "var(--text-mid)",
-                  background: pathname === l.href ? "var(--accent-2)" : "transparent",
-                }}>{l.label}</Link>
-              ))}
-              {profile?.role === "admin" && (
-                <Link href="/admin" onClick={() => setMobileOpen(false)} style={{
-                  padding: "14px 16px", borderRadius: "10px", textDecoration: "none",
-                  fontWeight: 600, fontSize: "0.95rem", color: "var(--text-mid)",
-                  display: "flex", alignItems: "center", gap: "10px",
-                }}><LayoutDashboard size={18} /> Admin</Link>
-              )}
-            </div>
-
-            {user ? (
-              <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "16px", marginTop: "auto" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
-                  <div style={{
-                    width: 40, height: 40, borderRadius: "50%", background: "var(--primary)",
-                    color: "white", display: "flex", alignItems: "center", justifyContent: "center",
-                    fontSize: "0.95rem", fontWeight: 700, overflow: "hidden",
-                  }}>
-                    {profile?.image ? (
-                      <img src={profile.image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : profile?.gender ? (
-                      <img src={`/avatars/${profile.gender}.png`} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                    ) : (
-                      profile?.name?.[0]?.toUpperCase() || "U"
-                    )}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.95rem" }}>{profile?.name || "User"}</div>
-                    <div style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>{profile?.college || ""}</div>
-                  </div>
-                </div>
-                <button onClick={handleLogout} style={{
-                  display: "flex", alignItems: "center", gap: "8px", width: "100%",
-                  padding: "12px 16px", borderRadius: "10px", border: "none",
-                  background: "#FEE2E2", color: "var(--error)", cursor: "pointer",
-                  fontWeight: 600, fontSize: "0.9rem", fontFamily: "inherit",
-                }}>
-                  <LogOut size={16} /> Log Out
-                </button>
-              </div>
-            ) : (
-              <div style={{ borderTop: "1px solid #E5E7EB", paddingTop: "16px", marginTop: "auto" }}>
-                <button
-                  id="mobile-drawer-auth-btn"
-                  onClick={() => { setMobileOpen(false); setShowAuthModal(true); }}
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                    width: "100%", padding: "13px 16px", borderRadius: "12px",
-                    border: "2px solid var(--primary)",
-                    background: "var(--primary)", color: "white",
-                    cursor: "pointer", fontFamily: "inherit",
-                    fontWeight: 700, fontSize: "0.95rem",
-                    transition: "all 0.15s",
-                  }}
-                >
-                  <User size={18} />
-                  Login / Sign Up
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      )}
+      {/* Mobile Drawer — hidden since bottom nav handles navigation */}
     </>
   );
 }

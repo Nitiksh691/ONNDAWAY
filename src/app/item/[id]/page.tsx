@@ -1,17 +1,21 @@
 "use client";
-import { useState, useEffect, useRef, useCallback, useMemo, type CSSProperties } from "react";
+import { useState, useRef, useCallback, useMemo, type CSSProperties } from "react";
+import useSWR from "swr";
 import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft, Star, Clock, MapPin, Zap, Info,
-  Plus, Minus, ShoppingCart, ChevronRight, CheckCircle
+  Plus, Minus, ShoppingCart, ChevronRight, CheckCircle, Search
 } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { MenuItem, SelectedCustomization } from "@/lib/types";
 import toast from "react-hot-toast";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
+
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then(res => res.json());
 
 /* ── helpers ─────────────────────────────────────────── */
 function getPseudoRating(id: string): number {
@@ -37,7 +41,7 @@ const CAT_TEXT: Record<string, string> = {
 const DELIVERY_BADGES = [
   { icon: <Zap size={13} />, text: "30-45 min delivery" },
   { icon: <Clock size={13} />, text: "Freshly prepared" },
-  { icon: <MapPin size={13} />, text: "Rohini delivery" },
+  { icon: <MapPin size={13} />, text: "Local delivery" },
 ];
 
 function customizationKey(customizations?: SelectedCustomization[]) {
@@ -47,9 +51,9 @@ function customizationKey(customizations?: SelectedCustomization[]) {
 const INFO_CARD: CSSProperties = {
   background: "white",
   borderRadius: 16,
-  border: "1px solid #E8ECF4",
-  padding: "20px 22px",
-  boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+  border: "1px solid #E2E8F0",
+  padding: "20px 24px",
+  boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
 };
 
 /* ═══════════════════════════════════════════════════════
@@ -61,9 +65,9 @@ function Stars({ rating }: { rating: number }) {
       {[1, 2, 3, 4, 5].map(i => (
         <Star
           key={i}
-          size={13}
+          size={14}
           fill={i <= Math.round(rating) ? "#F59E0B" : "none"}
-          color={i <= Math.round(rating) ? "#F59E0B" : "#D1D5DB"}
+          color={i <= Math.round(rating) ? "#F59E0B" : "#CBD5E1"}
         />
       ))}
     </span>
@@ -78,9 +82,6 @@ export default function ItemPage() {
   const router = useRouter();
   const { cart, addToCart, updateQuantity } = useApp();
 
-  const [item, setItem] = useState<MenuItem | null>(null);
-  const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [instructions, setInstructions] = useState("");
   const [charCount, setCharCount] = useState(0);
   const [descExpanded, setDescExpanded] = useState(false);
@@ -92,47 +93,29 @@ export default function ItemPage() {
   const [zoomPos, setZoomPos] = useState({ x: 50, y: 50 });
   const imgWrapRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    setCustomizations({});
-    setInstructions("");
-    setCharCount(0);
-    setQty(1);
-    setItem(null);
-    setLoading(true);
-  }, [id]);
+  // Use SWR for deduplication and caching
+  const { data: menu = [], isLoading } = useSWR<MenuItem[]>("/api/menu", fetcher, {
+    revalidateOnFocus: false, // Don't constantly refetch static menu
+    dedupingInterval: 60000,
+  });
 
-  useEffect(() => {
-    fetch("/api/menu")
-      .then(r => r.json())
-      .then((data: MenuItem[]) => {
-        setMenu(data);
-        const found = data.find(m => m.id === id);
-        if (found) {
-          setItem(found);
-          if (found.customizationCategories?.length) {
-            const defaults: Record<string, string> = {};
-            found.customizationCategories.forEach(cat => {
-              if (cat.options[0]?.name) defaults[cat.name] = cat.options[0].name;
-            });
-            setCustomizations(defaults);
-          }
-        }
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, [id]);
+  const item = menu.find(m => m.id === id);
 
-  useEffect(() => {
-    if (!item?.customizationCategories?.length) return;
-    setCustomizations(prev => {
-      if (Object.keys(prev).length > 0) return prev;
+  // Initialize customizations once item loads
+  useMemo(() => {
+    if (item?.customizationCategories?.length) {
       const defaults: Record<string, string> = {};
-      item.customizationCategories!.forEach(cat => {
-        if (cat.options[0]?.name) defaults[cat.name] = cat.options[0].name;
+      item.customizationCategories.forEach(cat => {
+        if (cat.options[0]?.name && !customizations[cat.name]) {
+          defaults[cat.name] = cat.options[0].name;
+        }
       });
-      return defaults;
-    });
-  }, [item]);
+      if (Object.keys(defaults).length > 0) {
+        setCustomizations(prev => ({ ...prev, ...defaults }));
+      }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [item]); // Intentionally omitting customizations dependency to only run once per item
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
     const rect = imgWrapRef.current?.getBoundingClientRect();
@@ -179,26 +162,18 @@ export default function ItemPage() {
     for (let i = 0; i < qty; i++) {
       addToCart(item, instructions, selectedCustomizations, unitPrice);
     }
-    toast.success(`${item.name} added to cart!`, { icon: "🛒" });
+    toast.success(`${item.name} added to cart!`, { icon: "🛒", style: { borderRadius: "10px", background: "#0135FB", color: "white" } });
   };
 
   /* ── Loading skeleton ── */
-  if (loading) {
+  if (isLoading) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F8FAFF" }}>
-        <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.5}}.sk{animation:sk 1.4s ease infinite;background:#E5E7EB;border-radius:8px}`}</style>
-        {/* Desktop skeleton */}
-        <div className="desktop-only" style={{ maxWidth: 1340, margin: "0 auto", padding: "32px 32px", display: "grid", gridTemplateColumns: "40% 1fr", gap: 40 }}>
-          <div className="sk" style={{ aspectRatio: "1", borderRadius: 20 }} />
-          <div style={{ display: "flex", flexDirection: "column", gap: 16, paddingTop: 8 }}>
-            {[60, 40, 80, 30, 100, 60, 100].map((w, i) => <div key={i} className="sk" style={{ height: i === 4 ? 80 : i === 6 ? 52 : 20, width: `${w}%` }} />)}
-          </div>
-        </div>
-        {/* Mobile skeleton */}
-        <div className="mobile-only" style={{ display: "flex", flexDirection: "column" }}>
-          <div className="sk" style={{ height: 320, borderRadius: "0 0 24px 24px" }} />
-          <div style={{ padding: "20px 16px", display: "flex", flexDirection: "column", gap: 14 }}>
-            {[70, 40, 90, 50].map((w, i) => <div key={i} className="sk" style={{ height: i === 3 ? 56 : 18, width: `${w}%` }} />)}
+      <div style={{ minHeight: "100vh", background: "#FAFAFA" }}>
+        <style>{`@keyframes sk{0%,100%{opacity:1}50%{opacity:.5}}.sk{animation:sk 1.4s ease infinite;background:#E2E8F0;border-radius:12px}`}</style>
+        <div className="desktop-only" style={{ maxWidth: 1200, margin: "0 auto", padding: "40px 32px", display: "grid", gridTemplateColumns: "1fr 1fr", gap: 60 }}>
+          <div className="sk" style={{ aspectRatio: "1" }} />
+          <div style={{ display: "flex", flexDirection: "column", gap: 20, paddingTop: 10 }}>
+            {[60, 40, 80, 30, 100, 60, 100].map((w, i) => <div key={i} className="sk" style={{ height: i === 4 ? 80 : i === 6 ? 52 : 24, width: `${w}%` }} />)}
           </div>
         </div>
       </div>
@@ -207,11 +182,11 @@ export default function ItemPage() {
 
   if (!item) {
     return (
-      <div style={{ minHeight: "100vh", background: "#F8FAFF", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
+      <div style={{ minHeight: "100vh", background: "#FAFAFA", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 16 }}>
         <div style={{ fontSize: "3.5rem" }}>😕</div>
-        <h1 style={{ fontWeight: 900, fontSize: "1.5rem", color: "#0A0F2E" }}>Item not found</h1>
-        <Link href="/menu" style={{ display: "flex", alignItems: "center", gap: 6, color: "#0135FB", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>
-          <ArrowLeft size={15} /> Back to Menu
+        <h1 style={{ fontWeight: 900, fontSize: "1.5rem", color: "#0F172A" }}>Item not found</h1>
+        <Link href="/menu" style={{ display: "flex", alignItems: "center", gap: 6, color: "#0135FB", fontWeight: 700, textDecoration: "none", fontSize: "0.95rem" }}>
+          <ArrowLeft size={16} /> Back to Menu
         </Link>
       </div>
     );
@@ -225,39 +200,38 @@ export default function ItemPage() {
   const displayUnitPrice = unitPrice;
   const displayLineTotal = displayUnitPrice * qty;
 
-  const catBg = CAT_BG[item.category] ?? "#E6F0FF";
-  const catText = CAT_TEXT[item.category] ?? "#1E40AF";
+  const catBg = CAT_BG[item.category] ?? "#F1F5F9";
+  const catText = CAT_TEXT[item.category] ?? "#475569";
 
   const relatedItems = menu.filter(m => m.id !== item.id && m.category === item.category && m.available).slice(0, 8);
   const boughtTogether = menu.filter(m => m.id !== item.id && m.category !== item.category && m.available).slice(0, 6);
 
-  const descLong = item.description && item.description.length > 200;
-  const descPreview = descLong && !descExpanded ? item.description.slice(0, 195) + "…" : item.description;
+  const descLong = item.description && item.description.length > 150;
+  const descPreview = descLong && !descExpanded ? item.description.slice(0, 145) + "…" : item.description;
 
   const renderCustomizations = (compact?: boolean) => (
     itemOptions.length > 0 && (
       <div>
         {itemOptions.map(opt => (
-          <div key={opt.name} style={{ marginBottom: compact ? 12 : 16 }}>
+          <div key={opt.name} style={{ marginBottom: compact ? 16 : 20 }}>
             <div style={{
-              fontSize: compact ? "0.75rem" : "0.78rem", fontWeight: 800, color: "#0A0F2E",
-              marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em",
-              display: "flex", alignItems: "center", gap: 6,
+              fontSize: "0.85rem", fontWeight: 700, color: "#0F172A",
+              marginBottom: 10, display: "flex", alignItems: "center", gap: 6,
             }}>
               {opt.name}
-              {opt.required && <span style={{ color: "#EF4444", fontSize: "0.7rem" }}>*</span>}
+              {opt.required && <span style={{ color: "#EF4444" }}>*</span>}
             </div>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: compact ? 7 : 8 }}>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
               {opt.options.filter(o => o.name).map(o => (
                 <button
                   key={o.name}
                   className={`opt-chip${customizations[opt.name] === o.name ? " selected" : ""}`}
-                  style={compact ? { fontSize: "0.8rem", padding: "7px 14px" } : undefined}
+                  style={{ padding: "8px 16px" }}
                   onClick={() => setCustom(opt.name, o.name)}
                 >
                   {o.name}
                   {o.price > 0 && (
-                    <span style={{ marginLeft: 6, opacity: customizations[opt.name] === o.name ? 0.9 : 0.7, fontSize: "0.78rem" }}>
+                    <span style={{ marginLeft: 6, opacity: customizations[opt.name] === o.name ? 0.9 : 0.6, fontSize: "0.8rem" }}>
                       +₹{o.price}
                     </span>
                   )}
@@ -275,68 +249,68 @@ export default function ItemPage() {
     const base: React.CSSProperties = mobile
       ? {
         position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 500,
-        background: "white", borderTop: "1.5px solid #E5E7EB",
-        boxShadow: "0 -8px 32px rgba(0,0,0,0.1)",
-        padding: "10px 16px 10px", display: "flex", alignItems: "center", gap: 10,
+        background: "white", borderTop: "1px solid #E2E8F0",
+        boxShadow: "0 -4px 20px rgba(0,0,0,0.05)",
+        padding: "12px 20px", display: "flex", alignItems: "center", gap: 12,
       }
-      : { display: "flex", flexDirection: "column", gap: 12, marginTop: 8 };
+      : { display: "flex", flexDirection: "column", gap: 16, marginTop: 8 };
 
     return (
       <div style={base}>
         {mobile && (
-          <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1, minWidth: 0 }}>
             <div style={{
-              width: 38, height: 38, borderRadius: 10, overflow: "hidden",
-              position: "relative", flexShrink: 0, background: catBg,
+              width: 44, height: 44, borderRadius: 12, overflow: "hidden",
+              position: "relative", flexShrink: 0, background: catBg, border: "1px solid #E2E8F0"
             }}>
-              <Image src={item.image} alt={item.name} fill sizes="38px" style={{ objectFit: "cover" }} />
+              <Image src={item.image} alt={item.name} fill sizes="44px" style={{ objectFit: "cover" }} />
             </div>
             <div style={{ minWidth: 0 }}>
-              <div style={{ fontWeight: 800, fontSize: "0.82rem", color: "#0A0F2E", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-                <span style={{ fontWeight: 900, fontSize: "1rem", color: "#0135FB" }}>₹{displayUnitPrice}</span>
-                {hasDiscount && extrasTotal === 0 && <span style={{ fontSize: "0.72rem", textDecoration: "line-through", color: "#9CA3AF" }}>₹{item.originalPrice}</span>}
+              <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0F172A", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{item.name}</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0135FB" }}>₹{displayUnitPrice}</span>
+                {hasDiscount && extrasTotal === 0 && <span style={{ fontSize: "0.75rem", textDecoration: "line-through", color: "#94A3B8" }}>₹{item.originalPrice}</span>}
               </div>
             </div>
           </div>
         )}
 
-        {/* Desktop: qty selector + total */}
         {!mobile && (
           <>
-            {/* Qty row */}
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-              <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#0A0F2E" }}>Quantity</span>
-              <div style={{ display: "flex", alignItems: "center", gap: 2, border: "1.5px solid #E5E7EB", borderRadius: 10, overflow: "hidden" }}>
+              <span style={{ fontSize: "0.9rem", fontWeight: 700, color: "#0F172A" }}>Quantity</span>
+              <div style={{ display: "flex", alignItems: "center", gap: 0, border: "1px solid #E2E8F0", borderRadius: 12, overflow: "hidden", background: "white" }}>
                 <button
                   onClick={() => setQty(q => Math.max(1, q - 1))}
-                  style={{ width: 36, height: 36, border: "none", background: "#F9FAFB", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#0A0F2E" }}
-                ><Minus size={14} /></button>
-                <span style={{ minWidth: 32, textAlign: "center", fontWeight: 800, fontSize: "0.95rem", color: "#0A0F2E" }}>{qty}</span>
+                  style={{ width: 40, height: 40, border: "none", borderRight: "1px solid #E2E8F0", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F1F5F9"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                ><Minus size={16} /></button>
+                <span style={{ width: 44, textAlign: "center", fontWeight: 800, fontSize: "1rem", color: "#0F172A" }}>{qty}</span>
                 <button
                   onClick={() => setQty(q => q + 1)}
-                  style={{ width: 36, height: 36, border: "none", background: "#0135FB", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}
-                ><Plus size={14} /></button>
+                  style={{ width: 40, height: 40, border: "none", borderLeft: "1px solid #E2E8F0", background: "transparent", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748B", transition: "background 0.2s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#F1F5F9"}
+                  onMouseLeave={e => e.currentTarget.style.background = "transparent"}
+                ><Plus size={16} /></button>
               </div>
             </div>
 
-            {/* Total */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", background: "#F8FAFF", borderRadius: 12, border: "1px solid #E5E7EB" }}>
-              <span style={{ fontSize: "0.82rem", color: "#6B7280", fontWeight: 600 }}>Total</span>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-                {hasDiscount && extrasTotal === 0 && qty === 1 && <span style={{ fontSize: "0.82rem", textDecoration: "line-through", color: "#9CA3AF" }}>₹{item.originalPrice}</span>}
-                <span style={{ fontWeight: 900, fontSize: "1.15rem", color: "#0135FB" }}>₹{displayLineTotal}</span>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", background: "#F8FAFC", borderRadius: 12, border: "1px solid #E2E8F0" }}>
+              <span style={{ fontSize: "0.9rem", color: "#64748B", fontWeight: 600 }}>Total</span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                {hasDiscount && extrasTotal === 0 && qty === 1 && <span style={{ fontSize: "0.85rem", textDecoration: "line-through", color: "#94A3B8" }}>₹{item.originalPrice}</span>}
+                <span style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0135FB" }}>₹{displayLineTotal}</span>
               </div>
             </div>
             {extrasTotal > 0 && (
-              <div style={{ fontSize: "0.78rem", color: "#6B7280", textAlign: "right" }}>
+              <div style={{ fontSize: "0.8rem", color: "#64748B", textAlign: "right" }}>
                 Base ₹{item.price}{extrasTotal > 0 ? ` + ₹${extrasTotal} add-ons` : ""}
               </div>
             )}
           </>
         )}
 
-        {/* CTA */}
         {qtyInCart === 0 ? (
           <button
             onClick={handleAddToCart}
@@ -344,47 +318,38 @@ export default function ItemPage() {
             style={{
               flex: mobile ? "unset" : undefined,
               width: mobile ? "auto" : "100%",
-              padding: mobile ? "0 20px" : "15px 24px",
-              height: mobile ? 44 : undefined,
+              padding: mobile ? "0 24px" : "16px 24px",
+              height: mobile ? 48 : undefined,
               borderRadius: 12, border: "none", cursor: item.available ? "pointer" : "not-allowed",
-              background: item.available ? "linear-gradient(135deg, #0135FB 0%, #0028D4 100%)" : "#E5E7EB",
-              color: item.available ? "white" : "#9CA3AF",
-              fontWeight: 900, fontSize: "0.9rem", fontFamily: "inherit",
-              letterSpacing: "0.3px",
-              boxShadow: item.available ? "0 6px 20px rgba(1,53,251,0.3)" : "none",
-              transition: "all 0.18s",
-              display: "flex", alignItems: "center", gap: 7, justifyContent: "center",
-              flexShrink: 0,
+              background: item.available ? "#0135FB" : "#E2E8F0",
+              color: item.available ? "white" : "#94A3B8",
+              fontWeight: 800, fontSize: "0.95rem", fontFamily: "inherit",
+              boxShadow: item.available ? "0 4px 12px rgba(1,53,251,0.2)" : "none",
+              transition: "all 0.2s",
+              display: "flex", alignItems: "center", gap: 8, justifyContent: "center",
               whiteSpace: "nowrap",
             }}
-            onMouseEnter={e => { if (item.available) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-1px)"; }}
+            onMouseEnter={e => { if (item.available) (e.currentTarget as HTMLButtonElement).style.transform = "translateY(-2px)"; }}
             onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = ""; }}
           >
-            <ShoppingCart size={15} />
+            <ShoppingCart size={18} />
             {item.available
-              ? (mobile ? "Add to Cart" : `Add ${qty > 1 ? `(${qty})` : ""} · ₹${displayLineTotal}`)
+              ? (mobile ? "Add to Cart" : `Add to Cart`)
               : "Sold Out"}
           </button>
         ) : (
-          <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
-            <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E5E7EB", borderRadius: 10, overflow: "hidden" }}>
-              <button onClick={() => updateQuantity(cartItem!.cartItemId, qtyInCart - 1)}
-                style={{ width: 36, height: 36, border: "none", background: "#F9FAFB", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "#0A0F2E" }}>
-                <Minus size={13} />
-              </button>
-              <span style={{ minWidth: 28, textAlign: "center", fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E" }}>{qtyInCart}</span>
-              <button onClick={() => addToCart(item, instructions, selectedCustomizations, unitPrice)}
-                style={{ width: 36, height: 36, border: "none", background: "#0135FB", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: "white" }}>
-                <Plus size={13} />
-              </button>
-            </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12, flexShrink: 0, width: mobile ? "auto" : "100%" }}>
             <Link href="/cart" style={{
-              display: "flex", alignItems: "center", gap: 6, padding: "0 16px", height: 36,
-              borderRadius: 10, background: "linear-gradient(135deg, #22C55E, #16A34A)",
-              color: "white", textDecoration: "none", fontWeight: 800, fontSize: "0.82rem",
-              boxShadow: "0 4px 14px rgba(34,197,94,0.3)", whiteSpace: "nowrap",
-            }}>
-              <ShoppingCart size={13} /> View Cart
+              flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: mobile ? "0 24px" : "16px 24px", height: mobile ? 48 : undefined,
+              borderRadius: 12, background: "#10B981",
+              color: "white", textDecoration: "none", fontWeight: 800, fontSize: "0.95rem",
+              boxShadow: "0 4px 12px rgba(16,185,129,0.2)", whiteSpace: "nowrap",
+              transition: "all 0.2s"
+            }}
+            onMouseEnter={e => { (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)"; }}
+            onMouseLeave={e => { (e.currentTarget as HTMLAnchorElement).style.transform = ""; }}
+            >
+              <CheckCircle size={18} /> Added to Cart
             </Link>
           </div>
         )}
@@ -392,565 +357,198 @@ export default function ItemPage() {
     );
   };
 
-  /* ─────────────────────────────────────────────────────
-     RENDER
-  ───────────────────────────────────────────────────── */
   return (
     <>
       <style>{`
-        /* hide scrollbars on recommendation rows */
-        .reco-scroll {
-          display: grid;
-          grid-auto-flow: column;
-          grid-auto-columns: 200px;
-          gap: 16px;
-          overflow-x: auto;
-          padding-bottom: 8px;
-          -webkit-overflow-scrolling: touch;
-          scrollbar-width: none;
-          align-items: stretch;
-        }
+        .reco-scroll { display: grid; grid-auto-flow: column; grid-auto-columns: 240px; gap: 20px; overflow-x: auto; padding-bottom: 12px; scrollbar-width: none; align-items: stretch; }
         .reco-scroll::-webkit-scrollbar { display:none; }
-        .reco-scroll-item { display: flex; flex-direction: column; height: 100%; min-height: 0; }
-        .reco-section { margin-bottom: 40px; }
-        .reco-section-header {
-          display: flex; align-items: center; justify-content: space-between;
-          margin-bottom: 16px; gap: 12px;
-        }
-        .reco-section-header h2 {
-          font-size: 1.15rem; font-weight: 800; color: #0A0F2E; margin: 0;
-        }
-        .item-desc-text {
-          font-size: 1rem; color: #374151; line-height: 1.75; margin: 0;
-        }
-        @media (max-width: 768px) {
-          .reco-scroll { grid-auto-columns: 160px; gap: 12px; }
-          .item-desc-text { font-size: 0.92rem; line-height: 1.65; }
-        }
-
-        /* desktop two-column */
-        .item-page-grid {
-          display: grid;
-          grid-template-columns: 40% 1fr;
-          gap: 40px;
-          max-width: 1340px;
-          margin: 0 auto;
-          padding: 28px 32px 80px;
-          align-items: start;
-        }
-
-        /* sticky info panel on desktop */
-        .info-panel { position: sticky; top: 72px; }
-
-        /* mobile-only padding for sticky bar */
-        @media (max-width: 768px) {
-          .mobile-page-body { padding-bottom: 82px; }
+        .item-page-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; max-width: 1200px; margin: 0 auto; padding: 40px 32px 80px; align-items: start; }
+        .info-panel { position: sticky; top: 80px; }
+        @media (max-width: 900px) {
           .item-page-grid { display: block; padding: 0; }
           .desktop-gallery { display: none !important; }
           .desktop-info { display: none !important; }
           .mobile-sticky-bar { display: flex !important; }
           .mobile-product-view { display: flex !important; }
+          .reco-scroll { grid-auto-columns: 200px; gap: 16px; padding: 0 16px 16px; }
         }
-        @media (min-width: 769px) {
+        @media (min-width: 901px) {
           .mobile-product-view { display: none !important; }
           .mobile-sticky-bar { display: none !important; }
           .desktop-gallery { display: block !important; }
           .desktop-info { display: flex !important; }
         }
-
-        /* image zoom */
         .img-zoom-wrap { cursor: zoom-in; }
         .img-zoom-wrap.zoomed { cursor: zoom-out; }
-
-        /* thumbnail active ring */
-        .thumb-active { outline: 2.5px solid #0135FB; outline-offset: 2px; }
-
-        /* option chips */
-        .opt-chip {
-          padding: 8px 16px; border-radius: 999px; border: 1.5px solid #E5E7EB;
-          background: white; cursor: pointer; font-family: inherit; font-size: 0.82rem;
-          font-weight: 600; color: #374151; transition: all 0.15s; white-space: nowrap;
-        }
-        .opt-chip:hover { border-color: #0135FB; color: #0135FB; background: #EEF1FF; }
-        .opt-chip.selected { border-color: #0135FB; background: #0135FB; color: white; }
-
-        /* delivery trust badges */
-        .trust-badge {
-          display: inline-flex; align-items: center; gap: 5px; padding: 6px 12px;
-          background: white; border: 1px solid #E5E7EB; border-radius: 99px;
-          font-size: 0.78rem; font-weight: 700; color: #374151; white-space: nowrap;
-          box-shadow: 0 1px 4px rgba(0,0,0,0.05);
-        }
-
-        @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
-        .fade-up { animation: fadeUp 0.35s ease both; }
+        .opt-chip { padding: 10px 20px; border-radius: 12px; border: 1px solid #E2E8F0; background: white; cursor: pointer; font-family: inherit; font-size: 0.9rem; font-weight: 600; color: #475569; transition: all 0.2s; }
+        .opt-chip:hover { border-color: #0135FB; color: #0135FB; background: #F8FAFC; }
+        .opt-chip.selected { border-color: #0135FB; background: #EEF1FF; color: #0135FB; }
+        .trust-badge { display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; font-size: 0.85rem; font-weight: 600; color: #475569; }
       `}</style>
 
-      <div style={{ background: "#F8FAFF", minHeight: "100vh" }}>
-
-        {/* ══════════════════════════════════════════════
-            DESKTOP LAYOUT: two-column grid
-        ══════════════════════════════════════════════ */}
+      <div style={{ background: "#FAFAFA", minHeight: "100vh" }}>
         <div className="item-page-grid">
-
-          {/* ── Left: Image Gallery ── */}
-          <div className="desktop-gallery" style={{ display: "none" }}>
-
-            {/* Breadcrumb */}
-            <nav style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 18, flexWrap: "wrap" }}>
-              <button onClick={() => router.back()} style={{ display: "flex", alignItems: "center", gap: 4, border: "none", background: "none", cursor: "pointer", color: "#6B7280", fontWeight: 600, fontSize: "0.8rem", fontFamily: "inherit", padding: 0 }}>
-                <ArrowLeft size={13} /> Back
-              </button>
-              <ChevronRight size={11} color="#9CA3AF" />
-              <Link href="/menu" style={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none" }}>Menu</Link>
-              <ChevronRight size={11} color="#9CA3AF" />
-              <Link href={`/menu?category=${item.category}`} style={{ color: "#6B7280", fontSize: "0.8rem", fontWeight: 600, textDecoration: "none", textTransform: "capitalize" }}>{item.category}</Link>
-              <ChevronRight size={11} color="#9CA3AF" />
-              <span style={{ color: "#0A0F2E", fontSize: "0.8rem", fontWeight: 700, textTransform: "capitalize" }}>{item.name}</span>
+          {/* Desktop Gallery */}
+          <div className="desktop-gallery">
+            <nav style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+              <Link href="/menu" style={{ display: "flex", alignItems: "center", gap: 6, color: "#64748B", fontWeight: 600, fontSize: "0.9rem", textDecoration: "none" }}>
+                <ArrowLeft size={16} /> Back to Menu
+              </Link>
             </nav>
-
-            {/* Main image */}
             <div
-              ref={imgWrapRef}
-              className={`img-zoom-wrap${zoomed ? " zoomed" : ""}`}
-              style={{
-                position: "relative", width: "100%", aspectRatio: "1 / 1",
-                borderRadius: 20, overflow: "hidden", background: catBg,
-                boxShadow: "0 8px 40px rgba(0,0,0,0.08)",
-              }}
-              onMouseEnter={() => setZoomed(true)}
-              onMouseLeave={() => setZoomed(false)}
-              onMouseMove={handleMouseMove}
+              ref={imgWrapRef} className={`img-zoom-wrap${zoomed ? " zoomed" : ""}`}
+              style={{ position: "relative", width: "100%", aspectRatio: "1 / 1", borderRadius: 24, overflow: "hidden", background: catBg, border: "1px solid #E2E8F0" }}
+              onMouseEnter={() => setZoomed(true)} onMouseLeave={() => setZoomed(false)} onMouseMove={handleMouseMove}
             >
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                sizes="(max-width: 1340px) 40vw, 530px"
-                priority
-                style={{
-                  objectFit: "cover",
-                  transition: "transform 0.3s ease",
-                  transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`,
-                  transform: zoomed ? "scale(1.6)" : "scale(1)",
-                }}
-              />
-              {/* Badges on desktop image */}
-              {item.isPopular && (
-                <span style={{
-                  position: "absolute", top: 14, left: 14, zIndex: 2,
-                  background: "linear-gradient(135deg, #F59E0B, #D97706)",
-                  color: "white", padding: "5px 12px", borderRadius: 99,
-                  fontSize: "0.72rem", fontWeight: 800, letterSpacing: "0.4px",
-                  boxShadow: "0 3px 10px rgba(217,119,6,0.35)",
-                }}>⭐ Popular</span>
-              )}
-              {hasDiscount && (
-                <span style={{
-                  position: "absolute", top: 14, right: 14, zIndex: 2,
-                  background: "#22C55E", color: "white",
-                  padding: "5px 12px", borderRadius: 99,
-                  fontSize: "0.72rem", fontWeight: 800,
-                  boxShadow: "0 3px 10px rgba(34,197,94,0.35)",
-                }}>{discountPct}% OFF</span>
-              )}
+              <Image src={item.image} alt={item.name} fill sizes="600px" priority style={{ objectFit: "cover", transition: "transform 0.4s ease-out", transformOrigin: `${zoomPos.x}% ${zoomPos.y}%`, transform: zoomed ? "scale(1.8)" : "scale(1)" }} />
+              {item.isPopular && <span style={{ position: "absolute", top: 20, left: 20, background: "#F59E0B", color: "white", padding: "6px 14px", borderRadius: 10, fontSize: "0.8rem", fontWeight: 700 }}>Popular</span>}
+              {hasDiscount && <span style={{ position: "absolute", top: 20, right: 20, background: "#10B981", color: "white", padding: "6px 14px", borderRadius: 10, fontSize: "0.8rem", fontWeight: 700 }}>{discountPct}% OFF</span>}
             </div>
-
-            {/* Thumbnail strip — shows same image with slight zoom variation for now */}
-            <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-              {[item.image].map((src, i) => (
-                <div
-                  key={i}
-                  className="thumb-active"
-                  style={{
-                    width: 64, height: 64, borderRadius: 10, overflow: "hidden",
-                    position: "relative", flexShrink: 0, background: catBg, cursor: "pointer",
-                  }}
-                >
-                  <Image src={src} alt={`View ${i + 1}`} fill sizes="64px" style={{ objectFit: "cover" }} />
-                </div>
-              ))}
-            </div>
-
-            {/* Trust badges (desktop, below gallery) */}
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 20 }}>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 24 }}>
               {DELIVERY_BADGES.map((b, i) => (
-                <span key={i} className="trust-badge">
-                  <span style={{ color: "#0135FB" }}>{b.icon}</span> {b.text}
-                </span>
+                <span key={i} className="trust-badge"><span style={{ color: "#0135FB" }}>{b.icon}</span> {b.text}</span>
               ))}
             </div>
           </div>
 
-          {/* ── Right: Info Panel (sticky) ── */}
-          <div className="desktop-info info-panel fade-up" style={{ display: "none", flexDirection: "column", gap: 14 }}>
-
-            {/* Header card */}
-            <div style={INFO_CARD}>
-              <div style={{ marginBottom: 10 }}>
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "4px 12px", borderRadius: 999,
-                  background: catBg, color: catText,
-                  fontSize: "0.75rem", fontWeight: 700, textTransform: "capitalize",
-                }}>{item.category}</span>
-              </div>
-
-              <h1 style={{
-                fontFamily: "'Outfit', sans-serif", fontWeight: 900,
-                fontSize: "clamp(1.7rem, 2.5vw, 2.2rem)", lineHeight: 1.1,
-                color: "#0A0F2E", textTransform: "capitalize", marginBottom: 12,
-              }}>{item.name}</h1>
-
-              <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+          {/* Desktop Info Panel */}
+          <div className="desktop-info info-panel" style={{ flexDirection: "column", gap: 24 }}>
+            <div>
+              <span style={{ display: "inline-block", padding: "6px 14px", borderRadius: 10, background: catBg, color: catText, fontSize: "0.8rem", fontWeight: 700, textTransform: "capitalize", marginBottom: 16 }}>{item.category}</span>
+              <h1 style={{ fontSize: "2.5rem", fontWeight: 900, color: "#0F172A", lineHeight: 1.1, marginBottom: 16 }}>{item.name}</h1>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
                 <Stars rating={rating} />
-                <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#0A0F2E" }}>{rating}</span>
-                <span style={{ fontSize: "0.82rem", color: "#6B7280" }}>({reviews} reviews)</span>
-                <span style={{ width: 1, height: 14, background: "#E5E7EB" }} />
-                <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: "0.82rem", color: "#6B7280" }}>
-                  <CheckCircle size={13} color="#22C55E" /> {item.orderCount}+ orders
-                </span>
+                <span style={{ fontWeight: 700, color: "#0F172A" }}>{rating}</span>
+                <span style={{ color: "#64748B" }}>({reviews} reviews)</span>
               </div>
-
-              <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
-                <span style={{
-                  display: "inline-flex", alignItems: "center", gap: 5,
-                  padding: "5px 12px", borderRadius: 99,
-                  background: item.available ? "#D1FAE5" : "#FEE2E2",
-                  fontSize: "0.78rem", fontWeight: 700,
-                  color: item.available ? "#065F46" : "#991B1B",
-                }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: item.available ? "#22C55E" : "#EF4444", display: "inline-block" }} />
-                  {item.available ? "Available" : "Sold Out"}
-                </span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 99, background: "#EEF1FF", fontSize: "0.78rem", fontWeight: 700, color: "#0135FB" }}>
-                  <Clock size={12} /> Freshly Prepared
-                </span>
-                <span style={{ display: "inline-flex", alignItems: "center", gap: 5, padding: "5px 12px", borderRadius: 99, background: "#FEF3C7", fontSize: "0.78rem", fontWeight: 700, color: "#92400E" }}>
-                  <Zap size={12} /> 30-45 min
-                </span>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
+                <span style={{ fontSize: "2.5rem", fontWeight: 900, color: "#0135FB" }}>₹{displayUnitPrice}</span>
+                {hasDiscount && extrasTotal === 0 && <span style={{ fontSize: "1.2rem", textDecoration: "line-through", color: "#94A3B8", fontWeight: 600 }}>₹{item.originalPrice}</span>}
               </div>
-
-              <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-                <span style={{ fontSize: "2rem", fontWeight: 900, color: "#0135FB", lineHeight: 1 }}>₹{displayUnitPrice}</span>
-                {hasDiscount && extrasTotal === 0 && (
-                  <>
-                    <span style={{ fontSize: "1.05rem", textDecoration: "line-through", color: "#9CA3AF", fontWeight: 600 }}>₹{item.originalPrice}</span>
-                    <span style={{ fontSize: "0.82rem", fontWeight: 800, color: "#22C55E", background: "#DCFCE7", padding: "3px 10px", borderRadius: 6 }}>
-                      Save ₹{savings}
-                    </span>
-                  </>
-                )}
-              </div>
-              {extrasTotal > 0 && (
-                <p style={{ margin: "8px 0 0", fontSize: "0.82rem", color: "#6B7280" }}>
-                  Base price ₹{item.price} + ₹{extrasTotal} add-ons
-                </p>
-              )}
             </div>
 
-            {/* Description card */}
             {item.description && (
-              <div style={{ ...INFO_CARD, background: "linear-gradient(180deg, #FAFBFF 0%, #FFFFFF 100%)" }}>
-                <h3 style={{ fontSize: "0.78rem", fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>About this item</h3>
-                <p className="item-desc-text">
+              <div style={{ ...INFO_CARD }}>
+                <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 }}>Description</h3>
+                <p style={{ fontSize: "1rem", color: "#334155", lineHeight: 1.6 }}>
                   {descPreview}
-                  {descLong && (
-                    <button onClick={() => setDescExpanded(v => !v)} style={{ marginLeft: 6, color: "#0135FB", fontWeight: 700, background: "none", border: "none", cursor: "pointer", fontSize: "0.92rem", fontFamily: "inherit" }}>
-                      {descExpanded ? "Show less" : "Read more"}
-                    </button>
-                  )}
+                  {descLong && <button onClick={() => setDescExpanded(!descExpanded)} style={{ color: "#0135FB", border: "none", background: "none", fontWeight: 600, cursor: "pointer", marginLeft: 8 }}>{descExpanded ? "Show less" : "Read more"}</button>}
                 </p>
               </div>
             )}
 
-            {/* Customizations card */}
             {itemOptions.length > 0 && (
               <div style={INFO_CARD}>
-                <h3 style={{ fontSize: "0.78rem", fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 14 }}>Customize your order</h3>
+                <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 16 }}>Customize</h3>
                 {renderCustomizations()}
               </div>
             )}
 
-            {/* Special instructions card */}
             <div style={INFO_CARD}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <h3 style={{ fontSize: "0.78rem", fontWeight: 800, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.06em", display: "flex", alignItems: "center", gap: 6, margin: 0 }}>
-                  <Info size={13} color="#9CA3AF" /> Special Requests
-                </h3>
-                <span style={{ fontSize: "0.7rem", color: "#9CA3AF" }}>{charCount}/200</span>
+              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 12 }}>
+                <h3 style={{ fontSize: "0.85rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase", letterSpacing: "0.05em", display: "flex", alignItems: "center", gap: 8 }}><Info size={16} /> Special Requests</h3>
+                <span style={{ fontSize: "0.8rem", color: "#94A3B8" }}>{charCount}/200</span>
               </div>
               <textarea
-                placeholder="e.g. Less sugar, extra hot, no ice…"
-                value={instructions}
-                maxLength={200}
-                rows={3}
+                placeholder="e.g. Less sugar, extra hot..."
+                value={instructions} maxLength={200} rows={3}
                 onChange={e => { setInstructions(e.target.value); setCharCount(e.target.value.length); }}
-                style={{
-                  width: "100%", background: "#F9FAFB", border: "1.5px solid #E5E7EB",
-                  borderRadius: 10, padding: "12px 14px", fontSize: "0.875rem",
-                  color: "#0A0F2E", outline: "none", resize: "none",
-                  fontFamily: "inherit", lineHeight: 1.5, transition: "border-color 0.2s",
-                  boxSizing: "border-box",
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = "#0135FB"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
+                style={{ width: "100%", background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 12, padding: "16px", fontSize: "0.95rem", color: "#0F172A", outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                onFocus={e => e.currentTarget.style.borderColor = "#0135FB"} onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
               />
             </div>
-
-            {/* Purchase card */}
-            <div style={{ ...INFO_CARD, border: "2px solid #EEF1FF", boxShadow: "0 8px 28px rgba(1,53,251,0.08)" }}>
-              <CartBar mobile={false} />
+            
+            <div style={{ ...INFO_CARD, padding: "24px" }}>
+               <CartBar mobile={false} />
             </div>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════
-            MOBILE LAYOUT
-        ══════════════════════════════════════════════ */}
-        <div className="mobile-product-view mobile-page-body" style={{ display: "none", flexDirection: "column" }}>
-
-          {/* ── Image area ── */}
-          <div style={{
-            position: "relative", width: "100%", height: 310,
-            background: catBg, borderRadius: "0 0 24px 24px", overflow: "hidden", flexShrink: 0,
-          }}>
+        {/* Mobile View */}
+        <div className="mobile-product-view" style={{ display: "none", flexDirection: "column", paddingBottom: 100 }}>
+          <div style={{ position: "relative", width: "100%", height: "45vh", background: catBg }}>
             <Image src={item.image} alt={item.name} fill sizes="100vw" priority style={{ objectFit: "cover" }} />
-
-            {/* Back */}
-            <button
-              onClick={() => router.back()}
-              style={{
-                position: "absolute", top: 14, left: 14, zIndex: 10,
-                width: 38, height: 38, borderRadius: "50%", border: "none",
-                background: "rgba(255,255,255,0.95)", backdropFilter: "blur(8px)",
-                display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.15)",
-              }}
-            >
-              <ArrowLeft size={17} color="#0A0F2E" />
-            </button>
-
-            {/* Category badge */}
-            <span style={{
-              position: "absolute", top: 14, right: 14, zIndex: 10,
-              background: catBg, color: catText,
-              padding: "5px 12px", borderRadius: 99,
-              fontSize: "0.72rem", fontWeight: 800, textTransform: "capitalize",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.12)",
-            }}>{item.category}</span>
-
-            {/* Discount badge */}
-            {hasDiscount && (
-              <span style={{
-                position: "absolute", bottom: 18, right: 16, zIndex: 10,
-                background: "#22C55E", color: "white",
-                padding: "5px 14px", borderRadius: 99,
-                fontSize: "0.78rem", fontWeight: 800,
-                boxShadow: "0 3px 12px rgba(34,197,94,0.4)",
-              }}>{discountPct}% OFF</span>
-            )}
-
-            {/* Popular badge */}
-            {item.isPopular && (
-              <span style={{
-                position: "absolute", bottom: 18, left: 16, zIndex: 10,
-                background: "linear-gradient(135deg, #F59E0B, #D97706)", color: "white",
-                padding: "5px 12px", borderRadius: 99,
-                fontSize: "0.72rem", fontWeight: 800,
-                boxShadow: "0 3px 10px rgba(217,119,6,0.35)",
-              }}>⭐ Popular</span>
-            )}
+            <button onClick={() => router.back()} style={{ position: "absolute", top: 20, left: 20, width: 44, height: 44, borderRadius: "50%", background: "white", border: "none", display: "flex", alignItems: "center", justifyContent: "center", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", zIndex: 10 }}><ArrowLeft size={20} /></button>
+            {item.isPopular && <span style={{ position: "absolute", bottom: 20, left: 20, background: "#F59E0B", color: "white", padding: "6px 14px", borderRadius: 10, fontSize: "0.8rem", fontWeight: 700, zIndex: 10 }}>Popular</span>}
+            {hasDiscount && <span style={{ position: "absolute", bottom: 20, right: 20, background: "#10B981", color: "white", padding: "6px 14px", borderRadius: 10, fontSize: "0.8rem", fontWeight: 700, zIndex: 10 }}>{discountPct}% OFF</span>}
           </div>
-
-          {/* ── Product info card ── */}
-          <div style={{ padding: "20px 16px 0" }}>
-
-            {/* Name + price */}
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginBottom: 8 }}>
-              <h1 style={{
-                fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "1.5rem",
-                lineHeight: 1.15, color: "#0A0F2E", textTransform: "capitalize", flex: 1,
-              }}>{item.name}</h1>
-              <div style={{ textAlign: "right", flexShrink: 0 }}>
-                {hasDiscount && extrasTotal === 0 && <div style={{ fontSize: "0.78rem", textDecoration: "line-through", color: "#9CA3AF", lineHeight: 1.2 }}>₹{item.originalPrice}</div>}
-                <div style={{ fontWeight: 900, fontSize: "1.5rem", color: "#0135FB", lineHeight: 1.1 }}>₹{displayUnitPrice}</div>
-                {hasDiscount && extrasTotal === 0 && <div style={{ fontSize: "0.72rem", fontWeight: 700, color: "#22C55E" }}>Save ₹{savings}</div>}
-                {extrasTotal > 0 && <div style={{ fontSize: "0.72rem", color: "#6B7280", marginTop: 2 }}>incl. add-ons</div>}
-              </div>
-            </div>
-
-            {/* Rating */}
-            <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
-              <Stars rating={rating} />
-              <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0A0F2E" }}>{rating}</span>
-              <span style={{ fontSize: "0.78rem", color: "#6B7280" }}>({reviews} reviews)</span>
-              <span style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", color: item.available ? "#065F46" : "#991B1B", fontWeight: 700 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: item.available ? "#22C55E" : "#EF4444", display: "inline-block" }} />
-                {item.available ? "Available" : "Sold Out"}
-              </span>
-            </div>
-
-            {/* Trust badges */}
-            <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: 4, marginBottom: 16, scrollbarWidth: "none" }}>
-              {DELIVERY_BADGES.map((b, i) => (
-                <span key={i} className="trust-badge" style={{ fontSize: "0.72rem" }}>
-                  <span style={{ color: "#0135FB" }}>{b.icon}</span> {b.text}
-                </span>
-              ))}
-            </div>
-
-            {/* Description */}
-            {item.description && (
-              <div style={{ background: "white", borderRadius: 14, border: "1px solid #F1F5F9", padding: "16px 18px", marginBottom: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
-                <h3 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 10 }}>About this item</h3>
-                <p className="item-desc-text">
-                  {descPreview}
-                  {descLong && (
-                    <button onClick={() => setDescExpanded(v => !v)}
-                      style={{ marginLeft: 4, color: "#0135FB", fontWeight: 700, background: "none", border: "none", cursor: "pointer", fontSize: "0.88rem", fontFamily: "inherit" }}>
-                      {descExpanded ? "Less" : "Read more"}
-                    </button>
-                  )}
-                </p>
-              </div>
-            )}
-
-            {/* Customisations */}
-            {itemOptions.length > 0 && (
-              <div style={{ background: "white", borderRadius: 14, border: "1px solid #F1F5F9", padding: "14px 16px", marginBottom: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
-                <h3 style={{ fontSize: "0.72rem", fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 12 }}>Customize</h3>
-                {renderCustomizations(true)}
-              </div>
-            )}
-
-            {/* Special instructions */}
-            <div style={{ background: "white", borderRadius: 14, border: "1px solid #F1F5F9", padding: "14px 16px", marginBottom: 14, boxShadow: "0 1px 6px rgba(0,0,0,0.04)" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 10 }}>
-                <h3 style={{ fontSize: "0.75rem", fontWeight: 800, color: "#9CA3AF", textTransform: "uppercase", letterSpacing: "0.06em" }}>Any special requests?</h3>
-                <span style={{ fontSize: "0.7rem", color: "#9CA3AF" }}>{charCount}/200</span>
-              </div>
-              <textarea
-                placeholder="Less sugar, extra hot, no ice…"
-                value={instructions}
-                maxLength={200}
-                rows={2}
-                onChange={e => { setInstructions(e.target.value); setCharCount(e.target.value.length); }}
-                style={{
-                  width: "100%", background: "#F9FAFB", border: "1.5px solid #E5E7EB",
-                  borderRadius: 10, padding: "10px 12px", fontSize: "0.875rem",
-                  color: "#0A0F2E", outline: "none", resize: "none",
-                  fontFamily: "inherit", lineHeight: 1.5, transition: "border-color 0.2s",
-                }}
-                onFocus={e => { e.currentTarget.style.borderColor = "#0135FB"; }}
-                onBlur={e => { e.currentTarget.style.borderColor = "#E5E7EB"; }}
-              />
-            </div>
-
-            {/* Frequently bought together */}
-            {boughtTogether.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <h2 style={{ fontSize: "0.9rem", fontWeight: 800, color: "#0A0F2E" }}>Frequently Bought Together</h2>
-                  <Link href="/menu" style={{ fontSize: "0.75rem", color: "#0135FB", fontWeight: 700, textDecoration: "none" }}>See all</Link>
-                </div>
-                <div className="reco-scroll">
-                  {boughtTogether.map(r => (
-                    <div key={r.id} className="reco-scroll-item">
-                      <FoodCard 
-                        item={r} 
-                        compact 
-                        layout="vertical"
-                        cartItem={cart.find(c => c.item.id === r.id)}
-                        onAdd={addToCart}
-                        onUpdateQuantity={updateQuantity}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {/* More from same category */}
-            {relatedItems.length > 0 && (
-              <div style={{ marginBottom: 20 }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
-                  <h2 style={{ fontSize: "0.9rem", fontWeight: 800, color: "#0A0F2E" }}>You May Also Like</h2>
-                  <Link href={`/menu?category=${item.category}`} style={{ fontSize: "0.75rem", color: "#0135FB", fontWeight: 700, textDecoration: "none" }}>View all →</Link>
-                </div>
-                <div className="reco-scroll">
-                  {relatedItems.map(r => (
-                    <div key={r.id} className="reco-scroll-item">
-                      <FoodCard 
-                        item={r} 
-                        compact 
-                        layout="vertical"
-                        cartItem={cart.find(c => c.item.id === r.id)}
-                        onAdd={addToCart}
-                        onUpdateQuantity={updateQuantity}
-                      />
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
+          
+          <div style={{ padding: "24px 20px" }}>
+             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 }}>
+               <h1 style={{ fontSize: "1.8rem", fontWeight: 900, color: "#0F172A", lineHeight: 1.2, flex: 1 }}>{item.name}</h1>
+               <div style={{ textAlign: "right", marginLeft: 16 }}>
+                  {hasDiscount && extrasTotal === 0 && <div style={{ fontSize: "0.9rem", textDecoration: "line-through", color: "#94A3B8" }}>₹{item.originalPrice}</div>}
+                  <div style={{ fontSize: "1.8rem", fontWeight: 900, color: "#0135FB" }}>₹{displayUnitPrice}</div>
+               </div>
+             </div>
+             <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 24 }}>
+                <Stars rating={rating} />
+                <span style={{ fontWeight: 700, color: "#0F172A", fontSize: "0.95rem" }}>{rating}</span>
+                <span style={{ color: "#64748B", fontSize: "0.95rem" }}>({reviews} reviews)</span>
+             </div>
+             
+             {item.description && (
+               <div style={{ marginBottom: 32 }}>
+                 <p style={{ fontSize: "1rem", color: "#334155", lineHeight: 1.6 }}>{item.description}</p>
+               </div>
+             )}
+             
+             {itemOptions.length > 0 && (
+               <div style={{ marginBottom: 32 }}>
+                 <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "#0F172A", marginBottom: 16 }}>Customize Your Order</h3>
+                 {renderCustomizations()}
+               </div>
+             )}
+             
+             <div style={{ marginBottom: 32 }}>
+                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, color: "#0F172A", marginBottom: 12 }}>Special Requests</h3>
+                <textarea
+                  placeholder="e.g. Less sugar, extra hot..."
+                  value={instructions} maxLength={200} rows={3}
+                  onChange={e => { setInstructions(e.target.value); setCharCount(e.target.value.length); }}
+                  style={{ width: "100%", background: "white", border: "1px solid #E2E8F0", borderRadius: 12, padding: "16px", fontSize: "1rem", color: "#0F172A", outline: "none", resize: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                  onFocus={e => e.currentTarget.style.borderColor = "#0135FB"} onBlur={e => e.currentTarget.style.borderColor = "#E2E8F0"}
+                />
+             </div>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════
-            DESKTOP: Recommendations (below 2-col grid)
-        ══════════════════════════════════════════════ */}
-        <div className="desktop-only" style={{ maxWidth: 1340, margin: "0 auto", padding: "0 32px 60px" }}>
+        {/* Recos */}
+        <div style={{ maxWidth: 1200, margin: "0 auto", padding: "0 0 60px" }}>
           {boughtTogether.length > 0 && (
-            <section className="reco-section" style={{ paddingTop: 24, borderTop: "2px solid #F1F5F9" }}>
-              <div className="reco-section-header">
-                <h2>🛒 Frequently Bought Together</h2>
-                <Link href="/menu" style={{ fontSize: "0.82rem", color: "#0135FB", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>See all <ChevronRight size={14} /></Link>
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px", marginBottom: 20 }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#0F172A" }}>Frequently Bought Together</h2>
+                <Link href="/menu" style={{ color: "#0135FB", fontWeight: 600, fontSize: "0.95rem", textDecoration: "none" }}>See all</Link>
               </div>
               <div className="reco-scroll">
-                {boughtTogether.map(r => (
-                  <div key={r.id} className="reco-scroll-item">
-                    <FoodCard 
-                      item={r} 
-                      compact 
-                      layout="vertical"
-                      cartItem={cart.find(c => c.item.id === r.id)}
-                      onAdd={addToCart}
-                      onUpdateQuantity={updateQuantity}
-                    />
-                  </div>
-                ))}
+                 {/* Empty div for padding in scroll */}
+                 <div style={{ width: 4 }} className="mobile-only" />
+                 {boughtTogether.map(r => (
+                   <FoodCard key={r.id} item={r} layout="vertical" cartItem={cart.find(c => c.item.id === r.id)} onAdd={addToCart} onUpdateQuantity={updateQuantity} />
+                 ))}
+                 <div style={{ width: 4 }} className="mobile-only" />
               </div>
-            </section>
+            </div>
           )}
-
           {relatedItems.length > 0 && (
-            <section className="reco-section">
-              <div className="reco-section-header">
-                <h2>☕ More {item.category.charAt(0).toUpperCase() + item.category.slice(1)}</h2>
-                <Link href={`/menu?category=${item.category}`} style={{ fontSize: "0.82rem", color: "#0135FB", fontWeight: 700, textDecoration: "none", display: "flex", alignItems: "center", gap: 4, whiteSpace: "nowrap" }}>View all <ChevronRight size={14} /></Link>
+            <div style={{ marginBottom: 40 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 20px", marginBottom: 20 }}>
+                <h2 style={{ fontSize: "1.2rem", fontWeight: 800, color: "#0F172A" }}>You May Also Like</h2>
+                <Link href={`/menu?category=${item.category}`} style={{ color: "#0135FB", fontWeight: 600, fontSize: "0.95rem", textDecoration: "none" }}>See all</Link>
               </div>
               <div className="reco-scroll">
-                {relatedItems.map(r => (
-                  <div key={r.id} className="reco-scroll-item">
-                    <FoodCard 
-                      item={r} 
-                      compact 
-                      layout="vertical"
-                      cartItem={cart.find(c => c.item.id === r.id)}
-                      onAdd={addToCart}
-                      onUpdateQuantity={updateQuantity}
-                    />
-                  </div>
-                ))}
+                 <div style={{ width: 4 }} className="mobile-only" />
+                 {relatedItems.map(r => (
+                   <FoodCard key={r.id} item={r} layout="vertical" cartItem={cart.find(c => c.item.id === r.id)} onAdd={addToCart} onUpdateQuantity={updateQuantity} />
+                 ))}
+                 <div style={{ width: 4 }} className="mobile-only" />
               </div>
-            </section>
+            </div>
           )}
         </div>
-
       </div>
-
-      {/* Sticky mobile cart bar */}
+      
       <div className="mobile-sticky-bar" style={{ display: "none" }}>
         <CartBar mobile={true} />
       </div>

@@ -1,17 +1,77 @@
 "use client";
-import { useState, useEffect, useMemo, useDeferredValue, useCallback, useRef } from "react";
+import { useState, useEffect, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { ArrowRight, Search, ChevronLeft, ChevronRight, MapPin } from "lucide-react";
+import { Search, LayoutGrid, List, ChevronRight } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { useApp } from "@/lib/context";
 import OnboardingModal from "@/components/OnboardingModal";
 import AuthModal from "@/components/AuthModal";
 import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
-
 import BannerSlider from "@/components/BannerSlider";
-// import CurvedMarquee from "@/components/CurvedMarquee";
+
+type LayoutMode = "grid" | "list";
+
+const CAT_EMOJI: Record<string, string> = {
+  all: "🍽️", coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤", desserts: "🍰",
+};
+
+/* ─── Horizontal Scroll Slider Section ─── */
+function HSliderSection({
+  title,
+  emoji,
+  items,
+  cart,
+  onAdd,
+  onUpdateQuantity,
+}: {
+  title: string;
+  emoji: string;
+  items: any[];
+  cart: any[];
+  onAdd: any;
+  onUpdateQuantity: any;
+}) {
+  if (items.length === 0) return null;
+  return (
+    <section style={{ marginBottom: 36 }}>
+      <div style={{
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        marginBottom: 14, padding: "0 2px",
+      }}>
+        <div>
+          <h2 style={{
+            fontFamily: "'Outfit', sans-serif", fontSize: "1.1rem", fontWeight: 900,
+            color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.4px",
+            marginBottom: 2,
+          }}>
+            {emoji} {title}
+          </h2>
+        </div>
+      </div>
+
+      {/* Horizontal scroll strip */}
+      <div style={{
+        display: "flex", gap: 14, overflowX: "auto",
+        paddingBottom: 10, WebkitOverflowScrolling: "touch",
+        scrollbarWidth: "none", msOverflowStyle: "none",
+      }}>
+        {items.map(item => (
+          <div key={item.id} style={{ flexShrink: 0, width: 200 }}>
+            <FoodCard
+              item={item}
+              layout="vertical"
+              cartItem={cart.find((c: any) => c.item.id === item.id)}
+              onAdd={onAdd}
+              onUpdateQuantity={onUpdateQuantity}
+            />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
 
 export default function HomePage() {
   const [menuItems, setMenuItems] = useState<any[]>([]);
@@ -27,9 +87,8 @@ export default function HomePage() {
   const { profile, cart, addToCart, updateQuantity } = useApp();
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
-  const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
 
-  // Load banner slides & menu
   useEffect(() => {
     const fetchBanner = async () => {
       try {
@@ -75,7 +134,7 @@ export default function HomePage() {
     subText: i.description || "Freshly prepared for you",
     image: i.image,
     link: `/item/${i.id}`,
-    active: true
+    active: true,
   })), [menuItems]);
 
   const combinedBannerSlides = useMemo(() => [...bannerItems, ...bannerSlides], [bannerItems, bannerSlides]);
@@ -89,19 +148,19 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   }), [menuItems, selectedCategory, deferredSearch]);
 
-  const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 6), [menuItems]);
-  const recommendedItems = useMemo(() => menuItems.filter(i => i.isRecommended).slice(0, 6), [menuItems]);
+  const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 10), [menuItems]);
+  const recommendedItems = useMemo(() => menuItems.filter(i => i.isRecommended).slice(0, 10), [menuItems]);
+
   const featuredIds = useMemo(
     () => new Set([...popularItems, ...recommendedItems].map(i => i.id)),
     [popularItems, recommendedItems]
   );
-  const gridItems = useMemo(() => {
-    if (selectedCategory !== "all") return filteredItems;
-    return filteredItems.filter(i => !featuredIds.has(i.id));
-  }, [filteredItems, selectedCategory, featuredIds]);
-  const userName = profile?.name?.split(" ")[0] || null;
 
-  const CAT_EMOJI: Record<string, string> = { all: "🍽️", coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤", desserts: "🍰" };
+  /* When showing "all" category without search, exclude featured from full menu to avoid dupe */
+  const fullMenuItems = useMemo(() => {
+    if (selectedCategory !== "all" || deferredSearch) return filteredItems;
+    return filteredItems.filter(i => !featuredIds.has(i.id));
+  }, [filteredItems, selectedCategory, deferredSearch, featuredIds]);
 
   return (
     <>
@@ -113,7 +172,72 @@ export default function HomePage() {
         />
       )}
 
-
+      <style>{`
+        .hn-toolbar {
+          display: flex;
+          flex-direction: row;
+          align-items: center;
+          gap: 12px;
+        }
+        .hn-search-wrap { flex: 1; min-width: 200px; position: relative; }
+        .hn-pills-wrap {
+          display: flex; gap: 7px;
+          overflow-x: auto; flex: 2; padding: 4px 0;
+          scrollbar-width: none;
+        }
+        .hn-pills-wrap::-webkit-scrollbar { display: none; }
+        .hn-layout-toggle {
+          display: flex; gap: 2px;
+          background: #f1f5f9; padding: 3px;
+          border-radius: 10px; flex-shrink: 0;
+          border: 1px solid #e2e8f0;
+        }
+        .hn-toggle-btn {
+          width: 34px; height: 30px; border-radius: 8px;
+          border: none; cursor: pointer;
+          display: flex; align-items: center; justify-content: center;
+          transition: all 0.15s;
+        }
+        .hn-toggle-btn.active {
+          background: #fff;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+          color: #0135FB;
+        }
+        .hn-toggle-btn:not(.active) {
+          background: transparent; color: #94a3b8;
+        }
+        /* Grid card — square, big image */
+        .menu-grid-sq {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+          gap: 16px;
+          width: 100%;
+        }
+        @media (max-width: 480px) {
+          .hn-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
+          .hn-search-wrap { min-width: unset; }
+          .hn-pills-wrap { flex: unset; }
+          .menu-grid-sq { grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        }
+        @media (min-width: 768px) {
+          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        }
+        @media (min-width: 1024px) {
+          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+        }
+        /* List card rows */
+        .menu-list-rows {
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          gap: 10px;
+          width: 100%;
+        }
+        @media (max-width: 640px) {
+          .menu-list-rows { grid-template-columns: 1fr; }
+        }
+        /* hscroll hide scrollbar */
+        .hscroll-hide::-webkit-scrollbar { display: none; }
+      `}</style>
 
       {/* ─── BANNER SLIDER ─── */}
       {hasBanner && bannerMode === "single" && (
@@ -125,7 +249,7 @@ export default function HomePage() {
 
       {/* ─── HERO (only when NO banners) ─── */}
       {!hasBanner && (
-        <section style={{ background: "var(--primary)", padding: "60px 24px 48px", color: "white", position: "relative", overflow: "hidden" }}>
+        <section style={{ background: "var(--primary)", padding: "56px 24px 44px", color: "white", position: "relative", overflow: "hidden" }}>
           <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -80, right: -60 }} />
           <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.03)", bottom: -40, left: "10%" }} />
           <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
@@ -139,63 +263,34 @@ export default function HomePage() {
         </section>
       )}
 
-
-
-
       {/* ─── MARQUEE ─── */}
       <div className="marquee">
-        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS & SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
-        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS & SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
+        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
+        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
       </div>
 
-      <style>{`
-        .menu-toolbar {
-          display: flex;
-          flex-direction: row;
-          align-items: center;
-          gap: 16px;
-        }
-        .menu-search-wrapper {
-          flex: 1;
-          min-width: 250px;
-        }
-        .menu-pills-wrapper {
-          display: flex;
-          gap: 8px;
-          overflow-x: auto;
-          flex: 2;
-          padding: 4px 0;
-          scrollbar-width: none;
-        }
-        .menu-pills-wrapper::-webkit-scrollbar { display: none; }
-        @media (max-width: 768px) {
-          .menu-toolbar {
-            flex-direction: column;
-            align-items: stretch;
-            gap: 10px;
-          }
-          .menu-search-wrapper { min-width: unset; }
-          .menu-pills-wrapper { flex: unset; }
-        }
-      `}</style>
+      {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
+      <div style={{
+        background: "rgba(255,255,255,0.97)",
+        backdropFilter: "blur(12px)",
+        borderBottom: "1px solid #e5e7eb",
+        position: "sticky", top: 60, zIndex: 41, padding: "12px 0",
+      }}>
+        <div className="otw-container hn-toolbar">
 
-      {/* ─── UNIFIED SEARCH & CATEGORY BAR ─── */}
-      <div style={{ background: "rgba(255,255,255,0.95)", backdropFilter: "blur(12px)", borderBottom: "1px solid #e5e7eb", position: "sticky", top: 60, zIndex: 41, padding: "12px 0" }}>
-        <div className="otw-container menu-toolbar">
-          
           {/* Search */}
-          <div className="menu-search-wrapper" style={{ position: "relative" }}>
-            <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#9ca3af" }} />
+          <div className="hn-search-wrap">
+            <Search size={17} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
             <input
               type="text"
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search meals, snacks..."
               style={{
-                width: "100%", padding: "12px 16px 12px 42px", borderRadius: "99px",
-                border: "1.5px solid #e5e7eb", fontSize: "0.95rem", fontFamily: "'Outfit', sans-serif",
-                fontWeight: 600, outline: "none", background: "#f8fafc", color: "#0f172a",
-                transition: "all 0.2s",
+                width: "100%", padding: "11px 14px 11px 40px", borderRadius: "99px",
+                border: "1.5px solid #e5e7eb", fontSize: "0.92rem",
+                fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: "none",
+                background: "#f8fafc", color: "#0f172a", transition: "all 0.2s",
               }}
               onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
               onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.boxShadow = "none"; }}
@@ -203,11 +298,11 @@ export default function HomePage() {
           </div>
 
           {/* Category Pills */}
-          <div className="menu-pills-wrapper">
+          <div className="hn-pills-wrap">
             {categories.map(cat => (
               <button
                 key={cat}
-                className={`cat-btn ${selectedCategory === cat ? 'active' : ''}`}
+                className={`cat-btn${selectedCategory === cat ? " active" : ""}`}
                 onClick={() => setSelectedCategory(cat)}
               >
                 {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
@@ -215,157 +310,156 @@ export default function HomePage() {
             ))}
           </div>
 
-          {/* Toggle */}
-          <div className="desktop-only" style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 4, borderRadius: 12, flexShrink: 0 }}>
-            <button
-              title="List view"
-              onClick={() => setMenuLayout("horizontal")}
-              style={{ width: 34, height: 30, borderRadius: 8, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 2px 6px rgba(0,0,0,0.08)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
-            >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
-            </button>
+          {/* Grid / List Toggle */}
+          <div className="hn-layout-toggle">
             <button
               title="Grid view"
-              onClick={() => setMenuLayout("vertical")}
-              style={{ width: 34, height: 30, borderRadius: 8, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 2px 6px rgba(0,0,0,0.08)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}
+              className={`hn-toggle-btn${layoutMode === "grid" ? " active" : ""}`}
+              onClick={() => setLayoutMode("grid")}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <LayoutGrid size={16} />
+            </button>
+            <button
+              title="List view"
+              className={`hn-toggle-btn${layoutMode === "list" ? " active" : ""}`}
+              onClick={() => setLayoutMode("list")}
+            >
+              <List size={16} />
             </button>
           </div>
         </div>
       </div>
 
       {/* ─── MENU CONTENT ─── */}
-      <section style={{ padding: "16px 0 24px", background: "var(--bg-cream)", minHeight: "60vh" }}>
+      <section style={{ padding: "24px 0 120px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
 
-          {/* Popular — top: social proof & bestsellers */}
-          {selectedCategory === "all" && popularItems.length > 0 && (
-            <section style={{ marginBottom: "32px" }}>
-              <div style={{ marginBottom: "14px", padding: "0 4px" }}>
-                <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
-                  🔥 Popular Right Now
-                </h2>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Trending picks — order what everyone&apos;s loving</p>
+          {/* ── MOBILE CTA BANNER (Food Swipe CTA) ── */}
+          <div className="mobile-only" style={{ marginBottom: "20px" }}>
+            <div style={{
+              background: "linear-gradient(135deg, var(--primary), #2A55FF)",
+              borderRadius: "16px", padding: "16px", color: "white",
+              display: "flex", alignItems: "center", justifyContent: "space-between",
+              boxShadow: "0 8px 24px rgba(1,53,251,0.25)"
+            }}>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "4px" }}>Can't Decide?</h3>
+                <p style={{ fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.3 }}>Let us pick the perfect meal for you based on your cravings.</p>
               </div>
-              <div style={{
-                display: "grid", gridAutoFlow: "column", gridAutoColumns: menuLayout === "horizontal" ? "280px" : "200px",
-                gap: "14px", overflowX: "auto", paddingBottom: "8px",
-                WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
-              }}>
-                {popularItems.map(item => (
-                  <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard
-                      item={item}
-                      layout={menuLayout}
-                      cartItem={cart.find((c: any) => c.item.id === item.id)}
-                      onAdd={addToCart}
-                      onUpdateQuantity={updateQuantity}
-                    />
-                  </div>
-                ))}
+              <div style={{ fontSize: "2.5rem", paddingLeft: "12px" }}>
+                ✨
               </div>
-            </section>
-          )}
-
-          {/* Recommended — middle: curated discovery */}
-          {selectedCategory === "all" && recommendedItems.length > 0 && (
-            <section style={{ marginBottom: "32px" }}>
-              <div style={{ marginBottom: "14px", padding: "0 4px" }}>
-                <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
-                  🎯 Recommended For You
-                </h2>
-                <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Hand-picked by us — great pairings & hidden gems</p>
-              </div>
-              <div style={{
-                display: "grid", gridAutoFlow: "column", gridAutoColumns: menuLayout === "horizontal" ? "280px" : "200px",
-                gap: "14px", overflowX: "auto", paddingBottom: "8px",
-                WebkitOverflowScrolling: "touch", scrollbarWidth: "none", alignItems: "stretch",
-              }}>
-                {recommendedItems.map(item => (
-                  <div key={item.id} style={{ display: "flex", flexDirection: "column", scrollSnapAlign: "start" }}>
-                    <FoodCard
-                      item={item}
-                      layout={menuLayout}
-                      cartItem={cart.find((c: any) => c.item.id === item.id)}
-                      onAdd={addToCart}
-                      onUpdateQuantity={updateQuantity}
-                    />
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {/* Full menu — bottom: complete browseable catalog */}
-          <div style={{ marginBottom: "12px", padding: "0 4px" }}>
-            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.2rem", fontWeight: 900, color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: 4 }}>
-              {selectedCategory === "all" ? "📋 Full Menu" : `${CAT_EMOJI[selectedCategory] || "📦"} ${selectedCategory}`}
-            </h2>
-            {selectedCategory === "all" && (popularItems.length > 0 || recommendedItems.length > 0) && (
-              <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", margin: 0 }}>Everything else — popular & recommended items shown above</p>
-            )}
+            </div>
           </div>
 
-          <div style={{ width: "100%" }}>
-            {loadingMenu ? (
-              <div style={{ display: "grid", gridTemplateColumns: menuLayout === "vertical" ? "repeat(auto-fill, minmax(150px, 1fr))" : "1fr", gap: 12 }}>
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <div key={i} className="skeleton" style={{ height: menuLayout === "vertical" ? 220 : 90, borderRadius: 14 }} />
-                ))}
-              </div>
-            ) : (
-              <div style={{
-                display: "grid",
-                gridTemplateColumns: menuLayout === "vertical"
-                  ? "repeat(auto-fill, minmax(150px, 1fr))"
-                  : "repeat(auto-fill, minmax(300px, 1fr))",
-                gap: menuLayout === "vertical" ? 16 : 10,
-                width: "100%"
+          {/* ── FULL MENU HEADER ── */}
+          <div style={{
+            display: "flex", alignItems: "center", justifyContent: "space-between",
+            marginBottom: 16, padding: "0 2px",
+          }}>
+            <div>
+              <h2 style={{
+                fontFamily: "'Outfit', sans-serif", fontSize: "1.1rem", fontWeight: 900,
+                color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 2,
               }}>
-                {gridItems.map(item => (
-                  <FoodCard
-                    key={item.id}
-                    item={item}
-                    layout={menuLayout}
-                    cartItem={cart.find((c: any) => c.item.id === item.id)}
-                    onAdd={addToCart}
-                    onUpdateQuantity={updateQuantity}
-                  />
-                ))}
-              </div>
-            )}
-            {!loadingMenu && gridItems.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px" }}>
-                <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
-                <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
-                <p style={{ color: "var(--text-muted)", marginTop: "4px", fontSize: "0.9rem" }}>Try a different category or search.</p>
-              </div>
-            )}
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "center", marginTop: "40px" }}>
-            <Link href="/menu" style={{ display: "inline-flex", alignItems: "center", gap: "8px", background: "var(--primary)", color: "white", padding: "16px 32px", borderRadius: "99px", fontWeight: 800, fontSize: "1.1rem", textDecoration: "none", boxShadow: "0 4px 14px rgba(1,53,251,0.3)", transition: "transform 0.2s" }} onMouseEnter={e => e.currentTarget.style.transform = "scale(1.05)"} onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}>
-              Explore Full Menu <ArrowRight size={20} />
+                {selectedCategory === "all" ? "📋 Full Menu" : `${CAT_EMOJI[selectedCategory] || "📦"} ${selectedCategory}`}
+              </h2>
+              {!loadingMenu && (
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+                  {fullMenuItems.length} item{fullMenuItems.length !== 1 ? "s" : ""}
+                </p>
+              )}
+            </div>
+            <Link href="/menu" style={{
+              display: "flex", alignItems: "center", gap: 4,
+              fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
+              padding: "5px 12px", borderRadius: 8, background: "var(--accent-2)",
+              textDecoration: "none", transition: "background 0.15s",
+            }}>
+              See All <ChevronRight size={14} />
             </Link>
           </div>
+
+          {/* ── GRID / LIST VIEW ── */}
+          {loadingMenu ? (
+            <div className={layoutMode === "grid" ? "menu-grid-sq" : "menu-list-rows"}>
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="skeleton" style={{
+                  height: layoutMode === "grid" ? 240 : 90,
+                  borderRadius: 14,
+                }} />
+              ))}
+            </div>
+          ) : fullMenuItems.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "60px 20px" }}>
+              <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
+              <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
+              <p style={{ color: "var(--text-muted)", marginTop: "4px", fontSize: "0.9rem" }}>Try a different category or search term.</p>
+            </div>
+          ) : layoutMode === "grid" ? (
+            <div className="menu-grid-sq">
+              {fullMenuItems.map(item => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  layout="vertical"
+                  cartItem={cart.find((c: any) => c.item.id === item.id)}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="menu-list-rows">
+              {fullMenuItems.map(item => (
+                <FoodCard
+                  key={item.id}
+                  item={item}
+                  layout="horizontal"
+                  cartItem={cart.find((c: any) => c.item.id === item.id)}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ── POPULAR (Horizontal Slider) ── */}
+          <div style={{ marginTop: "40px" }}>
+            {!deferredSearch && selectedCategory === "all" && (
+              <HSliderSection
+                title="Popular Right Now"
+                emoji="🔥"
+                items={popularItems}
+                cart={cart}
+                onAdd={addToCart}
+                onUpdateQuantity={updateQuantity}
+              />
+            )}
+          </div>
+
+          {/* ── RECOMMENDED (Horizontal Slider) ── */}
+          {!deferredSearch && selectedCategory === "all" && (
+            <HSliderSection
+              title="Recommended For You"
+              emoji="🎯"
+              items={recommendedItems}
+              cart={cart}
+              onAdd={addToCart}
+              onUpdateQuantity={updateQuantity}
+            />
+          )}
+
         </div>
       </section>
 
-      {/* ─── CURVED MARQUEE (Moved above footer) ─── */}
-      {/* {!loadingMenu && menuItems.length > 0 && (
-        <CurvedMarquee items={menuItems.filter(i => i.image)} />
-      )} */}
-
       <Footer />
 
-      {/* Location Modal */}
       <LocationModal
         isOpen={locationOpen}
         onClose={() => setLocationOpen(false)}
         onSave={saveLocation}
       />
-
     </>
   );
 }

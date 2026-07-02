@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { STORAGE_KEYS } from "@/lib/constants";
+import AdminBottomNav from "@/components/AdminBottomNav";
 
 function playAlarmBeep() {
   try {
@@ -661,6 +662,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="admin-content-pad">
           <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>{children}</div>
         </div>
+        
+        {/* New Flowing/Attached Admin Bottom Nav */}
+        <AdminBottomNav />
       </div>
 
       <style>{`

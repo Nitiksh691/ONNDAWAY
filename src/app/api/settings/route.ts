@@ -24,16 +24,30 @@ const _GET = async () => {
 const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
-    const { deliveryFee } = await req.json();
+    const body = await req.json();
+    const {
+      deliveryFee,
+      maintenanceMode,
+      maintenancePhone,
+      maintenanceMessage,
+      kitchenClosed,
+      kitchenOpenTime,
+    } = body;
+
     let settings = await Settings.findOne();
     if (settings) {
-      settings.deliveryFee = deliveryFee;
+      if (deliveryFee !== undefined) settings.deliveryFee = deliveryFee;
+      if (maintenanceMode !== undefined) settings.maintenanceMode = maintenanceMode;
+      if (maintenancePhone !== undefined) settings.maintenancePhone = maintenancePhone;
+      if (maintenanceMessage !== undefined) settings.maintenanceMessage = maintenanceMessage;
+      if (kitchenClosed !== undefined) settings.kitchenClosed = kitchenClosed;
+      if (kitchenOpenTime !== undefined) settings.kitchenOpenTime = kitchenOpenTime;
       settings.updatedAt = new Date();
       await settings.save();
     } else {
-      settings = await Settings.create({ deliveryFee });
+      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime });
     }
-    // Bust cache so next GET returns updated fee
+    // Bust cache so next GET returns updated settings
     appCache.invalidate(CACHE_KEYS.SETTINGS);
     return NextResponse.json(settings);
   } catch (error) {
@@ -43,6 +57,3 @@ const _POST = async (req: NextRequest) => {
 
 export const GET  = withLogger("GET /api/settings",  _GET);
 export const POST = withLogger("POST /api/settings", _POST);
-
-
-

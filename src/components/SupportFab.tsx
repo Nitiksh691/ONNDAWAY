@@ -7,7 +7,9 @@ import { useDraggableFab } from "@/hooks/useDraggableFab";
 import { getActiveOrderId } from "@/lib/activeOrder";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from "@/lib/company";
 
-const CART_BAR_HEIGHT = 64;
+// BottomNav: 62px tabs + when cart is open, 52px cart bar = 114px total
+// Floating pill nav total height
+const NAV_HEIGHT = 112;
 
 /** Support helpline — hidden when live order tracking widget is active */
 export default function SupportFab() {
@@ -15,7 +17,7 @@ export default function SupportFab() {
   const [expanded, setExpanded] = useState(false);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [cartBarVisible, setCartBarVisible] = useState(false);
-  const bottomOffset = cartBarVisible ? CART_BAR_HEIGHT + 14 : 20;
+  const bottomOffset = NAV_HEIGHT + 16;
   const { style, onDragStart, isDragging, didDrag } = useDraggableFab(bottomOffset, 16, "otw_fab_support");
 
   useEffect(() => {

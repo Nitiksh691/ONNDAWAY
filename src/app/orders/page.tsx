@@ -4,12 +4,26 @@ import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { setActiveOrderId, isActiveOrderStatus } from "@/lib/activeOrder";
-import { Package, Clock, MapPin, ChevronRight, RefreshCw } from "lucide-react";
+import { Package, Clock, MapPin, ChevronRight, RefreshCw, Compass } from "lucide-react";
+
+const CAT_EMOJI: Record<string, string> = {
+  coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤",
+  desserts: "🍰", burgers: "🍔", pizza: "🍕", sandwich: "🥪",
+  beverages: "🧃", combo: "🎁",
+};
+
+const CAT_COLORS: string[] = [
+  "#EEF1FF", "#FEF3C7", "#D1FAE5", "#FCE7F3", "#DBEAFE", "#FDE68A", "#E0E7FF", "#CFFAFE",
+];
 
 export default function OrdersPage() {
   const { user, loading } = useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
+  
+  // For empty state categories
+  const [categories, setCategories] = useState<string[]>([]);
+  const [menuItems, setMenuItems] = useState<any[]>([]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -17,6 +31,7 @@ export default function OrdersPage() {
     }
   }, [user, loading]);
 
+  // Fetch orders
   useEffect(() => {
     const fetchOrders = async () => {
       if (!user) return;
@@ -46,6 +61,23 @@ export default function OrdersPage() {
     if (user) fetchOrders();
   }, [user]);
 
+  // Fetch menu for categories if empty state
+  useEffect(() => {
+    if (!fetching && orders.length === 0) {
+      fetch("/api/menu")
+        .then(r => r.json())
+        .then(data => {
+          if (Array.isArray(data)) {
+            const available = data.filter((i: any) => i.available);
+            setMenuItems(available);
+            const cats = Array.from(new Set(available.map((i: any) => i.category as string)));
+            setCategories(cats);
+          }
+        })
+        .catch(console.error);
+    }
+  }, [fetching, orders.length]);
+
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
       case "placed": return <span className="otw-badge otw-badge-blue">Placed</span>;
@@ -58,6 +90,18 @@ export default function OrdersPage() {
   };
 
   if (loading || fetching) return <div style={{ display: "flex", justifyContent: "center", padding: "100px 0" }}><RefreshCw className="animate-spin" size={32} color="var(--primary)" /></div>;
+
+  if (!user) {
+    return (
+      <div style={{ background: "#F5F7FF", minHeight: "calc(100vh - 68px)", padding: "40px 0", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div className="otw-card" style={{ padding: "40px", textAlign: "center", maxWidth: "400px" }}>
+          <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "16px" }}>Login to view orders</h2>
+          <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>Please log in to track your current orders and view order history.</p>
+          <button id="nav-auth-btn" className="otw-btn otw-btn-primary" style={{ width: "100%" }} onClick={() => document.getElementById("nav-auth-btn")?.click()}>Log In</button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ background: "#F5F7FF", minHeight: "calc(100vh - 68px)", padding: "40px 0" }}>
@@ -74,11 +118,72 @@ export default function OrdersPage() {
         </div>
 
         {orders.length === 0 ? (
-          <div className="otw-card" style={{ padding: "60px 24px", textAlign: "center" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "16px" }}>🧾</div>
-            <h2 style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "8px" }}>No orders yet</h2>
-            <p style={{ color: "var(--text-muted)", marginBottom: "24px" }}>You haven't ordered anything yet. Let's fix that!</p>
-            <Link href="/" className="otw-btn otw-btn-primary">Browse Menu</Link>
+          <div>
+            <div className="otw-card" style={{ padding: "40px 24px", textAlign: "center", marginBottom: "32px" }}>
+              <div style={{ fontSize: "3.5rem", marginBottom: "12px" }}>🧾</div>
+              <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "8px" }}>No orders yet</h2>
+              <p style={{ color: "var(--text-muted)", marginBottom: "20px" }}>You haven't ordered anything yet. Let's fix that!</p>
+              <Link href="/menu" className="otw-btn otw-btn-primary">Browse Full Menu</Link>
+            </div>
+
+            {categories.length > 0 && (
+              <div>
+                <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "16px" }}>
+                  <Compass size={20} color="var(--primary)" />
+                  <h3 style={{ fontSize: "1.2rem", fontWeight: 800 }}>Explore Categories</h3>
+                </div>
+                
+                <div style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(130px, 1fr))",
+                  gap: "12px",
+                }}>
+                  {categories.map((cat, i) => {
+                    const bg = CAT_COLORS[i % CAT_COLORS.length];
+                    const emoji = CAT_EMOJI[cat.toLowerCase()] || "📦";
+                    const catItem = menuItems.find(item => item.category === cat && item.image);
+
+                    return (
+                      <Link
+                        key={cat}
+                        href={`/?category=${encodeURIComponent(cat)}`}
+                        style={{
+                          display: "flex", flexDirection: "column",
+                          alignItems: "center", justifyContent: "center",
+                          gap: "8px", padding: "16px 12px",
+                          borderRadius: "16px", background: bg,
+                          textDecoration: "none",
+                          transition: "transform 0.2s, box-shadow 0.2s",
+                          minHeight: "110px",
+                        }}
+                      >
+                        {catItem?.image ? (
+                          <img
+                            src={catItem.image}
+                            alt={cat}
+                            style={{
+                              width: "50px", height: "50px",
+                              objectFit: "cover", borderRadius: "50%",
+                              border: "2px solid rgba(255,255,255,0.8)",
+                              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                            }}
+                          />
+                        ) : (
+                          <span style={{ fontSize: "2rem" }}>{emoji}</span>
+                        )}
+                        <span style={{
+                          fontWeight: 800, fontSize: "0.8rem",
+                          color: "#0f172a", textTransform: "capitalize",
+                          textAlign: "center",
+                        }}>
+                          {cat}
+                        </span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>

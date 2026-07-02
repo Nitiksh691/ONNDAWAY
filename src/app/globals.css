@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --bottom-bar-height: 64px;
+  --bottom-bar-height: 112px;
   --primary: #0135FB;
   --primary-dark: #0028D4;
   --primary-light: #2A55FF;
@@ -46,8 +46,9 @@ body {
   max-width: 100vw;
 }
 
-body:has(.bottom-action-bar) main {
-  padding-bottom: calc(var(--bottom-bar-height) + env(safe-area-inset-bottom) + 12px);
+/* Bottom nav padding — always applied since BottomNav is always present */
+body main {
+  padding-bottom: var(--bottom-bar-height);
 }
 
 /* ── Scrollbar ── */

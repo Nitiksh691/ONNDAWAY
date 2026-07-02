@@ -23,7 +23,14 @@ const SettingsSchema = new Schema({
       active: { type: Boolean, default: true }
     }]
   }],
-  updatedAt:   { type: Date, default: Date.now },
+  // Maintenance mode: shows a full-screen "under repair" page to non-admins
+  maintenanceMode: { type: Boolean, default: false },
+  maintenancePhone: { type: String, default: "" },
+  maintenanceMessage: { type: String, default: "We're currently under maintenance. Please call us to place your order." },
+  // Kitchen closed: shows a banner on all pages
+  kitchenClosed: { type: Boolean, default: false },
+  kitchenOpenTime: { type: String, default: "7:00 AM" },
+  updatedAt: { type: Date, default: Date.now },
 });
 
 export default models.Settings || model("Settings", SettingsSchema);

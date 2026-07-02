@@ -1,24 +1,29 @@
 "use client";
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef } from "react";
+import useSWR from "swr";
+import { useDebounce } from "use-debounce";
 import { Order, DeliveryPerson, CartItem } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
 import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package, ChevronDown, ChevronUp } from "lucide-react";
 import toast from "react-hot-toast";
 
+// Fetcher for SWR
+const fetcher = (url: string) => fetch(url).then(res => res.json());
+
 const STATUS_COLORS: Record<string, { bg: string; border: string }> = {
-  placed:            { bg: "#271c19", border: "#522c22" },
-  preparing:         { bg: "#1a2436", border: "#c7d2fe" },
-  out_for_delivery:  { bg: "#143324", border: "#114c33" },
-  delivered:         { bg: "#ffffff", border: "#e2e8f0" },
-  cancelled:         { bg: "#3a1318", border: "#5c1923" },
+  placed:            { bg: "#F0F9FF", border: "#BAE6FD" }, // Light blue
+  preparing:         { bg: "#FEFCE8", border: "#FEF08A" }, // Light yellow
+  out_for_delivery:  { bg: "#F0FDF4", border: "#BBF7D0" }, // Light green
+  delivered:         { bg: "#F8FAFC", border: "#E2E8F0" }, // Light gray
+  cancelled:         { bg: "#FEF2F2", border: "#FECACA" }, // Light red
 };
 
 const STATUS_SELECT_COLORS: Record<string, { bg: string; color: string; border: string }> = {
-  placed:            { bg: "#450a0a", color: "#fca5a5", border: "#7f1d1d" },
-  preparing:         { bg: "#1a2436", color: "#93c5fd", border: "#c7d2fe" },
-  out_for_delivery:  { bg: "#143324", color: "#86efac", border: "#114c33" },
-  delivered:         { bg: "#ffffff", color: "#94a3b8", border: "#cbd5e1" },
-  cancelled:         { bg: "#3a1318", color: "#fca5a5", border: "#5c1923" },
+  placed:            { bg: "#E0F2FE", color: "#0369A1", border: "#7DD3FC" },
+  preparing:         { bg: "#FEF9C3", color: "#A16207", border: "#FDE047" },
+  out_for_delivery:  { bg: "#DCFCE7", color: "#15803D", border: "#86EFAC" },
+  delivered:         { bg: "#F1F5F9", color: "#475569", border: "#CBD5E1" },
+  cancelled:         { bg: "#FEE2E2", color: "#B91C1C", border: "#FCA5A5" },
 };
 
 function OrderLineItem({ line }: { line: CartItem }) {
@@ -30,22 +35,22 @@ function OrderLineItem({ line }: { line: CartItem }) {
 
   return (
     <div style={{
-      background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "10px",
+      background: "#ffffff", border: "1px solid #E2E8F0", borderRadius: "10px",
       padding: "12px 14px", marginBottom: "8px",
     }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#fafafa", textTransform: "capitalize" }}>
+          <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0F172A", textTransform: "capitalize" }}>
             {line.quantity}× {line.item.name}
           </div>
           {line.item.category && (
-            <div style={{ fontSize: "0.72rem", color: "#64748b", marginTop: "2px", textTransform: "capitalize" }}>{line.item.category}</div>
+            <div style={{ fontSize: "0.72rem", color: "#64748B", marginTop: "2px", textTransform: "capitalize" }}>{line.item.category}</div>
           )}
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#60a5fa" }}>₹{lineTotal}</div>
+          <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#0135FB" }}>₹{lineTotal}</div>
           {line.unitPrice != null && line.unitPrice !== line.item.price && (
-            <div style={{ fontSize: "0.68rem", color: "#64748b" }}>₹{unit} each</div>
+            <div style={{ fontSize: "0.68rem", color: "#64748B" }}>₹{unit} each</div>
           )}
         </div>
       </div>
@@ -53,7 +58,7 @@ function OrderLineItem({ line }: { line: CartItem }) {
       {details && (
         <div style={{
           marginTop: "8px", fontSize: "0.8rem", color: "#334155", lineHeight: 1.5,
-          background: "#1a1a1e", border: "1px solid #cbd5e1", borderRadius: "8px",
+          background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "8px",
           padding: "8px 10px",
         }}>
           {details}
@@ -64,8 +69,8 @@ function OrderLineItem({ line }: { line: CartItem }) {
         <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginTop: "8px" }}>
           {line.selectedCustomizations.map((c, i) => (
             <span key={i} style={{
-              fontSize: "0.72rem", fontWeight: 600, color: "#dbeafe",
-              background: "#c7d2fe", border: "1px solid #2563eb33",
+              fontSize: "0.72rem", fontWeight: 600, color: "#1E40AF",
+              background: "#DBEAFE", border: "1px solid #BFDBFE",
               padding: "3px 10px", borderRadius: "999px",
             }}>
               {c.category}: {c.option}{c.price > 0 ? ` +₹${c.price}` : ""}
@@ -77,7 +82,6 @@ function OrderLineItem({ line }: { line: CartItem }) {
   );
 }
 
-// Plays a beep using the Web Audio API — works without any audio file
 function playAlarmBeep() {
   try {
     const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -93,15 +97,12 @@ function playAlarmBeep() {
       osc.start(ctx.currentTime + start);
       osc.stop(ctx.currentTime + start + duration);
     };
-    // Three rising beeps: ding ding ding!
     playTone(880, 0,    0.18);
     playTone(1100, 0.22, 0.18);
     playTone(1320, 0.44, 0.28);
-    // Repeat once
     playTone(880, 0.85,  0.18);
     playTone(1100, 1.07, 0.18);
     playTone(1320, 1.29, 0.28);
-    // Also try mp3 if present
     const audio = new Audio("/ringtone.mp3");
     audio.play().catch(() => {});
   } catch (e) {
@@ -110,9 +111,8 @@ function playAlarmBeep() {
 }
 
 export default function AdminOrdersPage() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [deliveryPersons, setDeliveryPersons] = useState<DeliveryPerson[]>([]);
-  const [search, setSearch] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedSearch] = useDebounce(searchTerm, 400); // 400ms debounce
   const [statusFilter, setStatusFilter] = useState("all");
   const [selectedOrders, setSelectedOrders] = useState<string[]>([]);
   const [batchPartnerId, setBatchPartnerId] = useState("");
@@ -123,45 +123,20 @@ export default function AdminOrdersPage() {
   const prevPlacedIds = useRef<Set<string>>(new Set());
   const alarmIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    try {
-      let url = "/api/orders";
-      if (statusFilter === "all") {
-        url = "/api/orders?status=placed,preparing,out_for_delivery";
-      } else {
-        url = `/api/orders?status=${statusFilter}`;
-      }
+  // SWR automatically handles polling (refreshInterval) and deduplication
+  const fetchUrl = statusFilter === "all" 
+    ? "/api/orders?status=placed,preparing,out_for_delivery" 
+    : `/api/orders?status=${statusFilter}`;
 
-      const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  }, [statusFilter]);
+  const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(fetchUrl, fetcher, { 
+    refreshInterval: 8000, // 8s polling interval
+    revalidateOnFocus: true,
+  });
 
-  const fetchDeliveryPersons = async () => {
-    try {
-      const res = await fetch("/api/delivery-persons");
-      if (res.ok) {
-        const data = await res.json();
-        setDeliveryPersons(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
+  const { data: deliveryPersons = [] } = useSWR<DeliveryPerson[]>("/api/delivery-persons", fetcher, {
+    refreshInterval: 30000, // Sync partners every 30s
+  });
 
-  useEffect(() => {
-    fetchOrders();
-    fetchDeliveryPersons();
-    const interval = setInterval(fetchOrders, 3000);
-    return () => clearInterval(interval);
-  }, [fetchOrders]);
-
-  // Alarm: detect newly arrived unconfirmed placed orders
   useEffect(() => {
     const currentPlacedIds = new Set(
       orders.filter(o => o.status === "placed" && !o.confirmed).map(o => o.id)
@@ -174,7 +149,6 @@ export default function AdminOrdersPage() {
     if (hasNew) {
       setAlarmActive(true);
       playAlarmBeep();
-      // Keep repeating alarm every 8s while unconfirmed orders exist
       if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
       alarmIntervalRef.current = setInterval(() => {
         const stillPending = orders.some(o => o.status === "placed" && !o.confirmed);
@@ -194,7 +168,6 @@ export default function AdminOrdersPage() {
     prevPlacedIds.current = currentPlacedIds;
   }, [orders]);
 
-  // Cleanup alarm on unmount
   useEffect(() => () => {
     if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
   }, []);
@@ -208,10 +181,8 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ confirmed: true, status: "preparing" }),
       });
       if (res.ok) {
-        fetchOrders();
-        toast.success("✅ Order confirmed & moved to Preparing!", {
-          style: { background: "#065F46", color: "#0f172a", fontWeight: 700 },
-        });
+        mutateOrders();
+        toast.success("✅ Order confirmed!", { style: { background: "#065F46", color: "white" }});
         setExpandedOrders(prev => new Set(prev).add(orderId));
       } else {
         toast.error("Failed to confirm order");
@@ -224,11 +195,14 @@ export default function AdminOrdersPage() {
   };
 
   const handleUpdateStatus = async (orderId: string, status: Order["status"]) => {
-    // Optimistic UI update to hide instantly if it's set to delivered/cancelled in 'all' view
-    if (statusFilter === "all" && (status === "delivered" || status === "cancelled")) {
-      setOrders(prev => prev.filter(o => o.id !== orderId));
-      toast.success("Order removed from live view");
-    }
+    // Optimistic mutation to improve perceived speed
+    mutateOrders(current => {
+      if (!current) return [];
+      if (statusFilter === "all" && (status === "delivered" || status === "cancelled")) {
+        return current.filter(o => o.id !== orderId);
+      }
+      return current.map(o => o.id === orderId ? { ...o, status } : o);
+    }, false);
 
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
@@ -237,17 +211,14 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ status }),
       });
       if (res.ok) {
-        fetchOrders();
-        if (statusFilter !== "all" || (status !== "delivered" && status !== "cancelled")) {
-          toast.success("Status updated");
-        }
+        toast.success("Status updated");
       } else {
         toast.error("Failed to update status");
-        fetchOrders();
       }
     } catch {
       toast.error("Failed to update status");
-      fetchOrders();
+    } finally {
+      mutateOrders();
     }
   };
 
@@ -265,7 +236,7 @@ export default function AdminOrdersPage() {
         }),
       });
       if (res.ok) {
-        fetchOrders();
+        mutateOrders();
         toast.success(`Assigned to ${partner?.name}`);
       } else {
         toast.error("Failed to assign partner");
@@ -294,10 +265,10 @@ export default function AdminOrdersPage() {
           }),
         })
       ));
-      fetchOrders();
+      mutateOrders();
       setSelectedOrders([]);
       setBatchPartnerId("");
-      toast.success(`${selectedOrders.length} orders confirmed & assigned to ${partner?.name}! 🚀`);
+      toast.success(`${selectedOrders.length} orders confirmed & assigned!`);
     } catch {
       toast.error("Failed to assign batch orders");
     }
@@ -317,27 +288,22 @@ export default function AdminOrdersPage() {
   };
 
   const filtered = orders.filter(o => {
-    const matchesSearch = o.id?.includes(search) || o.userName?.toLowerCase().includes(search.toLowerCase()) || o.userPhone?.includes(search);
-    const matchesStatus = statusFilter === "all" || o.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const term = debouncedSearch.toLowerCase();
+    const matchesSearch = o.id?.toLowerCase().includes(term) || o.userName?.toLowerCase().includes(term) || o.userPhone?.includes(term);
+    return matchesSearch;
   });
 
   const pendingUnconfirmed = orders.filter(o => o.status === "placed" && !o.confirmed);
   const pendingOrders = orders.filter(o => o.status === "placed");
 
   return (
-    <div>
-      {/* ── Alarm Banner ── */}
+    <div style={{ paddingBottom: "100px" }}>
+      {/* Alarm Banner */}
       {alarmActive && pendingUnconfirmed.length > 0 && (
         <div style={{
-          background: "linear-gradient(135deg, #DC2626, #B91C1C)",
-          color: "white",
-          padding: "14px 24px",
-          borderRadius: "12px",
-          marginBottom: "20px",
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
+          background: "linear-gradient(135deg, #EF4444, #B91C1C)",
+          color: "white", padding: "14px 24px", borderRadius: "12px", marginBottom: "20px",
+          display: "flex", alignItems: "center", gap: "12px",
           animation: "pulse-alarm 1s ease-in-out infinite",
           boxShadow: "0 4px 20px rgba(220,38,38,0.4)",
         }}>
@@ -357,86 +323,83 @@ export default function AdminOrdersPage() {
           <Bell size={24} style={{ animation: "bell-shake 0.6s ease-in-out infinite", flexShrink: 0 }} />
           <div style={{ flex: 1 }}>
             <div style={{ fontWeight: 900, fontSize: "1.05rem" }}>
-              🚨 {pendingUnconfirmed.length} NEW ORDER{pendingUnconfirmed.length > 1 ? "S" : ""} — CALL CUSTOMER TO CONFIRM!
+              🚨 {pendingUnconfirmed.length} NEW ORDER{pendingUnconfirmed.length > 1 ? "S" : ""}
             </div>
             <div style={{ fontSize: "0.82rem", opacity: 0.9, marginTop: "2px" }}>
-              Orders are waiting for admin verification before processing
+              Orders are waiting for confirmation.
             </div>
           </div>
           <button
             onClick={() => { setAlarmActive(false); if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current); }}
-            style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", padding: "8px 16px", borderRadius: "8px", cursor: "pointer", fontWeight: 700, fontSize: "0.85rem" }}
-          >
-            Mute
-          </button>
+            style={{ background: "rgba(255,255,255,0.2)", border: "none", color: "white", padding: "8px 16px", borderRadius: "8px", cursor: "pointer", fontWeight: 700 }}
+          >Mute</button>
         </div>
       )}
 
+      {/* Header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
         <div>
-          <h1 style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-dark)", marginBottom: "4px" }}>Live Orders</h1>
-          <p style={{ color: "var(--text-muted)", fontSize: "0.9rem" }}>
-            Auto-refreshes every 3s •{" "}
-            <span style={{ color: pendingOrders.length > 0 ? "#DC2626" : "#059669", fontWeight: 700 }}>
+          <h1 style={{ fontSize: "2rem", fontWeight: 900, color: "#0F172A", marginBottom: "4px" }}>Live Orders</h1>
+          <p style={{ color: "#64748B", fontSize: "0.9rem" }}>
+            Auto-refreshes every 8s •{" "}
+            <span style={{ color: pendingOrders.length > 0 ? "#EF4444" : "#10B981", fontWeight: 700 }}>
               {pendingOrders.length} pending
             </span>
-            {pendingUnconfirmed.length > 0 && (
-              <span style={{ color: "#DC2626", fontWeight: 700, marginLeft: "4px" }}>
-                ({pendingUnconfirmed.length} unconfirmed)
-              </span>
-            )}
           </p>
         </div>
         {pendingUnconfirmed.length > 0 && (
           <div style={{
-            background: "#FEF2F2", border: "2px solid #FCA5A5", borderRadius: "12px",
+            background: "#FEF2F2", border: "1.5px solid #FCA5A5", borderRadius: "12px",
             padding: "10px 16px", display: "flex", alignItems: "center", gap: "8px",
           }}>
-            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#DC2626", animation: "pulse 1.2s ease-in-out infinite" }} />
-            <span style={{ fontWeight: 700, color: "#DC2626", fontSize: "0.9rem" }}>
+            <div style={{ width: 10, height: 10, borderRadius: "50%", background: "#EF4444", animation: "pulse 1.2s ease-in-out infinite" }} />
+            <span style={{ fontWeight: 700, color: "#EF4444", fontSize: "0.9rem" }}>
               {pendingUnconfirmed.length} order{pendingUnconfirmed.length > 1 ? "s" : ""} need confirmation!
             </span>
           </div>
         )}
       </div>
 
-      {/* Batch Assign Panel */}
+      {/* Batch Actions */}
       {selectedOrders.length > 0 && (
-        <div style={{ background: "var(--primary)", border: "1px solid #0044cc", borderRadius: "16px", padding: "16px 24px", marginBottom: "20px", color: "white", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap" }}>
+        <div style={{ background: "#0135FB", borderRadius: "16px", padding: "16px 24px", marginBottom: "20px", color: "white", display: "flex", gap: "16px", alignItems: "center", flexWrap: "wrap", boxShadow: "0 4px 12px rgba(1,53,251,0.2)" }}>
           <Users size={20} />
-          <span style={{ fontWeight: 700 }}>{selectedOrders.length} orders selected</span>
+          <span style={{ fontWeight: 700 }}>{selectedOrders.length} selected</span>
           <select
             value={batchPartnerId}
             onChange={e => setBatchPartnerId(e.target.value)}
-            style={{ flex: 1, minWidth: 200, padding: "8px 12px", borderRadius: "8px", border: "none", fontFamily: "inherit", fontWeight: 600 }}
+            style={{ flex: 1, minWidth: 200, padding: "8px 12px", borderRadius: "8px", border: "none", fontFamily: "inherit", fontWeight: 600, color: "#0F172A" }}
           >
             <option value="">-- Select Delivery Partner --</option>
             {deliveryPersons.map(dp => (
               <option key={dp.uid} value={dp.uid}>{dp.name} ({dp.phone})</option>
             ))}
           </select>
-          <button onClick={handleBatchAssign} style={{ background: "white", color: "var(--primary)", border: "none", borderRadius: "8px", padding: "10px 20px", fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
+          <button onClick={handleBatchAssign} style={{ background: "white", color: "#0135FB", border: "none", borderRadius: "8px", padding: "10px 20px", fontWeight: 800, cursor: "pointer", fontFamily: "inherit" }}>
             Confirm & Assign All 🚀
           </button>
-          <button onClick={() => setSelectedOrders([])} style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", borderRadius: "8px", padding: "10px 16px", fontWeight: 600, cursor: "pointer", fontFamily: "inherit" }}>Cancel</button>
+          <button onClick={() => setSelectedOrders([])} style={{ background: "rgba(255,255,255,0.2)", color: "white", border: "none", borderRadius: "8px", padding: "10px 16px", fontWeight: 600, cursor: "pointer" }}>Cancel</button>
         </div>
       )}
 
-      <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px" }}>
+      {/* Filters & Search */}
+      <div style={{ background: "#ffffff", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
         <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
           <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
-            <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
+            <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
             <input
               type="text"
               placeholder="Search by Order ID, Name, or Phone..."
-              style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
-              value={search}
-              onChange={e => setSearch(e.target.value)}
+              style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#0F172A", borderRadius: "10px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", transition: "border-color 0.2s" }}
+              value={searchTerm}
+              onChange={e => setSearchTerm(e.target.value)}
+              onFocus={e => e.target.style.borderColor = "#0135FB"}
+              onBlur={e => e.target.style.borderColor = "#E2E8F0"}
             />
           </div>
           <div style={{ position: "relative", width: "220px" }}>
-            <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)", zIndex: 1 }} />
-            <select style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
+            <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#94A3B8", zIndex: 1 }} />
+            <select style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#0F172A", borderRadius: "10px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none", cursor: "pointer" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
               <option value="all">Live Orders (Pending)</option>
               <option value="placed">🔴 Placed</option>
               <option value="preparing">🟡 Preparing</option>
@@ -447,46 +410,41 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+        {/* Order List */}
+        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
           {filtered.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px", color: "var(--text-muted)" }}>
+            <div style={{ textAlign: "center", padding: "60px", color: "#94A3B8" }}>
               <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📭</div>
               <div style={{ fontWeight: 600 }}>No orders found</div>
             </div>
           ) : filtered.map(order => {
             const isUnconfirmed = order.status === "placed" && !order.confirmed;
-            const colors = STATUS_COLORS[order.status] || { bg: "white", border: "#E5E7EB" };
+            const colors = STATUS_COLORS[order.status] || { bg: "#ffffff", border: "#E2E8F0" };
             const isExpanded = expandedOrders.has(order.id) || isUnconfirmed;
 
             return (
               <div
                 key={order.id}
                 style={{
-                  border: `2px solid ${isUnconfirmed ? "#FCA5A5" : selectedOrders.includes(order.id) ? "var(--primary)" : colors.border}`,
+                  border: `1.5px solid ${isUnconfirmed ? "#FCA5A5" : selectedOrders.includes(order.id) ? "#0135FB" : colors.border}`,
                   borderRadius: "14px",
-                  padding: "0",
-                  background: isUnconfirmed ? "#450a0a" : colors.bg,
+                  background: isUnconfirmed ? "#FEF2F2" : colors.bg,
                   transition: "all 0.2s",
-                  position: "relative",
                   overflow: "hidden",
-                  animation: isUnconfirmed ? "pulse-alarm 2s ease-in-out infinite" : "none",
+                  boxShadow: selectedOrders.includes(order.id) ? "0 4px 12px rgba(1,53,251,0.1)" : "none",
                 }}
               >
                 {isUnconfirmed && (
-                  <div style={{
-                    background: "#DC2626", color: "white",
-                    fontSize: "0.72rem", fontWeight: 900, letterSpacing: "0.08em",
-                    padding: "6px 20px", textAlign: "center",
-                  }}>
-                    📞 AWAITING CONFIRMATION — CALL CUSTOMER
+                  <div style={{ background: "#EF4444", color: "white", fontSize: "0.75rem", fontWeight: 800, letterSpacing: "0.08em", padding: "6px 20px", textAlign: "center" }}>
+                    📞 AWAITING CONFIRMATION
                   </div>
                 )}
 
-                {/* Header row (Clickable to expand) */}
+                {/* Header Row */}
                 <div style={{
                   display: "flex", alignItems: "center", justifyContent: "space-between",
                   gap: "12px", padding: "16px 20px",
-                  borderBottom: isExpanded ? "1px solid #e2e8f0" : "none", flexWrap: "wrap",
+                  borderBottom: isExpanded ? `1px solid ${colors.border}` : "none", flexWrap: "wrap",
                   cursor: "pointer",
                 }}
                 onClick={() => toggleExpand(order.id)}
@@ -494,19 +452,18 @@ export default function AdminOrdersPage() {
                   <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
                     <button 
                       onClick={(e) => { e.stopPropagation(); toggleSelect(order.id); }} 
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "var(--primary)", flexShrink: 0 }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#0135FB", flexShrink: 0 }}
                     >
-                      {selectedOrders.includes(order.id) ? <CheckSquare size={20} /> : <Square size={20} color="#52525b" />}
+                      {selectedOrders.includes(order.id) ? <CheckSquare size={20} /> : <Square size={20} color="#94A3B8" />}
                     </button>
-                    
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }}
-                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#94a3b8", display: "flex", alignItems: "center" }}
+                      style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#64748B", display: "flex", alignItems: "center" }}
                     >
                       {isExpanded ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
                     </button>
-
-                    <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#fafafa" }}>#{order.id?.slice(-8).toUpperCase()}</span>
+                    <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>#{order.id?.slice(-8).toUpperCase()}</span>
+                    
                     <select
                       value={order.status}
                       onChange={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, e.target.value as Order["status"]); }}
@@ -526,63 +483,63 @@ export default function AdminOrdersPage() {
                       <option value="delivered">🟢 Delivered</option>
                       <option value="cancelled">❌ Cancelled</option>
                     </select>
+
                     {order.confirmed && (
-                      <span style={{ fontSize: "0.75rem", color: "#86efac", fontWeight: 700, background: "#14532d", padding: "4px 10px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
+                      <span style={{ fontSize: "0.75rem", color: "#15803D", fontWeight: 700, background: "#DCFCE7", border: "1px solid #86EFAC", padding: "4px 10px", borderRadius: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
                         <CheckCircle size={12} /> Confirmed
                       </span>
                     )}
+                    
                     {!isExpanded && (
-                       <span style={{ fontSize: "0.85rem", color: "#94a3b8", marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                       <span style={{ fontSize: "0.85rem", color: "#64748B", marginLeft: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                           <Package size={14} /> {order.items.length} items
                        </span>
                     )}
                   </div>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
-                    <span style={{ fontSize: "0.78rem", color: "#94a3b8", display: "flex", alignItems: "center", gap: "4px" }}>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "0.78rem", color: "#64748B", display: "flex", alignItems: "center", gap: "4px" }}>
                       <Clock size={13} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     {order.scheduledTime && (
-                      <span style={{ fontSize: "0.78rem", color: "#93c5fd", fontWeight: 700, background: "#c7d2fe", padding: "4px 10px", borderRadius: "6px" }}>
+                      <span style={{ fontSize: "0.78rem", color: "#1E40AF", fontWeight: 700, background: "#DBEAFE", padding: "4px 10px", borderRadius: "6px" }}>
                         🕒 {order.scheduledTime}
                       </span>
                     )}
-                    <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#60a5fa" }}>₹{order.total}</span>
+                    <span style={{ fontWeight: 900, fontSize: "1.1rem", color: "#0135FB" }}>₹{order.total}</span>
                   </div>
                 </div>
 
-                {/* Body grid (Collapsible) */}
+                {/* Expanded Body */}
                 {isExpanded && (
                   <div style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-                    gap: "20px",
-                    padding: "20px",
-                    alignItems: "start",
+                    display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "20px",
+                    padding: "20px", alignItems: "start",
                   }}>
                     {/* Customer */}
-                    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
-                      <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#fafafa", marginBottom: "10px" }}>{order.userName}</div>
+                    <div style={{ background: "#ffffff", border: `1px solid ${colors.border}`, borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.08em", marginBottom: "12px" }}>CUSTOMER</div>
+                      <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0F172A", marginBottom: "10px" }}>{order.userName}</div>
                       <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "8px" }}>
-                        <Phone size={14} color="#71717a" />
-                        <a href={`tel:+91${order.userPhone}`} style={{ color: "#60a5fa", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>+91 {order.userPhone}</a>
+                        <Phone size={14} color="#64748B" />
+                        <a href={`tel:+91${order.userPhone}`} style={{ color: "#0135FB", fontWeight: 700, textDecoration: "none", fontSize: "0.9rem" }}>+91 {order.userPhone}</a>
                       </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#94a3b8", fontSize: "0.88rem" }}>
-                        <MapPin size={14} color="#71717a" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <div style={{ display: "flex", alignItems: "flex-start", gap: "8px", color: "#334155", fontSize: "0.88rem" }}>
+                        <MapPin size={14} color="#64748B" style={{ flexShrink: 0, marginTop: 2 }} />
                         <span>{order.location}</span>
                       </div>
                     </div>
 
                     {/* Items */}
-                    <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", padding: "16px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748b", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <div style={{ background: "#ffffff", border: `1px solid ${colors.border}`, borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.08em", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
                         <Package size={13} /> ORDER ITEMS ({order.items.length})
                       </div>
                       {order.items.map((line, idx) => (
                         <OrderLineItem key={line.cartItemId || idx} line={line} />
                       ))}
                       {order.discount ? (
-                        <div style={{ fontSize: "0.82rem", color: "#86efac", marginTop: "8px" }}>Coupon discount: −₹{order.discount}</div>
+                        <div style={{ fontSize: "0.82rem", color: "#15803D", marginTop: "8px", fontWeight: 600 }}>Coupon discount: −₹{order.discount}</div>
                       ) : null}
                     </div>
 
@@ -595,12 +552,12 @@ export default function AdminOrdersPage() {
                             disabled={confirmingId === order.id}
                             style={{
                               width: "100%", padding: "14px 16px",
-                              background: "linear-gradient(135deg, #059669, #047857)",
+                              background: "linear-gradient(135deg, #10B981, #059669)",
                               color: "white", border: "none", borderRadius: "10px",
                               fontWeight: 900, fontSize: "0.9rem",
                               cursor: confirmingId === order.id ? "not-allowed" : "pointer",
                               display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                              boxShadow: "0 4px 12px rgba(5,150,105,0.4)",
+                              boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
                               opacity: confirmingId === order.id ? 0.7 : 1,
                             }}
                           >
@@ -615,8 +572,8 @@ export default function AdminOrdersPage() {
                             disabled={confirmingId === order.id}
                             style={{
                               width: "100%", padding: "10px 16px",
-                              background: "transparent", color: "#f87171",
-                              border: "1px solid #7f1d1d", borderRadius: "10px",
+                              background: "transparent", color: "#EF4444",
+                              border: "1.5px solid #FCA5A5", borderRadius: "10px",
                               fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
                             }}
                           >
@@ -625,12 +582,12 @@ export default function AdminOrdersPage() {
                         </>
                       )}
 
-                      <div style={{ background: "#e2e8f0", padding: "14px", borderRadius: "10px", border: "1px solid #cbd5e1" }}>
-                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#94a3b8", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
+                      <div style={{ background: "#F8FAFC", padding: "14px", borderRadius: "10px", border: "1px solid #E2E8F0" }}>
+                        <div style={{ fontSize: "0.72rem", fontWeight: 800, color: "#64748B", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px", letterSpacing: "0.06em" }}>
                           <Truck size={14} /> ASSIGN PARTNER
                         </div>
                         <select
-                          style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
+                          style={{ background: "#ffffff", border: "1px solid #E2E8F0", color: "#0F172A", borderRadius: "8px", padding: "10px 12px", width: "100%", outline: "none", fontFamily: "inherit", fontSize: "0.85rem" }}
                           value={order.deliveryPersonId || ""}
                           onClick={e => e.stopPropagation()}
                           onChange={(e) => { e.stopPropagation(); handleAssignPartner(order.id, e.target.value); }}
@@ -641,7 +598,7 @@ export default function AdminOrdersPage() {
                           ))}
                         </select>
                         {order.deliveryPersonName && (
-                          <div style={{ fontSize: "0.78rem", color: "#86efac", fontWeight: 700, marginTop: "8px" }}>
+                          <div style={{ fontSize: "0.78rem", color: "#15803D", fontWeight: 700, marginTop: "8px" }}>
                             ✓ {order.deliveryPersonName}
                           </div>
                         )}

@@ -7,7 +7,8 @@ import { useDraggableFab } from "@/hooks/useDraggableFab";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from "@/lib/company";
 import type { Order } from "@/lib/types";
 
-const CART_BAR_HEIGHT = 64;
+// Floating pill nav total height
+const NAV_HEIGHT = 112;
 
 const STATUS_LABEL: Record<string, string> = {
   placed: "Order placed",
@@ -32,7 +33,7 @@ export default function ActiveOrderWidget() {
   const [visible, setVisible] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [cartBarVisible, setCartBarVisible] = useState(false);
-  const bottomOffset = cartBarVisible ? CART_BAR_HEIGHT + 14 : 20;
+  const bottomOffset = NAV_HEIGHT + 16;
   const { style, onDragStart, isDragging, didDrag } = useDraggableFab(bottomOffset, 16, "otw_fab_track");
 
   const load = useCallback(async () => {
@@ -76,7 +77,7 @@ export default function ActiveOrderWidget() {
 
   const fabStyle = {
     ...style,
-    bottom: `max(${bottomOffset}px, calc(env(safe-area-inset-bottom) + ${cartBarVisible ? CART_BAR_HEIGHT - 6 : 0}px))`,
+    bottom: `max(${bottomOffset}px, calc(env(safe-area-inset-bottom) + ${NAV_HEIGHT}px))`,
   };
 
   const goToTrack = () => {
