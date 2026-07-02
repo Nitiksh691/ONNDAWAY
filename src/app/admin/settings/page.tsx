@@ -127,7 +127,7 @@ export default function AdminSettingsPage() {
               </div>
               <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                 <div style={{ position: "relative" }}>
-                  <input type="checkbox" checked={kitchenClosed} onChange={e => setKitchenClosed(e.target.checked)} style={{ srOnly: true, width: 0, height: 0, opacity: 0 }} />
+                  <input type="checkbox" checked={kitchenClosed} onChange={e => setKitchenClosed(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
                   <div style={{ width: 44, height: 24, background: kitchenClosed ? "#EF4444" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
                   <div style={{ position: "absolute", left: kitchenClosed ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
                 </div>
@@ -153,7 +153,7 @@ export default function AdminSettingsPage() {
               </div>
               <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
                 <div style={{ position: "relative" }}>
-                  <input type="checkbox" checked={maintenanceMode} onChange={e => setMaintenanceMode(e.target.checked)} style={{ srOnly: true, width: 0, height: 0, opacity: 0 }} />
+                  <input type="checkbox" checked={maintenanceMode} onChange={e => setMaintenanceMode(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
                   <div style={{ width: 44, height: 24, background: maintenanceMode ? "#EF4444" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
                   <div style={{ position: "absolute", left: maintenanceMode ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
                 </div>
