@@ -249,15 +249,21 @@ export default function HomePage() {
 
       {/* ─── HERO (only when NO banners) ─── */}
       {!hasBanner && (
-        <section style={{ background: "var(--primary)", padding: "56px 24px 44px", color: "white", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -80, right: -60 }} />
-          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.03)", bottom: -40, left: "10%" }} />
+        <section style={{ 
+          background: "linear-gradient(135deg, var(--primary) 0%, #2A55FF 50%, #0150FF 100%)", 
+          padding: "60px 24px 48px", 
+          color: "white", 
+          position: "relative", 
+          overflow: "hidden" 
+        }}>
+          <div style={{ position: "absolute", width: 400, height: 400, borderRadius: "50%", background: "rgba(255,255,255,0.07)", top: -120, right: -100 }} />
+          <div style={{ position: "absolute", width: 250, height: 250, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -80, left: "5%" }} />
           <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.4rem, 7vw, 4.5rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.02em" }}>
-              LIFE BEGINS <br /> AFTER <span style={{ color: "#93C5FD" }}>FLAVOR</span>.
+            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.2rem, 7vw, 3.8rem)", lineHeight: 1.15, textTransform: "uppercase", marginBottom: "20px", letterSpacing: "-0.02em" }}>
+              Hungry?<br />Get <span style={{ color: "#93C5FD" }}>Fresh</span> Food Now
             </h1>
-            <p style={{ fontSize: "1.05rem", maxWidth: "500px", opacity: 0.85, marginBottom: "32px", fontWeight: 500, lineHeight: 1.6 }}>
-              Curated meals, snacks, and beverages — delivered straight to you in minutes.
+            <p style={{ fontSize: "1.05rem", maxWidth: "520px", opacity: 0.9, marginBottom: "36px", fontWeight: 500, lineHeight: 1.6 }}>
+              Campus-to-door delivery of fresh meals, snacks, and drinks curated just for you.
             </p>
           </div>
         </section>
@@ -271,10 +277,11 @@ export default function HomePage() {
 
       {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
       <div style={{
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #e5e7eb",
-        position: "sticky", top: 60, zIndex: 41, padding: "12px 0",
+        background: "rgba(255,255,255,0.98)",
+        backdropFilter: "blur(14px)",
+        borderBottom: "1px solid var(--border-light)",
+        position: "sticky", top: 60, zIndex: 41, padding: "14px 0",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
       }}>
         <div className="otw-container hn-toolbar">
 
@@ -287,13 +294,13 @@ export default function HomePage() {
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search meals, snacks..."
               style={{
-                width: "100%", padding: "11px 14px 11px 40px", borderRadius: "99px",
-                border: "1.5px solid #e5e7eb", fontSize: "0.92rem",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: "none",
-                background: "#f8fafc", color: "#0f172a", transition: "all 0.2s",
+                width: "100%", padding: "12px 14px 12px 42px", borderRadius: "10px",
+                border: "1.5px solid var(--border)", fontSize: "0.92rem",
+                fontFamily: "'Outfit', sans-serif", fontWeight: 500, outline: "none",
+                background: "var(--bg-light)", color: "var(--text-dark)", transition: "all 0.25s ease",
               }}
-              onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.boxShadow = "none"; }}
+              onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "white"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
+              onBlur={e => { e.currentTarget.style.borderColor = "var(--border)"; e.currentTarget.style.background = "var(--bg-light)"; e.currentTarget.style.boxShadow = "none"; }}
             />
           </div>
 
@@ -331,7 +338,7 @@ export default function HomePage() {
       </div>
 
       {/* ─── MENU CONTENT ─── */}
-      <section style={{ padding: "24px 0 120px", background: "var(--bg-cream)", minHeight: "60vh" }}>
+      <section style={{ padding: "32px 0 120px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
 
           {/* ── MOBILE CTA BANNER (Food Swipe CTA) ── */}

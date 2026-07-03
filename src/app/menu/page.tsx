@@ -210,14 +210,22 @@ export default function MenuPage() {
         }
       ` }} />
 
-      {/* ─── BANNER SLIDER ─── */}
+      {/* ─── BANNER SLIDER OR HERO ─── */}
       {bannerEnabled && bannerSlides.length > 0 ? (
         <BannerSlider slides={bannerSlides} variant="menu" />
       ) : (
-        <div className="otw-page-header">
-          <div className="otw-container">
-            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "6px" }}>Our Menu</h1>
-            <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>Fresh campus food, curated daily.</p>
+        <div style={{
+          background: "linear-gradient(135deg, var(--primary) 0%, #2A55FF 100%)",
+          padding: "48px 24px",
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+        }}>
+          <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.08)", top: -80, right: -60 }} />
+          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.05)", bottom: -40, left: "10%" }} />
+          <div className="otw-container" style={{ position: "relative", zIndex: 1 }}>
+            <h1 style={{ fontSize: "2.4rem", fontWeight: 900, marginBottom: "8px", letterSpacing: "-0.02em" }}>Our Menu</h1>
+            <p style={{ opacity: 0.9, fontSize: "1rem", fontWeight: 500 }}>Fresh campus food, curated daily for you.</p>
           </div>
         </div>
       )}
@@ -225,11 +233,12 @@ export default function MenuPage() {
       {/* ─── Sticky Category Filters ─── */}
       <div style={{
         position: "sticky", top: "60px", zIndex: 100,
-        background: "rgba(255,255,255,0.97)", backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #f0f0f0",
+        background: "rgba(255,255,255,0.98)", backdropFilter: "blur(14px)",
+        borderBottom: "1px solid var(--border-light)",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
       }}>
-        <div className="otw-container" style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px" }}>
-          <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "10px 0", scrollbarWidth: "none" as any }}>
+        <div className="otw-container" style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 24px" }}>
+          <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "6px 0", scrollbarWidth: "none" as any }}>
             {CATEGORIES.map(cat => (
               <button
                 key={cat}
@@ -242,12 +251,12 @@ export default function MenuPage() {
             ))}
           </div>
           {activeCategory !== "all" && (
-            <div style={{ display: "flex", gap: 2, background: "#f1f5f9", padding: 3, borderRadius: 10, flexShrink: 0, border: "1px solid #e2e8f0" }}>
-              <button title="List" onClick={() => setMenuLayout("horizontal")} style={{ width: 34, height: 32, borderRadius: 8, border: "none", background: menuLayout === "horizontal" ? "#fff" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+            <div style={{ display: "flex", gap: 2, background: "var(--bg-light)", padding: 4, borderRadius: 12, flexShrink: 0, border: "1px solid var(--border-light)" }}>
+              <button title="List" onClick={() => setMenuLayout("horizontal")} style={{ width: 36, height: 34, borderRadius: 8, border: "none", background: menuLayout === "horizontal" ? "white" : "transparent", boxShadow: menuLayout === "horizontal" ? "0 2px 6px rgba(0,0,0,0.1)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "horizontal" ? "var(--primary)" : "var(--text-muted)", transition: "all 0.2s", fontSize: "14px" }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
               </button>
-              <button title="Grid" onClick={() => setMenuLayout("vertical")} style={{ width: 34, height: 32, borderRadius: 8, border: "none", background: menuLayout === "vertical" ? "#fff" : "transparent", boxShadow: menuLayout === "vertical" ? "0 1px 3px rgba(0,0,0,0.12)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "#0135FB" : "#94a3b8", transition: "all 0.15s" }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+              <button title="Grid" onClick={() => setMenuLayout("vertical")} style={{ width: 36, height: 34, borderRadius: 8, border: "none", background: menuLayout === "vertical" ? "white" : "transparent", boxShadow: menuLayout === "vertical" ? "0 2px 6px rgba(0,0,0,0.1)" : "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", color: menuLayout === "vertical" ? "var(--primary)" : "var(--text-muted)", transition: "all 0.2s", fontSize: "14px" }}>
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
               </button>
             </div>
           )}
@@ -255,8 +264,8 @@ export default function MenuPage() {
       </div>
 
       {/* ─── Content ─── */}
-      <div style={{ background: "#F8FAFF", minHeight: "60vh" }}>
-        <div className="otw-container" style={{ padding: "28px 24px" }}>
+      <div style={{ background: "var(--bg-cream)", minHeight: "60vh" }}>
+        <div className="otw-container" style={{ padding: "32px 24px" }}>
 
           {loading ? (
             /* Skeleton */

@@ -70,21 +70,24 @@ export default function Navbar() {
           display: flex;
           align-items: center;
           gap: 5px;
-          padding: 6px 10px;
+          padding: 7px 12px;
           border-radius: 10px;
-          border: 1.5px solid rgba(1,53,251,0.2);
-          background: #EEF1FF;
-          color: #0135FB;
+          border: 1.5px solid var(--border-light);
+          background: var(--primary-lighter);
+          color: var(--primary);
           cursor: pointer;
           font-family: inherit;
-          font-weight: 700;
+          font-weight: 600;
           font-size: 0.76rem;
-          transition: all 0.2s;
+          transition: all 0.2s ease;
           white-space: nowrap;
           max-width: 160px;
           overflow: hidden;
         }
-        .nav-location-pill:hover { background: #E0E7FF; }
+        .nav-location-pill:hover { 
+          background: #D6DDFF;
+          border-color: var(--primary);
+        }
         .nav-location-text {
           overflow: hidden;
           text-overflow: ellipsis;
@@ -107,10 +110,10 @@ export default function Navbar() {
 
       <nav style={{
         position: "sticky", top: 0, zIndex: 1000,
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "3px solid var(--primary)",
-        boxShadow: "none",
+        background: "rgba(255,255,255,0.98)",
+        backdropFilter: "blur(14px)",
+        borderBottom: "1px solid var(--border-light)",
+        boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
       }}>
         <div className="otw-container nav-inner">
 

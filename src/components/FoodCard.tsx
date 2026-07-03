@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 const CATEGORY_BG: Record<string, string> = {
-  coffee: "#E6F0FF", snacks: "#FEF3C7", meals: "#D1FAE5", drinks: "#E0F2FE", desserts: "#FCE7F3",
+  coffee: "#EEF1FF", snacks: "#FEF3E2", meals: "#E1F5E8", drinks: "#E0F7FF", desserts: "#FDEAF8",
 };
 
 function getPseudoRating(id: string): string {
@@ -53,17 +53,17 @@ const FoodCard = ({
         onClick={go}
         style={{
           display: "flex", alignItems: "center", gap: 12,
-          background: "#fff", borderRadius: 16,
-          border: "1px solid #e2e8f0",
-          borderLeft: "4px solid #0135FB",
-          boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-          padding: "10px 14px 10px 10px",
+          background: "#fff", borderRadius: "14px",
+          border: "1px solid #E5E7EB",
+          borderLeft: "3px solid #0135FB",
+          boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+          padding: "11px 14px 11px 11px",
           cursor: "pointer",
-          transition: "box-shadow 0.2s, transform 0.2s",
+          transition: "box-shadow 0.25s ease, transform 0.25s ease",
           overflow: "hidden",
         }}
-        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(1,53,251,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-        onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = ""; }}
+        onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 10px 28px rgba(1,53,251,0.14)"; e.currentTarget.style.transform = "translateY(-3px)"; }}
+        onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
       >
         {/* Image — square */}
         <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
@@ -137,18 +137,17 @@ const FoodCard = ({
       onClick={go}
       style={{
         background: "#fff",
-        borderRadius: 18,
-        border: "1px solid #f0f2f5",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+        borderRadius: "14px",
+        border: "1px solid #E5E7EB",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
         overflow: "hidden",
         cursor: "pointer",
-        transition: "box-shadow 0.18s, transform 0.18s",
+        transition: "box-shadow 0.25s ease, transform 0.25s ease",
         display: "flex",
         flexDirection: "column",
-        /* Square aspect ratio maintained via image */
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 10px 32px rgba(1,53,251,0.14)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
+      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 12px 32px rgba(1,53,251,0.15)"; e.currentTarget.style.transform = "translateY(-5px)"; }}
+      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
     >
       {/* Square Image Area — 1:1 ratio, fills top of card */}
       <div style={{ position: "relative", aspectRatio: "1 / 1", background: bg, overflow: "hidden", flexShrink: 0 }}>
