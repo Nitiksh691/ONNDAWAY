@@ -10,19 +10,12 @@ import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle } 
 import toast from "react-hot-toast";
 import Link from "next/link";
 
-const CAMPUS_LOCATIONS = [
-  "Boys Hostel Block A", "Boys Hostel Block B", "Boys Hostel Block C",
-  "Girls Hostel Block A", "Girls Hostel Block B", "Girls Hostel Block C",
-  "PG Area – North Campus", "PG Area – South Campus", "PG Area – East Gate", "PG Area – West Gate",
-  "City PG – Sector 1", "City PG – Sector 2", "Faculty Quarters",
-  "Library Block", "Main Gate", "Sports Complex", "Cafeteria", "Admin Block", "Auditorium",
-];
+const CAMPUS_LOCATIONS: string[] = []; // removed
 
 export default function CartPage() {
   const { user, profile, cart, updateQuantity, removeFromCart, clearCart, cartTotal, syncProfile } = useApp();
   const router = useRouter();
   const [location, setLocation] = useState("");
-  const [customLocation, setCustomLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<{ discount: number; type: "percentage" | "flat"; label: string } | null>(null);
@@ -75,7 +68,6 @@ export default function CartPage() {
     }
   }, [profile]);
 
-  const isCustomLoc = location === "Other (Type below)";
   const phoneDigits = phone.replace(/\D/g, "");
   const isPhoneValid = /^[6-9]\d{9}$/.test(phoneDigits);
 
@@ -91,7 +83,7 @@ export default function CartPage() {
     return diffHours > 0 && diffHours <= 3;
   };
 
-  const canPlace = cart.length > 0 && location && (!isCustomLoc || customLocation.trim()) && isPhoneValid && name.trim().length > 0 && isTimeValid();
+  const canPlace = cart.length > 0 && location.trim().length > 0 && isPhoneValid && name.trim().length > 0 && isTimeValid();
 
   const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase();
@@ -120,7 +112,7 @@ export default function CartPage() {
   const handleConfirmAndPlace = async () => {
     setPlacing(true);
     try {
-      const finalLoc = isCustomLoc ? customLocation.trim() : location;
+      const finalLoc = location.trim();
       const finalUserId = phoneDigits;
 
       let latitude: number | null = null;
@@ -405,9 +397,18 @@ export default function CartPage() {
                   </div>
 
                   {/* Details + controls (flex column keeps everything in-bounds) */}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontWeight: 800, fontSize: "0.97rem", color: "#0A0F2E", letterSpacing: "0.2px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.item.name}</div>
-                    <div style={{ color: "#9ca3af", fontSize: "0.78rem", marginTop: "2px", textTransform: "capitalize" }}>{c.item.category || "Item"}</div>
+                  <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", minHeight: "68px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div style={{ paddingRight: "10px" }}>
+                        <div style={{ fontWeight: 800, fontSize: "0.97rem", color: "#0A0F2E", letterSpacing: "0.2px", overflow: "hidden", textOverflow: "ellipsis", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{c.item.name}</div>
+                        <div style={{ color: "#9ca3af", fontSize: "0.78rem", marginTop: "2px", textTransform: "capitalize" }}>{c.item.category || "Item"}</div>
+                      </div>
+                      <button
+                        className="otw-del-btn"
+                        onClick={() => removeFromCart(c.cartItemId || c.item.id)}
+                        style={{ width: 32, height: 32, borderRadius: "8px", border: "1.5px solid #fecaca", background: "transparent", color: "#f87171", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", flexShrink: 0 }}
+                      ><Trash2 size={14} /></button>
+                    </div>
 
                     {c.lineDetails && (
                       <div style={{ marginTop: "4px", fontSize: "0.78rem", color: "#0135FB", lineHeight: 1.4 }}>{c.lineDetails}</div>
@@ -423,30 +424,21 @@ export default function CartPage() {
                       </div>
                     )}
 
-                    {/* Price + controls row — all inside the card, never overflows */}
-                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: "10px", gap: "8px" }}>
+                    {/* Price + controls row */}
+                    <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: "auto", paddingTop: "8px" }}>
                       <div style={{ fontWeight: 900, fontSize: "1rem", color: "#0135FB", flexShrink: 0 }}>₹{c.unitPrice ?? c.item.price}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
-                        {/* Quantity stepper */}
-                        <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", background: "#fff" }}>
-                          <button
-                            className="otw-qty-btn"
-                            onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity - 1)}
-                            style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
-                          ><Minus size={13} /></button>
-                          <span style={{ fontWeight: 700, width: "26px", textAlign: "center", fontSize: "0.9rem", color: "#0A0F2E" }}>{c.quantity}</span>
-                          <button
-                            className="otw-qty-btn"
-                            onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity + 1)}
-                            style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
-                          ><Plus size={13} /></button>
-                        </div>
-                        {/* Delete button */}
+                      <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #e5e7eb", borderRadius: "8px", overflow: "hidden", background: "#fff" }}>
                         <button
-                          className="otw-del-btn"
-                          onClick={() => removeFromCart(c.cartItemId || c.item.id)}
-                          style={{ width: 32, height: 32, borderRadius: "8px", border: "1.5px solid #fecaca", background: "transparent", color: "#f87171", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "all 0.15s", flexShrink: 0 }}
-                        ><Trash2 size={14} /></button>
+                          className="otw-qty-btn"
+                          onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity - 1)}
+                          style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
+                        ><Minus size={13} /></button>
+                        <span style={{ fontWeight: 700, width: "26px", textAlign: "center", fontSize: "0.9rem", color: "#0A0F2E" }}>{c.quantity}</span>
+                        <button
+                          className="otw-qty-btn"
+                          onClick={() => updateQuantity(c.cartItemId || c.item.id, c.quantity + 1)}
+                          style={{ width: 30, height: 30, border: "none", background: "transparent", color: "#0A0F2E", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", transition: "background 0.15s" }}
+                        ><Plus size={13} /></button>
                       </div>
                     </div>
                   </div>
@@ -491,13 +483,24 @@ export default function CartPage() {
                 </div>
               )}
 
-              <div>
-                <label style={labelStyle}>Campus Location</label>
-                <select style={inputStyle} className="otw-cart-input" value={location} onChange={e => setLocation(e.target.value)}>
-                  <option value="">-- Select Spot --</option>
-                  {CAMPUS_LOCATIONS.map(l => <option key={l} value={l}>{l}</option>)}
-                  <option value="Other (Type below)">Other (Type below)</option>
-                </select>
+              <div style={{ gridColumn: "1 / -1" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Delivery Address</label>
+                  <button type="button" onClick={async () => {
+                    if (navigator.geolocation) {
+                      toast.loading("Fetching location...", { id: "gps" });
+                      navigator.geolocation.getCurrentPosition(pos => {
+                        toast.success("Location found!", { id: "gps" });
+                        setLocation(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+                      }, err => {
+                        toast.error("Failed to get location", { id: "gps" });
+                      });
+                    }
+                  }} style={{ background: "transparent", border: "none", color: "#0135FB", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
+                    <MapPin size={12} /> Use GPS
+                  </button>
+                </div>
+                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. 123 Main St, Apt 4B" value={location} onChange={e => setLocation(e.target.value)} />
               </div>
 
               <div>
@@ -519,12 +522,7 @@ export default function CartPage() {
                 )}
               </div>
 
-              {isCustomLoc && (
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={labelStyle}>Specify Location</label>
-                  <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Near Basketball Court" value={customLocation} onChange={e => setCustomLocation(e.target.value)} />
-                </div>
-              )}
+
 
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Delivery Notes (optional)</label>

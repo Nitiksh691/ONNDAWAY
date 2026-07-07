@@ -12,17 +12,6 @@ export function useDraggableFab(
   const [isDragging, setIsDragging] = useState(false);
   const dragState = useRef({ startX: 0, startY: 0, startOffsetX: 0, startOffsetY: 0, moved: false });
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem(storageKey);
-      if (saved) setOffset(JSON.parse(saved));
-    } catch { /* ignore */ }
-  }, [storageKey]);
-
-  const persist = useCallback((pos: FabPosition) => {
-    localStorage.setItem(storageKey, JSON.stringify(pos));
-  }, [storageKey]);
-
   const clampOffset = useCallback((pos: FabPosition): FabPosition => {
     if (typeof window === "undefined") return pos;
     const margin = 12;
@@ -34,6 +23,17 @@ export function useDraggableFab(
       y: Math.max(-maxUp, Math.min(margin, pos.y)),
     };
   }, [defaultBottom, defaultRight]);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) setOffset(JSON.parse(saved));
+    } catch { /* ignore */ }
+  }, [storageKey]);
+
+  const persist = useCallback((pos: FabPosition) => {
+    localStorage.setItem(storageKey, JSON.stringify(pos));
+  }, [storageKey]);
 
   const onDragStart = useCallback((clientX: number, clientY: number) => {
     dragState.current = {

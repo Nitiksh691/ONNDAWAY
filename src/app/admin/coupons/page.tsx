@@ -99,7 +99,7 @@ export default function AdminCouponsPage() {
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1000 }} />
-          <Dialog.Content className="otw-card animate-fade-up" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "90%", maxWidth: "400px", padding: "32px", zIndex: 1001 }}>
+          <Dialog.Content aria-describedby={undefined} className="otw-card animate-fade-up" style={{ position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)", width: "90%", maxWidth: "400px", padding: "32px", zIndex: 1001 }}>
             <Dialog.Title style={{ fontSize: "1.4rem", fontWeight: 800, marginBottom: "24px" }}>Create Coupon</Dialog.Title>
             
             <form onSubmit={handleSave} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

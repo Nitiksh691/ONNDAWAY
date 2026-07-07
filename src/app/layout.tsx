@@ -2,10 +2,12 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { AppProvider } from "@/lib/context";
 import Navbar from "@/components/Navbar";
+import GlobalSidebar from "@/components/GlobalSidebar";
 import Loader from "@/components/Loader";
 import ActiveOrderWidget from "@/components/ActiveOrderWidget";
 import SupportFab from "@/components/SupportFab";
 import BottomNav from "@/components/BottomNav";
+import BottomActionBar from "@/components/BottomActionBar";
 import MaintenanceOverlay from "@/components/MaintenanceOverlay";
 import KitchenClosedBanner from "@/components/KitchenClosedBanner";
 import { Toaster } from "react-hot-toast";
@@ -23,7 +25,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" data-scroll-behavior="smooth">
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
@@ -37,8 +39,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <KitchenClosedBanner />
           <Loader />
           <Navbar />
-          <main style={{ minHeight: "100vh", paddingBottom: "env(safe-area-inset-bottom)" }}>{children}</main>
+          <div className="app-with-sidebar">
+            <GlobalSidebar />
+            <main className="app-content-slot" style={{ minHeight: "100vh", paddingBottom: "env(safe-area-inset-bottom)" }}>
+              {children}
+            </main>
+          </div>
           <BottomNav />
+          <BottomActionBar />
           <ActiveOrderWidget />
           <SupportFab />
           <Toaster

@@ -7,19 +7,19 @@ export default function Footer() {
     <footer style={{
       background: "var(--primary)",
       color: "white",
-      padding: "32px 0 20px",
+      padding: "20px 0 16px",
     }}>
       <div className="otw-container">
         <div style={{
           display: "flex",
           flexWrap: "wrap",
           justifyContent: "space-between",
-          gap: "24px",
-          marginBottom: "24px",
+          gap: "16px",
+          marginBottom: "16px",
         }}>
           {/* Brand - take up more space */}
           <div style={{ flex: "1 1 300px", minWidth: "260px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "12px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
               <div style={{
                 width: 36, height: 36, borderRadius: "8px",
                 background: "rgba(255,255,255,0.15)",

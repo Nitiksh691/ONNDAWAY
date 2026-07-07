@@ -31,6 +31,13 @@ interface AppContextType {
   checkSession: () => Promise<void>;
   /** Re-fetch profile bypassing the 30s cache (e.g. after checkout). */
   syncProfile: (uid: string) => Promise<void>;
+  /** Whether the global sidebar is open on desktop. */
+  isSidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
+  toggleSidebar: () => void;
+  /** Wishlist item IDs */
+  wishlist: string[];
+  toggleWishlist: (itemId: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -40,6 +47,28 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+  const [wishlist, setWishlist] = useState<string[]>([]);
+
+  // ── Wishlist — loaded from localStorage ──────────────────────────────────────
+  useEffect(() => {
+    const saved = localStorage.getItem("otw_wishlist");
+    if (saved) {
+      try {
+        setWishlist(JSON.parse(saved));
+      } catch {
+        // ignore
+      }
+    }
+  }, []);
+
+  const toggleWishlist = useCallback((itemId: string) => {
+    setWishlist(prev => {
+      const next = prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId];
+      localStorage.setItem("otw_wishlist", JSON.stringify(next));
+      return next;
+    });
+  }, []);
 
   // ── Profile fetch ───────────────────────────────────────────────────────────
   const fetchProfile = useCallback(async (uid: string) => {
@@ -253,6 +282,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         refreshProfile: checkSession,
         checkSession,
         syncProfile,
+        isSidebarOpen,
+        setSidebarOpen,
+        toggleSidebar: () => setSidebarOpen(prev => !prev),
+        wishlist,
+        toggleWishlist,
       }}
     >
       {children}

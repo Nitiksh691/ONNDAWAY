@@ -62,6 +62,6 @@ const _POST = async (req: NextRequest) => {
   }
 };
 
-export const GET  = withLogger("GET /api/menu",  _GET);
-export const POST = withLogger("POST /api/menu", _POST);
+export const GET = async (req: NextRequest, ctx: any) => withLogger("GET /api/menu", _GET)(req, ctx);
+export const POST = async (req: NextRequest, ctx: any) => withLogger("POST /api/menu", _POST)(req, ctx);
 

@@ -6,6 +6,7 @@ import { MenuItem } from "@/lib/types";
 import { Plus, Edit2, Trash2, Search, Image as ImageIcon } from "lucide-react";
 import toast from "react-hot-toast";
 
+
 // Dialog components from Radix UI
 import * as Dialog from '@radix-ui/react-dialog';
 
@@ -19,6 +20,7 @@ export default function AdminMenuPage() {
 
   const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", customizationCategories: [] });
   const [uploadingImage, setUploadingImage] = useState(false);
+
 
   const fetchMenu = async () => {
     try {
@@ -54,29 +56,33 @@ export default function AdminMenuPage() {
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
+    e.target.value = "";
     setUploadingImage(true);
     try {
       const reader = new FileReader();
       reader.readAsDataURL(file);
       reader.onloadend = async () => {
-        const base64Image = reader.result;
-        const res = await fetch("/api/upload", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ image: base64Image }),
-        });
-        const data = await res.json();
-        if (res.ok && data.url) {
-          setForm({ ...form, image: data.url });
-          toast.success("Image uploaded!");
-        } else {
-          toast.error(data.error || "Failed to upload image");
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ image: reader.result }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            setForm(f => ({ ...f, image: data.url }));
+            toast.success("Image uploaded!");
+          } else {
+            toast.error(data.error || "Failed to upload image");
+          }
+        } catch {
+          toast.error("Error uploading image");
+        } finally {
+          setUploadingImage(false);
         }
-        setUploadingImage(false);
       };
-    } catch (err) {
-      toast.error("Error reading image");
+    } catch {
+      toast.error("Error reading file");
       setUploadingImage(false);
     }
   };
@@ -164,7 +170,7 @@ export default function AdminMenuPage() {
                   <td style={{ padding: "16px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "16px" }}>
                       <div style={{ width: 48, height: 48, borderRadius: "10px", background: "#e2e8f0", position: "relative", overflow: "hidden", display: "flex", alignItems: "center", justifyContent: "center" }}>
-                        {item.image ? <Image src={item.image} alt={item.name} fill style={{ objectFit: "cover" }} /> : <ImageIcon size={20} color="var(--text-muted)" />}
+                        {item.image ? <Image src={item.image} alt={item.name} fill sizes="48px" style={{ objectFit: "cover" }} /> : <ImageIcon size={20} color="var(--text-muted)" />}
                       </div>
                       <div>
                         <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-dark)" }}>{item.name}</div>
@@ -204,11 +210,13 @@ export default function AdminMenuPage() {
         </div>
       </div>
 
+
+
       {/* Edit/Add Dialog */}
       <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
         <Dialog.Portal>
           <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.6)", backdropFilter: "blur(8px)", zIndex: 1000 }} />
-          <Dialog.Content style={{
+          <Dialog.Content aria-describedby={undefined} style={{
             background: "#ffffff",
             position: "fixed", top: "45%", left: "50%", transform: "translate(-50%, -50%)",
             width: "95%", maxWidth: "650px", padding: "0", zIndex: 1001,
@@ -274,7 +282,7 @@ export default function AdminMenuPage() {
                     ) : form.image ? (
                       <>
                         <div style={{ position: "absolute", inset: 0 }}>
-                          <Image src={form.image} alt="Preview" fill style={{ objectFit: "contain" }} />
+                          <Image src={form.image} alt="Preview" fill sizes="600px" style={{ objectFit: "contain" }} />
                         </div>
                         <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.4)", opacity: 0, transition: "opacity 0.2s", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 700 }} onMouseEnter={e => e.currentTarget.style.opacity = "1"} onMouseLeave={e => e.currentTarget.style.opacity = "0"}>
                           Click to change image

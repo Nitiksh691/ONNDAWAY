@@ -131,6 +131,7 @@ function AdminPasscodeModal({ onSuccess }: { onSuccess: () => void }) {
           }}
         />
         <Dialog.Content
+          aria-describedby={undefined}
           style={{
             position: "fixed",
             top: "50%",

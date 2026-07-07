@@ -194,7 +194,7 @@ export default function AdminSettingsPage() {
       <Dialog.Root open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <Dialog.Portal>
           <Dialog.Overlay style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 99999, backdropFilter: "blur(4px)" }} />
-          <Dialog.Content style={{
+          <Dialog.Content aria-describedby={undefined} style={{
             position: "fixed", top: "50%", left: "50%", transform: "translate(-50%, -50%)",
             background: "white", padding: "32px", borderRadius: "20px", width: "90%", maxWidth: "450px",
             zIndex: 100000, boxShadow: "0 20px 40px rgba(0,0,0,0.2)"

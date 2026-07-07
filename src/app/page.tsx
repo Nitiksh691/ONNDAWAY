@@ -49,6 +49,12 @@ function HSliderSection({
             {emoji} {title}
           </h2>
         </div>
+        <Link href={`/menu?category=${encodeURIComponent(title)}`} style={{
+          fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", textDecoration: "none",
+          display: "flex", alignItems: "center", gap: 2
+        }}>
+          See All <ChevronRight size={14} />
+        </Link>
       </div>
 
       {/* Horizontal scroll strip */}
@@ -58,7 +64,7 @@ function HSliderSection({
         scrollbarWidth: "none", msOverflowStyle: "none",
       }}>
         {items.map(item => (
-          <div key={item.id} style={{ flexShrink: 0, width: 200 }}>
+          <div key={item.id} style={{ flexShrink: 0, width: 154 }}>
             <FoodCard
               item={item}
               layout="vertical"
@@ -180,6 +186,25 @@ export default function HomePage() {
           gap: 12px;
         }
         .hn-search-wrap { flex: 1; min-width: 200px; position: relative; }
+        .hn-search-input {
+          width: 100%;
+          padding: 12px 16px 12px 42px;
+          border-radius: 12px;
+          border: 1.5px solid #E2E8F0;
+          font-size: 0.9rem;
+          font-family: 'Outfit', sans-serif;
+          font-weight: 600;
+          outline: none;
+          background: white;
+          color: #0f172a;
+          transition: all 0.25s;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+        .hn-search-input:focus {
+          border-color: var(--primary);
+          box-shadow: 0 0 0 3px rgba(1,53,251,0.1), 0 4px 12px rgba(1,53,251,0.08);
+          background: white;
+        }
         .hn-pills-wrap {
           display: flex; gap: 7px;
           overflow-x: auto; flex: 2; padding: 4px 0;
@@ -217,13 +242,20 @@ export default function HomePage() {
           .hn-toolbar { flex-direction: column; align-items: stretch; gap: 8px; }
           .hn-search-wrap { min-width: unset; }
           .hn-pills-wrap { flex: unset; }
-          .menu-grid-sq { grid-template-columns: repeat(2, 1fr); gap: 12px; }
         }
-        @media (min-width: 768px) {
-          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        @media (max-width: 639px) {
+          .menu-grid {
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+          }
+          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+        }
+        @media (min-width: 640px) {
+          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
         }
         @media (min-width: 1024px) {
-          .menu-grid-sq { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+          .menu-grid {
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          }
         }
         /* List card rows */
         .menu-list-rows {
@@ -237,6 +269,25 @@ export default function HomePage() {
         }
         /* hscroll hide scrollbar */
         .hscroll-hide::-webkit-scrollbar { display: none; }
+
+        /* Hero animation */
+        @keyframes hero-float-1 {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-18px) rotate(8deg); }
+        }
+        @keyframes hero-float-2 {
+          0%, 100% { transform: translateY(0) rotate(0deg); }
+          50% { transform: translateY(-12px) rotate(-5deg); }
+        }
+        @keyframes hero-float-3 {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50% { transform: translateY(-10px) scale(1.08); }
+        }
+        .hero-emoji-1 { animation: hero-float-1 4s ease-in-out infinite; }
+        .hero-emoji-2 { animation: hero-float-2 5s ease-in-out infinite 0.5s; }
+        .hero-emoji-3 { animation: hero-float-3 3.5s ease-in-out infinite 1s; }
+        .hero-emoji-4 { animation: hero-float-1 4.5s ease-in-out infinite 1.5s; }
+        .hero-emoji-5 { animation: hero-float-2 3.8s ease-in-out infinite 0.8s; }
       `}</style>
 
       {/* ─── BANNER SLIDER ─── */}
@@ -249,16 +300,32 @@ export default function HomePage() {
 
       {/* ─── HERO (only when NO banners) ─── */}
       {!hasBanner && (
-        <section style={{ background: "var(--primary)", padding: "56px 24px 44px", color: "white", position: "relative", overflow: "hidden" }}>
-          <div style={{ position: "absolute", width: 300, height: 300, borderRadius: "50%", background: "rgba(255,255,255,0.04)", top: -80, right: -60 }} />
-          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.03)", bottom: -40, left: "10%" }} />
+        <section style={{ background: "linear-gradient(135deg, #0028D4 0%, #0135FB 50%, #2A55FF 100%)", padding: "56px 24px 48px", color: "white", position: "relative", overflow: "hidden" }}>
+          {/* Floating food emoji particles */}
+          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
+            <span className="hero-emoji-1" style={{ position: "absolute", top: "12%", left: "8%", fontSize: "2.5rem", opacity: 0.18 }}>🍔</span>
+            <span className="hero-emoji-2" style={{ position: "absolute", top: "20%", right: "12%", fontSize: "2rem", opacity: 0.15 }}>🍕</span>
+            <span className="hero-emoji-3" style={{ position: "absolute", bottom: "20%", left: "15%", fontSize: "1.8rem", opacity: 0.12 }}>🥤</span>
+            <span className="hero-emoji-4" style={{ position: "absolute", bottom: "30%", right: "8%", fontSize: "2.2rem", opacity: 0.14 }}>☕</span>
+            <span className="hero-emoji-5" style={{ position: "absolute", top: "50%", left: "40%", fontSize: "1.5rem", opacity: 0.1 }}>🍟</span>
+            {/* Big blur circles */}
+            <div style={{ position: "absolute", width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)", top: -100, right: -80, filter: "blur(40px)" }} />
+            <div style={{ position: "absolute", width: 250, height: 250, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -60, left: "5%", filter: "blur(30px)" }} />
+          </div>
           <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.4rem, 7vw, 4.5rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.02em" }}>
-              LIFE BEGINS <br /> AFTER <span style={{ color: "#93C5FD" }}>FLAVOR</span>.
+            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)", marginBottom: 20, fontSize: "0.8rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
+              🛵 Campus Food Delivery
+            </div>
+            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.6rem, 7vw, 4.8rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.03em" }}>
+              LIFE BEGINS <br /> AFTER <span style={{ background: "linear-gradient(135deg, #93C5FD, #BAE6FD)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>FLAVOR</span>.
             </h1>
-            <p style={{ fontSize: "1.05rem", maxWidth: "500px", opacity: 0.85, marginBottom: "32px", fontWeight: 500, lineHeight: 1.6 }}>
-              Curated meals, snacks, and beverages — delivered straight to you in minutes.
+            <p style={{ fontSize: "1.05rem", maxWidth: "480px", opacity: 0.88, marginBottom: "32px", fontWeight: 500, lineHeight: 1.65 }}>
+              Curated meals, snacks &amp; beverages — delivered to your campus spot in minutes.
             </p>
+            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
+              <a href="/menu" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", borderRadius: 999, background: "white", color: "var(--primary)", fontWeight: 900, fontSize: "0.92rem", textDecoration: "none", boxShadow: "0 8px 24px rgba(0,0,0,0.18)", transition: "all 0.2s", textTransform: "uppercase", letterSpacing: "0.5px" }}>🍽️ Browse Menu</a>
+              <a href="/orders" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", borderRadius: 999, background: "rgba(255,255,255,0.12)", color: "white", fontWeight: 800, fontSize: "0.92rem", textDecoration: "none", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.25)", transition: "all 0.2s", textTransform: "uppercase", letterSpacing: "0.5px" }}>📦 My Orders</a>
+            </div>
           </div>
         </section>
       )}
@@ -286,14 +353,7 @@ export default function HomePage() {
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
               placeholder="Search meals, snacks..."
-              style={{
-                width: "100%", padding: "11px 14px 11px 40px", borderRadius: "99px",
-                border: "1.5px solid #e5e7eb", fontSize: "0.92rem",
-                fontFamily: "'Outfit', sans-serif", fontWeight: 600, outline: "none",
-                background: "#f8fafc", color: "#0f172a", transition: "all 0.2s",
-              }}
-              onFocus={e => { e.currentTarget.style.borderColor = "var(--primary)"; e.currentTarget.style.background = "#fff"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(1,53,251,0.1)"; }}
-              onBlur={e => { e.currentTarget.style.borderColor = "#e5e7eb"; e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.boxShadow = "none"; }}
+              className="hn-search-input"
             />
           </div>
 
@@ -395,6 +455,24 @@ export default function HomePage() {
               <div style={{ fontSize: "3rem", marginBottom: "12px" }}>🔍</div>
               <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.3rem", color: "var(--text-muted)", fontWeight: 700 }}>No items found</h3>
               <p style={{ color: "var(--text-muted)", marginTop: "4px", fontSize: "0.9rem" }}>Try a different category or search term.</p>
+            </div>
+          ) : layoutMode === "grid" && selectedCategory === "all" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              {categories.filter(c => c !== "all").map(cat => {
+                const catItems = fullMenuItems.filter(i => i.category === cat);
+                if (catItems.length === 0) return null;
+                return (
+                  <HSliderSection
+                    key={cat}
+                    title={cat}
+                    emoji={CAT_EMOJI[cat] || "📦"}
+                    items={catItems}
+                    cart={cart}
+                    onAdd={addToCart}
+                    onUpdateQuantity={updateQuantity}
+                  />
+                );
+              })}
             </div>
           ) : layoutMode === "grid" ? (
             <div className="menu-grid-sq">

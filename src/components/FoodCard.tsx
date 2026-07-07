@@ -1,7 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import Image from "next/image";
-import { Plus, Minus } from "lucide-react";
+import { Plus, Minus, ShoppingCart } from "lucide-react";
 import { MenuItem, SelectedCustomization } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
@@ -137,102 +137,188 @@ const FoodCard = ({
       onClick={go}
       style={{
         background: "#fff",
-        borderRadius: 18,
-        border: "1px solid #f0f2f5",
-        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
-        overflow: "hidden",
-        cursor: "pointer",
-        transition: "box-shadow 0.18s, transform 0.18s",
+        borderRadius: 16,
         display: "flex",
         flexDirection: "column",
-        /* Square aspect ratio maintained via image */
+        height: "100%",
+        cursor: "pointer",
+        position: "relative"
       }}
-      onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 10px 32px rgba(1,53,251,0.14)"; e.currentTarget.style.transform = "translateY(-4px)"; }}
-      onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 12px rgba(0,0,0,0.06)"; e.currentTarget.style.transform = ""; }}
     >
-      {/* Square Image Area — 1:1 ratio, fills top of card */}
-      <div style={{ position: "relative", aspectRatio: "1 / 1", background: bg, overflow: "hidden", flexShrink: 0 }}>
-        {!imgError ? (
-          <Image
-            src={item.image}
-            alt={item.name}
-            fill
-            sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
-            style={{ objectFit: "cover", transition: "transform 0.4s" }}
-            onError={() => setImgError(true)}
-            onMouseEnter={e => (e.currentTarget as HTMLImageElement).style.transform = "scale(1.06)"}
-            onMouseLeave={e => (e.currentTarget as HTMLImageElement).style.transform = ""}
-          />
-        ) : (
-          <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.8rem" }}>
-            {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
-          </div>
-        )}
-
-        {/* Category badge */}
-        <span style={{ position: "absolute", top: 8, left: 8, background: "rgba(255,255,255,0.92)", color: "#0135FB", fontSize: "0.58rem", fontWeight: 800, padding: "3px 7px", borderRadius: 6, textTransform: "uppercase", letterSpacing: "0.05em", backdropFilter: "blur(4px)" }}>
-          {item.category}
-        </span>
-
-        {item.isPopular && (
-          <span style={{ position: "absolute", top: 8, right: 8, background: "linear-gradient(135deg,#F59E0B,#D97706)", color: "#fff", fontSize: "0.58rem", fontWeight: 800, padding: "2px 7px", borderRadius: 6, textTransform: "uppercase" }}>
-            ⭐ Best
-          </span>
-        )}
-      </div>
-
-      {/* Card body — name, price, rating, add button */}
-      <div style={{ padding: "10px 12px 12px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flex: 1 }}>
-        <div style={{ minWidth: 0, flex: 1, display: "flex", flexDirection: "column", gap: 4 }}>
-          <div style={{
-            fontWeight: 800, fontSize: "0.9rem", color: "#0f172a", lineHeight: 1.25,
-            overflow: "hidden", display: "-webkit-box",
-            WebkitLineClamp: 2, WebkitBoxOrient: "vertical" as any,
-          }}>
-            {item.name}
-          </div>
-          <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
-            <span style={{ fontSize: "1rem", fontWeight: 900, color: "var(--primary)", lineHeight: 1 }}>₹{item.price}</span>
-            {item.originalPrice && item.originalPrice > item.price && (
-              <span style={{ fontSize: "0.7rem", color: "#94a3b8", textDecoration: "line-through", lineHeight: 1, fontWeight: 600 }}>₹{item.originalPrice}</span>
-            )}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <span style={{ color: "#F59E0B", fontSize: "0.6rem" }}>★</span>
-            <span style={{ fontSize: "0.65rem", color: "#64748b", fontWeight: 600 }}>{getPseudoRating(item.id)}</span>
-          </div>
+      {/* Image Area */}
+      <div style={{
+        position: "relative",
+        aspectRatio: "1 / 1",
+        background: bg,
+        borderRadius: 12,
+        border: "1px solid rgba(0,0,0,0.06)",
+        flexShrink: 0,
+        marginBottom: 8
+      }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: 12, overflow: "hidden" }}>
+          {!imgError ? (
+            <Image
+              src={item.image}
+              alt={item.name}
+              fill
+              sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
+              style={{ objectFit: "cover" }}
+              onError={() => setImgError(true)}
+            />
+          ) : (
+            <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem" }}>
+              {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
+            </div>
+          )}
         </div>
 
-        {/* Add / Qty control */}
-        {cartItem ? (
-          <div style={{ display: "flex", alignItems: "center", gap: 4, flexShrink: 0 }} onClick={e => e.stopPropagation()}>
-            <button
-              onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
-              style={{ width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #0135FB", background: "#fff", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-            ><Minus size={10} /></button>
-            <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#0f172a", minWidth: 14, textAlign: "center" }}>{cartItem.quantity}</span>
-            <button
-              onClick={e => { e.stopPropagation(); if (onAdd) onAdd(item); }}
-              style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: "#0135FB", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 3px 10px rgba(1,53,251,0.3)" }}
-            ><Plus size={10} /></button>
+        {/* Bestseller Tag */}
+        {item.isPopular && (
+          <div style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            background: "linear-gradient(90deg, #F59E0B, #FCD34D)",
+            color: "#fff",
+            fontSize: "0.55rem",
+            fontWeight: 800,
+            padding: "4px 6px",
+            borderRadius: "12px 0 8px 0",
+            textTransform: "uppercase"
+          }}>
+            Bestseller
           </div>
-        ) : (
-          <button
-            onClick={handleAdd}
-            disabled={!item.available}
-            style={{
-              width: 32, height: 32, borderRadius: "50%", border: "none", flexShrink: 0,
-              background: item.available ? "#0135FB" : "#e2e8f0",
-              color: item.available ? "#fff" : "#94a3b8",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              cursor: item.available ? "pointer" : "not-allowed",
-              boxShadow: item.available ? "0 4px 12px rgba(1,53,251,0.35)" : "none",
-              transition: "transform 0.15s, box-shadow 0.15s",
-            }}
-            onMouseEnter={e => item.available && (e.currentTarget.style.transform = "scale(1.15)")}
-            onMouseLeave={e => (e.currentTarget.style.transform = "")}
-          ><Plus size={14} /></button>
         )}
+
+        {/* ADD Button (Floating) */}
+        <div style={{
+          position: "absolute",
+          bottom: -10,
+          right: 8,
+          zIndex: 10
+        }} onClick={e => e.stopPropagation()}>
+          {cartItem ? (
+            <div style={{
+              display: "flex", alignItems: "center",
+              background: "var(--primary)",
+              color: "#fff",
+              borderRadius: 8,
+              height: 32,
+              padding: "0 4px",
+              boxShadow: "0 2px 6px rgba(1,53,251,0.3)"
+            }}>
+              <button
+                onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
+                style={{ width: 26, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+              ><Minus size={14}/></button>
+              <span style={{ fontWeight: 800, fontSize: "0.85rem", minWidth: 20, textAlign: "center" }}>{cartItem.quantity}</span>
+              <button
+                onClick={e => { e.stopPropagation(); if (onAdd) onAdd(item); }}
+                style={{ width: 26, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+              ><Plus size={14}/></button>
+            </div>
+          ) : (
+            <button
+              onClick={handleAdd}
+              disabled={!item.available}
+              style={{
+                background: "#fff",
+                color: item.available ? "var(--primary)" : "#94A3B8",
+                border: `1px solid ${item.available ? "var(--primary)" : "#E2E8F0"}`,
+                borderRadius: 8,
+                height: 32,
+                padding: "0 18px",
+                fontWeight: 900,
+                fontSize: "0.85rem",
+                boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
+                cursor: item.available ? "pointer" : "not-allowed"
+              }}
+            >
+              ADD
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Card Body */}
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 4px 4px 4px" }}>
+        
+        {/* Price Row */}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+          <div style={{
+            background: "var(--primary)",
+            color: "#fff",
+            fontWeight: 800,
+            fontSize: "0.8rem",
+            padding: "2px 6px",
+            borderRadius: 6
+          }}>
+            ₹{item.price}
+          </div>
+          {item.originalPrice && item.originalPrice > item.price && (
+            <div style={{
+              color: "#94A3B8",
+              fontSize: "0.75rem",
+              textDecoration: "line-through",
+              fontWeight: 600
+            }}>
+              ₹{item.originalPrice}
+            </div>
+          )}
+        </div>
+
+        {/* Discount Text */}
+        {item.originalPrice && item.originalPrice > item.price && (
+          <div style={{ color: "var(--primary)", fontSize: "0.65rem", fontWeight: 800, marginBottom: 6 }}>
+            ₹{item.originalPrice - item.price} OFF
+          </div>
+        )}
+
+        {/* Title */}
+        <div style={{
+          fontSize: "0.85rem",
+          fontWeight: 700,
+          color: "#0F172A",
+          lineHeight: 1.3,
+          marginBottom: 4,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+          marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? "4px" : "0px"
+        }}>
+          {item.name}
+        </div>
+
+        {/* Portion / Info */}
+        <div style={{ fontSize: "0.75rem", color: "#64748B", marginBottom: 6 }}>
+          1 portion
+        </div>
+
+        {/* Category Pill */}
+        {item.section && (
+          <div style={{ marginBottom: 8, display: "flex", overflow: "hidden" }}>
+            <span style={{
+              background: "rgba(1, 53, 251, 0.08)",
+              color: "var(--primary)",
+              fontSize: "0.65rem",
+              fontWeight: 700,
+              padding: "2px 6px",
+              borderRadius: 4,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "100%"
+            }}>
+              {item.section}
+            </span>
+          </div>
+        )}
+
+        {/* Rating */}
+        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", fontWeight: 700, color: "#64748B" }}>
+          <span style={{ color: "var(--primary)" }}>★</span> {getPseudoRating(item.id)} ({(4 + parseInt(item.id.slice(-2), 16) % 96)}k)
+        </div>
       </div>
     </div>
   );

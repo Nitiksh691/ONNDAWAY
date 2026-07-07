@@ -24,26 +24,28 @@ export default function BottomActionBar() {
 
   return (
     <div className="bottom-action-bar">
-      <div className="bottom-action-bar__left">
-        <div className="bottom-action-bar__icon">
-          <ShoppingBag size={20} color="#fff" />
-        </div>
-        <div className="bottom-action-bar__info">
-          <div className="bottom-action-bar__count">
-            {cartCount} item{cartCount > 1 ? "s" : ""} · ₹{cartTotal}
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: "12px" }}>
+        <div className="bottom-action-bar__left">
+          <div className="bottom-action-bar__icon">
+            <ShoppingBag size={20} color="#fff" />
+          </div>
+          <div className="bottom-action-bar__info">
+            <div className="bottom-action-bar__count">
+              {cartCount} item{cartCount > 1 ? "s" : ""} · ₹{cartTotal}
+            </div>
           </div>
         </div>
-      </div>
-      <div className="bottom-action-bar__actions">
-        {hasActiveOrder && (
-          <Link href="/orders" className="bottom-action-bar__orders">
-            <Package size={15} />
-            <span className="bottom-action-bar__orders-label">Orders</span>
+        <div className="bottom-action-bar__actions">
+          {hasActiveOrder && (
+            <Link href="/orders" className="bottom-action-bar__orders">
+              <Package size={15} />
+              <span className="bottom-action-bar__orders-label">Orders</span>
+            </Link>
+          )}
+          <Link href="/cart" className="bottom-action-bar__checkout">
+            Checkout <ArrowRight size={15} />
           </Link>
-        )}
-        <Link href="/cart" className="bottom-action-bar__checkout">
-          Checkout <ArrowRight size={15} />
-        </Link>
+        </div>
       </div>
     </div>
   );
