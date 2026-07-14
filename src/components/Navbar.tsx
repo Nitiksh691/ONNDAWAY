@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect, useRef } from "react";
 import { ShoppingCart, User, LogOut, LayoutDashboard, Truck, MapPin, ChevronDown, Menu, X } from "lucide-react";
@@ -7,6 +8,7 @@ import { useApp } from "@/lib/context";
 import toast from "react-hot-toast";
 import AuthModal from "./AuthModal";
 import { LocationModal, useDeliveryLocation } from "./LocationModal";
+import WalkingLoader from "./WalkingLoader";
 
 const NAV_LINKS = [
   { href: "/", label: "Home" },
@@ -50,6 +52,8 @@ export default function Navbar() {
   };
 
   const showSidebarToggle = !pathname.startsWith("/admin") && !pathname.startsWith("/delivery");
+
+  if (pathname.startsWith("/admin")) return null;
 
   return (
     <>
@@ -130,20 +134,16 @@ export default function Navbar() {
           position: relative;
         }
         .nav-logo-icon {
-          width: 38px;
-          height: 38px;
-          border-radius: 11px;
-          background: var(--primary-gradient, linear-gradient(135deg,#0135FB,#2A55FF));
+          width: 36px;
+          height: 36px;
           display: flex;
           align-items: center;
           justify-content: center;
-          box-shadow: 0 4px 12px rgba(1,53,251,0.35);
-          transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.25s;
+          transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1);
           flex-shrink: 0;
         }
         .nav-logo-wrap:hover .nav-logo-icon {
           transform: scale(1.08) rotate(-3deg);
-          box-shadow: 0 6px 20px rgba(1,53,251,0.45);
         }
         .nav-logo-text {
           font-weight: 900;
@@ -426,19 +426,9 @@ export default function Navbar() {
             )}
 
             <Link href="/" className="nav-logo-wrap">
-              <div className="nav-logo-icon">
-                <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
-                  <circle cx="16" cy="5.5" r="3" fill="white"/>
-                  <path d="M16 9 L13.5 17 L18.5 17 Z" fill="white"/>
-                  <path d="M13.5 11 L10 15" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M18.5 11 L22 13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-                  <path d="M14 17 L11 23 L9 27" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                  <path d="M18 17 L20 22 L22 26" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </div>
+              <WalkingLoader size={36} color="#0135FB" />
               <div className="hide-mobile">
                 <div className="nav-logo-text">ONN DA WAY</div>
-                <div className="nav-logo-sub">Campus Delivery</div>
               </div>
             </Link>
           </div>

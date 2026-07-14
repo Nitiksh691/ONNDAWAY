@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import MenuItem from "@/models/MenuItem";
+import Settings from "@/models/Settings";
 import { withLogger } from "@/lib/withLogger";
 import { normalizeCartLines } from "@/lib/orderLine";
 import type { CartItem, OrderStatus } from "@/lib/types";
@@ -58,6 +59,11 @@ const _POST = async (req: NextRequest) => {
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+  }
+
+  const settings = await Settings.findOne();
+  if (settings?.kitchenClosed) {
+    return NextResponse.json({ error: `Kitchen is closed. We'll be open from ${settings.kitchenOpenTime || "soon"}.` }, { status: 403 });
   }
 
   const normalizedItems = normalizeCartLines(items as CartItem[]);

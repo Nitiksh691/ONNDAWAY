@@ -24,13 +24,15 @@ export default function MaintenanceOverlay() {
       .catch(() => setChecking(false));
   }, []);
 
+  // Admins bypass maintenance mode immediately via route
+  if (pathname.startsWith("/admin")) return null;
+  
   // Don't show while checking or if user profile is loading
   if (checking || loading) return null;
   // If no maintenance mode, return nothing
   if (!status.mode) return null;
-  // Admins bypass maintenance mode
+  // Admins bypass maintenance mode via profile (if navigating client-side)
   if (profile?.role === "admin") return null;
-  // Admins might need to access /admin even if profile is slow to load, but we wait for loading above.
 
   return (
     <div style={{

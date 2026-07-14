@@ -74,7 +74,7 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
 
   const handleGeolocate = () => {
     if (!navigator.geolocation) {
-      setGeoError("Geolocation not supported by your browser.");
+      setGeoError("Geolocation is not supported by your browser.");
       return;
     }
     setGeoLoading(true);
@@ -83,27 +83,52 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
       async (pos) => {
         try {
           const { latitude, longitude } = pos.coords;
-          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          // Try multiple reverse geocoding approaches
+          const res = await fetch(
+            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=16&addressdetails=1`,
+            { headers: { "Accept-Language": "en" } }
+          );
           const data = await res.json();
-          let locationName = "Current Location";
+          let locationName = "";
           if (data && data.address) {
-             const addr = data.address;
-             locationName = addr.suburb || addr.neighbourhood || addr.residential || addr.city_district || addr.city || "Detected Location";
+            const addr = data.address;
+            // Priority: neighbourhood > suburb > residential > quarter > city_district > road
+            locationName =
+              addr.neighbourhood ||
+              addr.suburb ||
+              addr.residential ||
+              addr.quarter ||
+              addr.village ||
+              addr.city_district ||
+              addr.county ||
+              addr.town ||
+              addr.city ||
+              "";
+            // Append city if available and different from the area name
+            const city = addr.city || addr.town || addr.state_district || "";
+            if (city && city.toLowerCase() !== locationName.toLowerCase()) {
+              locationName = locationName ? `${locationName}, ${city}` : city;
+            }
           }
+          if (!locationName) locationName = data?.display_name?.split(",")[0] || "Your Location";
           setGeoLoading(false);
           onSave(locationName);
           onClose();
         } catch (e) {
           setGeoLoading(false);
-          onSave("Detected Location");
-          onClose();
+          setGeoError("Could not get address. Please select your area below.");
         }
       },
       (error) => {
         setGeoLoading(false);
-        setGeoError(error.message || "Could not detect location. Please select manually.");
+        const msgs: Record<number, string> = {
+          1: "Location access denied. Please enable it in browser settings.",
+          2: "Location unavailable. Try selecting manually.",
+          3: "Location request timed out. Please try again.",
+        };
+        setGeoError(msgs[error.code] || "Could not detect location. Please select manually.");
       },
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
   };
 

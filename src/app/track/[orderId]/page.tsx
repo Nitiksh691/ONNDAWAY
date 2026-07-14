@@ -11,6 +11,7 @@ import { CheckCircle, MapPin, Clock, MessageCircle, Navigation, Phone } from "lu
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from "@/lib/company";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import WalkingLoader from "@/components/WalkingLoader";
 
 const STATUS_STEPS = [
   { id: "placed", label: "Order Placed", subLabel: "We've received your order", icon: "📋", color: "#6366F1" },
@@ -90,9 +91,13 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
       }
     };
     if (!loading) fetchOrder();
-    const interval = setInterval(fetchOrder, 3000);
+    
+    // Check if order is already completed/cancelled before setting interval
+    if (order?.status === "delivered" || order?.status === "cancelled") return;
+
+    const interval = setInterval(fetchOrder, 6000);
     return () => clearInterval(interval);
-  }, [orderId, loading, router]);
+  }, [orderId, loading, router, order?.status]);
 
   useEffect(() => {
     const el = chatScrollRef.current;
@@ -109,35 +114,43 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sender: "user", text }),
       });
-    } catch {
-      toast.error("Could not send message");
+      // optimistically add
+      setOrder(prev => {
+        if (!prev) return prev;
+        return { ...prev, messages: [...(prev.messages || []), { id: Date.now().toString(), sender: "user", text, timestamp: new Date().toISOString() }] };
+      });
+    } catch (err) {
+      toast.error("Failed to send message");
     } finally {
       setSendingMsg(false);
     }
   };
 
-  const submitReview = async () => {
-    if (!rating) { toast.error("Please select a rating first."); return; }
+  const cancelOrder = async () => {
+    if (!orderId) return;
+    if (!confirm("Are you sure you want to cancel this order?")) return;
     try {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ rating, review: reviewText }),
+        body: JSON.stringify({ status: "cancelled" }),
       });
       if (res.ok) {
-        setRatingSubmitted(true);
-        toast.success("Thanks for rating! ⭐", { style: { background: "#fff", color: "#0A0F2E" } });
-        setOrder(prev => prev ? { ...prev, rating, review: reviewText } : prev);
-      } else { toast.error("Failed to submit review"); }
-    } catch { toast.error("Failed to submit review"); }
+        toast.success("Order cancelled");
+        setOrder(prev => prev ? { ...prev, status: "cancelled" } : prev);
+      } else {
+        toast.error("Failed to cancel order");
+      }
+    } catch {
+      toast.error("Error cancelling order");
+    }
   };
 
   /* ── Loading ── */
   if (loading || fetching || !order) {
     return (
       <div style={{ background: "#F5F7FF", minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: "16px" }}>
-        <style>{`@keyframes spin-track { to { transform: rotate(360deg); } }`}</style>
-        <div style={{ width: 44, height: 44, borderRadius: "50%", border: "4px solid #e5e7eb", borderTop: "4px solid #0135FB", animation: "spin-track 1s linear infinite" }} />
+        <WalkingLoader size={60} color="#0135FB" />
         <span style={{ color: "#6B7280", fontWeight: 600, fontSize: "0.9rem" }}>Loading order details…</span>
       </div>
     );
@@ -427,57 +440,18 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
               </div>
             </div>
 
-            {/* ── Rating (delivered) ── */}
-            {isDelivered && (
-              <div style={{ ...cardStyle, padding: "28px 24px", textAlign: "center", animation: "fade-up 0.6s ease" }}>
-                {(order.rating || ratingSubmitted) ? (
-                  <div>
-                    <div style={{ fontSize: "2.2rem", marginBottom: "8px" }}>🙏</div>
-                    <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#22C55E" }}>Thanks for your feedback!</div>
-                    <div style={{ color: "#0A0F2E", marginTop: "10px", fontSize: "1.3rem" }}>
-                      {Array(order.rating || rating).fill("⭐").join("")}
-                    </div>
-                    {(order.review || reviewText) && (
-                      <div style={{ background: "#F5F7FF", padding: "12px", borderRadius: "8px", marginTop: "12px", fontSize: "0.88rem", color: "#6B7280", fontStyle: "italic" }}>
-                        &ldquo;{order.review || reviewText}&rdquo;
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <>
-                    <div style={{ fontSize: "1.6rem", marginBottom: "6px", fontWeight: 900, color: "#0A0F2E" }}>How was your order?</div>
-                    <p style={{ color: "#6B7280", fontSize: "0.88rem", marginBottom: "18px" }}>Rate your experience with ONN DA WAY</p>
-                    <div style={{ display: "flex", justifyContent: "center", gap: "10px", marginBottom: "22px" }}>
-                      {[1, 2, 3, 4, 5].map(star => (
-                        <button
-                          key={star}
-                          onClick={() => setRating(star)}
-                          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px", fontSize: "2.2rem", transition: "transform 0.15s", animation: star <= rating ? "star-pop 0.3s ease" : "none" }}
-                          onMouseEnter={e => e.currentTarget.style.transform = "scale(1.2)"}
-                          onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-                        >
-                          {star <= rating ? "⭐" : "☆"}
-                        </button>
-                      ))}
-                    </div>
-                    {rating > 0 && (
-                      <div style={{ animation: "fade-up 0.4s ease" }}>
-                        <textarea
-                          placeholder="Tell us what you liked or how we can improve (optional)"
-                          value={reviewText}
-                          onChange={(e) => setReviewText(e.target.value)}
-                          style={{ width: "100%", padding: "13px", borderRadius: "10px", border: "1.5px solid #e5e7eb", background: "#F5F7FF", color: "#0A0F2E", resize: "none", height: "80px", marginBottom: "14px", fontFamily: "inherit", fontSize: "0.92rem", outline: "none" }}
-                        />
-                        <button
-                          onClick={submitReview}
-                          style={{ background: "#0135FB", color: "#fff", border: "none", padding: "13px 24px", borderRadius: "10px", fontWeight: 800, fontSize: "0.95rem", cursor: "pointer", width: "100%", textTransform: "uppercase", letterSpacing: "1px", boxShadow: "0 4px 0 #0028D4", fontFamily: "inherit" }}
-                        >
-                          Submit Feedback
-                        </button>
-                      </div>
-                    )}
-                  </>
-                )}
+            {/* ── Cancel Order (only when placed/confirmed) ── */}
+            {currentStepIndex >= 0 && currentStepIndex <= 1 && (
+              <div style={{ ...cardStyle, padding: "20px", animation: "fade-up 0.65s ease", textAlign: "center" }}>
+                <p style={{ color: "#6B7280", fontSize: "0.85rem", marginBottom: "12px" }}>
+                  Need to change your mind? You can cancel your order before the kitchen starts preparing it.
+                </p>
+                <button
+                  onClick={cancelOrder}
+                  style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FCA5A5", padding: "10px 20px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.2s" }}
+                >
+                  Cancel Order
+                </button>
               </div>
             )}
           </>

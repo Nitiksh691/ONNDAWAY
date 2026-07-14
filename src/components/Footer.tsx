@@ -1,124 +1,144 @@
 import Link from "next/link";
 import { Camera, MessageCircle, Mail, MapPin, Phone } from "lucide-react";
-import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, SUPPORT_EMAIL, COMPANY_BLURB } from "@/lib/company";
+import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, SUPPORT_EMAIL } from "@/lib/company";
 
 export default function Footer() {
   return (
-    <footer style={{
-      background: "var(--primary)",
-      color: "white",
-      padding: "20px 0 16px",
-    }}>
+    <footer style={{ background: "var(--primary)", color: "white" }}>
+      <style>{`
+        .footer-main {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 48px;
+          padding: 48px 0 32px;
+        }
+        .footer-brand-col {}
+        .footer-right-col {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 32px;
+        }
+        .footer-section-title {
+          font-size: 0.7rem;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          opacity: 0.5;
+          margin-bottom: 16px;
+        }
+        .footer-link {
+          display: block;
+          color: rgba(255,255,255,0.8);
+          text-decoration: none;
+          font-size: 0.88rem;
+          font-weight: 500;
+          padding: 5px 0;
+          transition: color 0.15s;
+        }
+        .footer-link:hover { color: white; }
+        .footer-contact-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 0.85rem;
+          color: rgba(255,255,255,0.8);
+          padding: 4px 0;
+        }
+        .footer-contact-item a { color: rgba(255,255,255,0.8); text-decoration: none; transition: color 0.15s; }
+        .footer-contact-item a:hover { color: white; }
+        .footer-bottom {
+          border-top: 1px solid rgba(255,255,255,0.12);
+          padding: 20px 0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 12px;
+        }
+        .footer-social-btn {
+          width: 32px; height: 32px;
+          border-radius: 8px;
+          background: rgba(255,255,255,0.12);
+          display: flex; align-items: center; justify-content: center;
+          color: white; text-decoration: none;
+          transition: background 0.2s;
+        }
+        .footer-social-btn:hover { background: rgba(255,255,255,0.25); }
+        @media (max-width: 640px) {
+          .footer-main { grid-template-columns: 1fr; gap: 32px; padding: 32px 0 24px; }
+          .footer-right-col { grid-template-columns: 1fr 1fr; gap: 24px; }
+        }
+      `}</style>
+
       <div className="otw-container">
-        <div style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          gap: "16px",
-          marginBottom: "16px",
-        }}>
-          {/* Brand - take up more space */}
-          <div style={{ flex: "1 1 300px", minWidth: "260px" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", marginBottom: "8px" }}>
+        <div className="footer-main">
+          {/* Left: Brand */}
+          <div className="footer-brand-col">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "16px" }}>
               <div style={{
-                width: 36, height: 36, borderRadius: "8px",
+                width: 40, height: 40, borderRadius: "10px",
                 background: "rgba(255,255,255,0.15)",
                 display: "flex", alignItems: "center", justifyContent: "center",
+                overflow: "hidden",
               }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="5" r="2.5" fill="white"/>
-                  <path d="M12 8.5 L9 12 L12 11 L15 12 Z" fill="white"/>
-                  <path d="M12 11 L10 16 M12 11 L14 16" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                  <path d="M10 16 L8.5 20 M14 16 L15.5 20" stroke="white" strokeWidth="1.5" strokeLinecap="round"/>
-                </svg>
+                <img src="/logo.png.jpeg" alt="ONN DA WAY" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div>
-                <div style={{ fontWeight: 800, fontSize: "1rem", lineHeight: 1.1 }}>ONN D A WAY</div>
-                <div style={{ fontSize: "0.6rem", opacity: 0.7, letterSpacing: "0.05em" }}>FOOD DELIVERY</div>
+                <div style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "0.5px", lineHeight: 1.1 }}>ONN DA WAY</div>
+                <div style={{ fontSize: "0.62rem", opacity: 0.6, letterSpacing: "1.5px", marginTop: "2px" }}>FOOD DELIVERY</div>
               </div>
             </div>
-            <p style={{ fontSize: "0.8rem", opacity: 0.8, lineHeight: 1.5, maxWidth: "100%" }}>
-              {COMPANY_BLURB}
+            <p style={{ fontSize: "0.85rem", opacity: 0.75, lineHeight: 1.7, maxWidth: "280px" }}>
+              Fresh meals, snacks & beverages delivered fast — built by students, for students.
             </p>
+            <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
+              <a href="#" className="footer-social-btn"><Camera size={15} /></a>
+              <a href={`https://wa.me/${SUPPORT_PHONE_DISPLAY?.replace(/\D/g, "")}`} className="footer-social-btn"><MessageCircle size={15} /></a>
+            </div>
           </div>
 
-          {/* Links and Contact side-by-side if space allows */}
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "32px", flex: "2 1 auto", justifyContent: "flex-end" }}>
+          {/* Right: Links + Contact */}
+          <div className="footer-right-col">
             {/* Quick Links */}
-            <div style={{ minWidth: "140px" }}>
-              <h4 style={{ fontWeight: 700, marginBottom: "12px", fontSize: "0.9rem" }}>Quick Links</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                {[
-                  { label: "Menu", href: "/menu" },
-                  { label: "My Orders", href: "/orders" },
-                  { label: "About Us", href: "/about" },
-                  { label: "Delivery Partner", href: "/delivery/login" },
-                ].map(l => (
-                  <Link key={l.label} href={l.href} style={{
-                    color: "rgba(255,255,255,0.8)", textDecoration: "none",
-                    fontSize: "0.8rem", transition: "color 0.15s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.color = "white")}
-                  onMouseLeave={e => (e.currentTarget.style.color = "rgba(255,255,255,0.8)")}>
-                    {l.label}
-                  </Link>
-                ))}
-              </div>
+            <div>
+              <div className="footer-section-title">Explore</div>
+              {[
+                { label: "Menu", href: "/menu" },
+                { label: "My Orders", href: "/orders" },
+                { label: "About Us", href: "/about" },
+                { label: "Become a Partner", href: "/delivery/login" },
+              ].map(l => (
+                <Link key={l.label} href={l.href} className="footer-link">{l.label}</Link>
+              ))}
             </div>
 
             {/* Contact */}
-            <div style={{ minWidth: "180px" }}>
-              <h4 style={{ fontWeight: 700, marginBottom: "12px", fontSize: "0.9rem" }}>Contact & Socials</h4>
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {[
-                  { icon: <MapPin size={14}/>, text: "Delivering fresh food daily" },
-                  { icon: <Phone size={14}/>, text: SUPPORT_PHONE_DISPLAY, href: SUPPORT_TEL },
-                  { icon: <Mail size={14}/>, text: SUPPORT_EMAIL, href: `mailto:${SUPPORT_EMAIL}` },
-                ].map((c, i) => (
-                  <div key={i} style={{ display: "flex", gap: "8px", alignItems: "center", fontSize: "0.8rem", opacity: 0.85 }}>
-                    <span style={{ flexShrink: 0 }}>{c.icon}</span>
-                    {"href" in c && c.href ? (
-                      <a href={c.href} style={{ color: "inherit", textDecoration: "none" }}>{c.text}</a>
-                    ) : (
-                      <span>{c.text}</span>
-                    )}
-                  </div>
-                ))}
+            <div>
+              <div className="footer-section-title">Contact</div>
+              <div className="footer-contact-item">
+                <MapPin size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+                <span>Rohini, Delhi</span>
               </div>
-              
-              <div style={{ display: "flex", gap: "8px", marginTop: "12px" }}>
-                {[
-                  { icon: <Camera size={14}/>, href: "#" },
-                  { icon: <MessageCircle size={14}/>, href: "#" },
-                ].map((s, i) => (
-                  <a key={i} href={s.href} style={{
-                    width: 28, height: 28, borderRadius: "6px",
-                    background: "rgba(255,255,255,0.15)", display: "flex",
-                    alignItems: "center", justifyContent: "center", color: "white",
-                    textDecoration: "none", transition: "background 0.2s",
-                  }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.3)")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.15)")}>
-                    {s.icon}
-                  </a>
-                ))}
+              <div className="footer-contact-item">
+                <Phone size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+                <a href={SUPPORT_TEL}>{SUPPORT_PHONE_DISPLAY}</a>
+              </div>
+              <div className="footer-contact-item">
+                <Mail size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+                <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
               </div>
             </div>
           </div>
         </div>
 
-        <div style={{
-          borderTop: "1px solid rgba(255,255,255,0.15)",
-          paddingTop: "16px",
-          display: "flex", justifyContent: "space-between", alignItems: "center",
-          flexWrap: "wrap", gap: "12px",
-        }}>
-          <p style={{ fontSize: "0.75rem", opacity: 0.65 }}>
-            © {new Date().getFullYear()} ONN D A WAY. All rights reserved.
+        {/* Bottom bar */}
+        <div className="footer-bottom">
+          <p style={{ fontSize: "0.75rem", opacity: 0.5 }}>
+            © {new Date().getFullYear()} ONN DA WAY. All rights reserved.
           </p>
-          <div style={{ display: "flex", gap: "16px" }}>
+          <div style={{ display: "flex", gap: "20px" }}>
             {["Privacy Policy", "Terms of Service"].map(l => (
-              <a key={l} href="#" style={{ fontSize: "0.75rem", opacity: 0.65, color: "white", textDecoration: "none" }}>{l}</a>
+              <a key={l} href="#" style={{ fontSize: "0.72rem", opacity: 0.5, color: "white", textDecoration: "none" }}>{l}</a>
             ))}
           </div>
         </div>

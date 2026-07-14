@@ -293,7 +293,7 @@ export default function ProfilePage() {
                     <div style={{ fontSize: "1.5rem" }}>👋</div>
                     <div>
                       <h4 style={{ fontSize: "0.95rem", fontWeight: 800, color: "#854D0E", marginBottom: "4px" }}>Complete your profile</h4>
-                      <p style={{ fontSize: "0.85rem", color: "#A16207", lineHeight: 1.4 }}>Add your college and year to help us personalize your campus delivery experience.</p>
+                      <p style={{ fontSize: "0.85rem", color: "#A16207", lineHeight: 1.4 }}>Add your details to help us personalize your delivery experience.</p>
                       <button onClick={() => setIsEditing(true)} style={{ background: "none", border: "none", color: "#854D0E", fontWeight: 800, fontSize: "0.85rem", marginTop: "8px", cursor: "pointer", textDecoration: "underline" }}>Edit Profile</button>
                     </div>
                   </div>

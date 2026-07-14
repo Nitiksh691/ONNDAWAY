@@ -1,53 +1,21 @@
 "use client";
-import { useState, useRef, useCallback, useMemo } from "react";
+import { useState, useMemo } from "react";
 import useSWR from "swr";
 import Image from "next/image";
 import { useParams, useRouter } from "next/navigation";
-import {
-  ArrowLeft, Star, ShoppingCart, Heart, Share2, Package, Minus, Plus
-} from "lucide-react";
+import { ArrowLeft, ShoppingCart, Heart, Share2, Minus, Plus, Search } from "lucide-react";
 import { useApp } from "@/lib/context";
-import { MenuItem, SelectedCustomization } from "@/lib/types";
+import { MenuItem } from "@/lib/types";
 import toast from "react-hot-toast";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 
-// Fetcher for SWR
 const fetcher = (url: string) => fetch(url).then(res => res.json());
-
-function getPseudoRating(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 31 + id.charCodeAt(i)) >>> 0;
-  return +(4.0 + (h % 10) / 10).toFixed(1);
-}
-function getPseudoReviews(id: string): number {
-  let h = 0;
-  for (let i = 0; i < id.length; i++) h = (h * 17 + id.charCodeAt(i)) >>> 0;
-  return 40 + (h % 160);
-}
-
-function Stars({ rating }: { rating: number }) {
-  return (
-    <span style={{ display: "inline-flex", gap: "2px" }}>
-      {[1, 2, 3, 4, 5].map(i => (
-        <Star
-          key={i}
-          size={16}
-          fill={i <= Math.round(rating) ? "#0135FB" : "none"}
-          color={i <= Math.round(rating) ? "#0135FB" : "#CBD5E1"}
-        />
-      ))}
-    </span>
-  );
-}
 
 export default function ItemPage() {
   const { id } = useParams();
   const router = useRouter();
   const { cart, addToCart, updateQuantity, wishlist, toggleWishlist } = useApp();
-
-  const [qty, setQty] = useState(1);
-  const [activeTab, setActiveTab] = useState("description");
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   const { data: menu = [], isLoading } = useSWR<MenuItem[]>("/api/menu", fetcher, {
@@ -59,7 +27,7 @@ export default function ItemPage() {
   const cartItem = useMemo(() => cart.find(c => c.item.id === item?.id), [cart, item]);
   const relatedItems = useMemo(() => {
     if (!item) return [];
-    return menu.filter(m => m.category === item.category && m.id !== item.id).slice(0, 4);
+    return menu.filter(m => m.category === item.category && m.id !== item.id).slice(0, 6);
   }, [menu, item]);
 
   const handleAddToCart = () => {
@@ -68,555 +36,448 @@ export default function ItemPage() {
     toast.success("Added to cart");
   };
 
-  if (isLoading) {
-    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Loading...</div>;
-  }
-  if (!item) {
-    return <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}>Item not found</div>;
+  if (isLoading || !item) {
+    return (
+      <div style={{ minHeight: "100vh", background: "#F8FAFC", display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ color: "#0F172A" }}>Loading...</div>
+      </div>
+    );
   }
 
-  const rating = getPseudoRating(item.id);
-  const reviews = getPseudoReviews(item.id);
   const hasDiscount = !!item.originalPrice && item.originalPrice > item.price;
   const discountPct = hasDiscount ? Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100) : 0;
-  
   const isWishlisted = wishlist?.includes(item.id);
-
-  // Mock array for thumbnails if we want to show multiple
-  const images = [item.image, item.image];
+  const images = [item.image, item.image]; // Mocking multiple images for now
 
   return (
-    <div style={{ minHeight: "100vh", background: "var(--bg-main)", paddingBottom: "env(safe-area-inset-bottom)" }}>
+    <div style={{ minHeight: "100vh", background: "#F8FAFC", color: "#0F172A", paddingBottom: "env(safe-area-inset-bottom)" }}>
       <style>{`
-        .item-container {
-          max-width: 1200px;
+        .item-page-wrap {
+          max-width: 1000px;
           margin: 0 auto;
+          padding: 40px 24px;
+        }
+        .item-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 48px;
+          align-items: start;
+        }
+
+        /* Gallery */
+        .gallery-box {
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
           padding: 24px;
-        }
-        /* Top Header */
-        .item-page-header {
+          position: relative;
+          aspect-ratio: 4/3;
           display: flex;
           align-items: center;
-          justify-content: space-between;
-          margin-bottom: 24px;
-          border-bottom: 1px solid var(--border-light);
-          padding-bottom: 16px;
+          justify-content: center;
+          margin-bottom: 12px;
+          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
         }
-        .item-page-title-badge {
+        .gallery-box img {
+          object-fit: contain;
+          max-width: 100%;
+          max-height: 100%;
+        }
+        .zoom-icon {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          color: #94A3B8;
+        }
+        .thumbs-row {
           display: flex;
-          align-items: center;
           gap: 12px;
-          font-family: 'Outfit', sans-serif;
-          font-weight: 900;
-          font-size: 1.5rem;
-          color: var(--text-dark);
-          text-transform: uppercase;
         }
-        .item-page-title-icon {
-          width: 32px;
-          height: 32px;
-          background: var(--primary);
-          color: white;
+        .thumb-box {
+          width: 72px;
+          height: 72px;
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
           border-radius: 8px;
+          padding: 8px;
+          cursor: pointer;
+          transition: border-color 0.2s;
           display: flex;
           align-items: center;
           justify-content: center;
         }
-        .brand-text {
-          font-size: 0.85rem;
-          font-weight: 800;
-          color: var(--text-muted);
-          letter-spacing: 1px;
+        .thumb-box.active {
+          border-color: #0135FB;
+          border-width: 2px;
         }
-        
-        /* Main Layout */
-        .item-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 40px;
-          margin-bottom: 40px;
-        }
-        
-        /* Left: Images */
-        .img-main-box {
-          background: white;
-          border: 1px solid var(--border-light);
-          border-radius: 12px;
-          aspect-ratio: 4/3;
-          position: relative;
-          overflow: hidden;
-          margin-bottom: 16px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.03);
-        }
-        .img-thumbnails {
-          display: flex;
-          gap: 12px;
-        }
-        .img-thumb {
-          width: 70px;
-          height: 70px;
-          background: white;
-          border-radius: 8px;
-          border: 2px solid transparent;
-          position: relative;
-          overflow: hidden;
-          cursor: pointer;
-          transition: border-color 0.2s;
-        }
-        .img-thumb.active {
-          border-color: var(--primary);
+        .thumb-box img {
+          object-fit: contain;
+          max-width: 100%;
+          max-height: 100%;
         }
 
-        /* Right: Info */
-        .info-col {
-          display: flex;
-          flex-direction: column;
-        }
-        .info-brand {
-          color: var(--primary);
-          font-weight: 900;
-          font-size: 0.85rem;
-          letter-spacing: 1px;
-          text-transform: uppercase;
-          margin-bottom: 8px;
-        }
-        .info-title {
-          font-family: 'Outfit', sans-serif;
-          font-size: 2.5rem;
-          font-weight: 900;
-          line-height: 1.1;
-          color: var(--text-dark);
-          text-transform: uppercase;
-          margin-bottom: 12px;
-        }
-        .info-rating {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 24px;
-        }
-        .rating-text {
+        /* Info */
+        .brand-text {
+          color: #0135FB;
+          font-size: 0.75rem;
           font-weight: 800;
-          color: var(--text-dark);
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          margin-bottom: 10px;
+        }
+        .title-text {
+          font-size: 2.2rem;
+          font-weight: 900;
+          text-transform: uppercase;
+          line-height: 1.1;
+          margin: 0 0 12px 0;
+          letter-spacing: -0.5px;
         }
         .reviews-text {
-          color: var(--text-muted);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          color: #64748B;
+          font-size: 0.85rem;
+          margin-bottom: 24px;
         }
-        .info-desc {
-          font-size: 1.05rem;
-          color: var(--text-mid);
+        .desc-text {
+          color: #475569;
+          font-size: 0.95rem;
+          line-height: 1.5;
           margin-bottom: 24px;
         }
 
         /* Price Box */
         .price-box {
-          background: white;
-          border: 1px solid var(--border-light);
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 24px;
+          padding: 20px 24px;
           margin-bottom: 24px;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+          box-shadow: 0 4px 12px rgba(0,0,0,0.02);
         }
         .price-row {
           display: flex;
           align-items: baseline;
           gap: 12px;
-          margin-bottom: 16px;
+          margin-bottom: 12px;
         }
         .price-current {
-          font-size: 3rem;
-          font-weight: 900;
-          color: var(--text-dark);
-          line-height: 1;
+          font-size: 2.2rem;
+          font-weight: 800;
         }
         .price-old {
-          font-size: 1.2rem;
-          font-weight: 700;
-          color: var(--text-muted);
+          font-size: 1rem;
+          color: #94A3B8;
           text-decoration: line-through;
         }
         .discount-pill {
           background: #10B981;
-          color: white;
-          font-size: 0.8rem;
-          font-weight: 900;
+          color: #fff;
+          font-size: 0.75rem;
+          font-weight: 800;
           padding: 4px 8px;
           border-radius: 4px;
         }
-        .delivery-eta {
+        .delivery-text {
+          color: #10B981;
+          font-size: 0.85rem;
+          font-weight: 700;
           display: flex;
           align-items: center;
-          gap: 6px;
-          color: #10B981;
-          font-weight: 800;
-          font-size: 0.9rem;
+          gap: 8px;
         }
-        .delivery-eta-dot {
-          width: 8px;
-          height: 8px;
+        .delivery-dot {
+          width: 6px; height: 6px;
           background: #10B981;
           border-radius: 50%;
         }
 
-        /* Controls */
-        .controls-row {
+        /* Quantity */
+        .qty-row {
           display: flex;
           align-items: center;
           gap: 16px;
           margin-bottom: 24px;
         }
         .qty-label {
-          font-weight: 900;
-          color: var(--text-dark);
-          font-size: 0.9rem;
-          text-transform: uppercase;
+          color: #64748B;
+          font-size: 0.75rem;
+          font-weight: 800;
+          letter-spacing: 1px;
         }
-        .qty-box {
+        .qty-control {
           display: flex;
           align-items: center;
-          background: white;
-          border: 1px solid var(--border-light);
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
           border-radius: 8px;
-          overflow: hidden;
         }
         .qty-btn {
-          width: 40px;
-          height: 40px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          width: 40px; height: 36px;
           background: transparent;
           border: none;
-          color: var(--text-dark);
+          color: #0F172A;
           cursor: pointer;
-        }
-        .qty-btn:hover { background: #f1f5f9; }
-        .qty-val {
-          width: 40px;
-          text-align: center;
-          font-weight: 900;
           font-size: 1.1rem;
-          color: var(--text-dark);
+          display: flex; align-items: center; justify-content: center;
+        }
+        .qty-btn:hover { background: #F8FAFC; }
+        .qty-val {
+          width: 32px;
+          text-align: center;
+          font-size: 0.9rem;
+          font-weight: 700;
         }
 
         /* Buttons */
         .actions-row {
           display: flex;
           gap: 12px;
-          margin-bottom: 12px;
+          margin-bottom: 16px;
         }
-        .btn-atc {
+        .btn-add {
           flex: 1;
-          background: var(--primary);
-          color: white;
+          background: #0135FB;
+          color: #fff;
           border: none;
           border-radius: 8px;
-          padding: 16px;
-          font-size: 1rem;
-          font-weight: 900;
+          font-weight: 800;
+          font-size: 0.95rem;
           display: flex;
           align-items: center;
           justify-content: center;
           gap: 8px;
           cursor: pointer;
-          text-transform: uppercase;
           transition: background 0.2s;
         }
-        .btn-atc:hover { background: var(--primary-dark); }
-        
+        .btn-add:hover { background: #002be0; }
         .btn-icon {
-          width: 54px;
-          height: 54px;
-          background: white;
-          border: 1px solid var(--border-light);
+          width: 48px; height: 48px;
+          background: #ffffff;
+          border: 1px solid #E2E8F0;
           border-radius: 8px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          color: var(--text-dark);
+          display: flex; align-items: center; justify-content: center;
+          color: #64748B;
           cursor: pointer;
-          transition: background 0.2s;
+          transition: all 0.2s;
         }
-        .btn-icon:hover { background: #f1f5f9; }
-        .btn-icon.active { color: #ef4444; border-color: #ef4444; }
-
+        .btn-icon:hover { border-color: #CBD5E1; color: #0F172A; }
+        .btn-icon.active { color: #ef4444; border-color: #ef4444; background: #FEF2F2; }
+        
         .btn-buy {
           width: 100%;
-          background: white;
-          color: var(--primary);
-          border: 1px solid var(--border-light);
+          padding: 14px;
+          background: #ffffff;
+          border: 2px solid #0135FB;
           border-radius: 8px;
-          padding: 16px;
-          font-size: 1rem;
-          font-weight: 900;
+          color: #0135FB;
+          font-weight: 800;
+          font-size: 0.9rem;
           cursor: pointer;
-          text-transform: uppercase;
-          transition: background 0.2s;
+          transition: all 0.2s;
           margin-bottom: 24px;
         }
-        .btn-buy:hover { background: #f1f5f9; }
+        .btn-buy:hover { background: #0135FB; color: #fff; }
 
-        /* Meta Box */
+        /* Meta Table */
         .meta-box {
-          background: white;
-          border: 1px solid var(--border-light);
+          border: 1px solid #E2E8F0;
           border-radius: 8px;
           padding: 16px;
+          background: #ffffff;
         }
         .meta-row {
           display: flex;
           justify-content: space-between;
-          padding: 8px 0;
+          font-size: 0.85rem;
+          padding: 4px 0;
         }
-        .meta-row:not(:last-child) {
-          border-bottom: 1px solid #f1f5f9;
-        }
-        .meta-label {
-          color: var(--text-muted);
-          font-weight: 600;
-          font-size: 0.9rem;
-        }
-        .meta-value {
-          color: var(--text-dark);
-          font-weight: 800;
-          font-size: 0.9rem;
-          text-transform: uppercase;
-        }
+        .meta-label { color: #64748B; font-weight: 600; }
+        .meta-val { color: #0F172A; font-weight: 800; text-transform: capitalize; }
 
-        /* Tabs Section */
-        .tabs-container {
-          display: flex;
-          border-bottom: 1px solid var(--border-light);
-          margin-bottom: 24px;
-        }
-        .tab {
-          flex: 1;
-          text-align: center;
-          padding: 16px;
-          font-weight: 900;
-          font-size: 0.95rem;
-          text-transform: uppercase;
-          cursor: pointer;
-          color: var(--text-muted);
-          transition: all 0.2s;
-          background: transparent;
-        }
-        .tab.active {
-          background: var(--primary);
-          color: white;
-          border-radius: 8px 8px 0 0;
-        }
-        .tab-content {
-          padding: 24px;
-          background: white;
-          border: 1px solid var(--border-light);
-          border-top: none;
-          border-radius: 0 0 8px 8px;
-          color: var(--text-mid);
-          font-size: 1rem;
-          min-height: 150px;
-        }
-
-        /* Related */
+        /* Related Items */
         .related-section {
-          margin-top: 48px;
+          padding-top: 56px;
+        }
+        .related-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
         }
         .related-title {
           font-family: 'Outfit', sans-serif;
-          font-size: 1.5rem;
+          font-size: 1.4rem;
           font-weight: 900;
-          color: var(--text-dark);
-          text-transform: uppercase;
-          margin-bottom: 24px;
+          color: #0F172A;
+          letter-spacing: -0.02em;
         }
-        
+        .related-line {
+          flex: 1;
+          height: 1px;
+          background: #E2E8F0;
+        }
         .reco-scroll {
           display: flex;
-          gap: 16px;
+          gap: 20px;
           overflow-x: auto;
           scrollbar-width: none;
           margin: 0 -24px;
-          padding: 0 24px 16px 24px;
+          padding: 0 24px 16px;
         }
         .reco-scroll::-webkit-scrollbar { display: none; }
         .reco-item {
-          width: 200px;
+          width: 220px;
           flex-shrink: 0;
         }
 
         /* Mobile specific fixes */
-        .mobile-sticky-bar {
-          display: none;
-        }
-        .mobile-only {
-          display: none !important;
-        }
+        .mobile-only { display: none !important; }
+        .mobile-sticky-bar { display: none; }
 
         @media (max-width: 900px) {
+          .item-grid { grid-template-columns: 1fr; gap: 24px; }
+          .item-page-wrap { padding: 16px 20px 100px; }
           .desktop-only { display: none !important; }
           .mobile-only { display: flex !important; }
-          .item-grid { grid-template-columns: 1fr; gap: 24px; }
-          .item-page-header { display: none; }
-          .img-main-box { border-radius: 0; border-left: none; border-right: none; }
-          .info-title { font-size: 2rem; }
+          
+          .title-text { font-size: 1.8rem; }
+          .gallery-box { padding: 16px; aspect-ratio: 4/3; }
+          .thumbs-row { justify-content: flex-start; }
+          
           .mobile-sticky-bar {
             display: flex;
             position: fixed;
-            bottom: 0;
-            left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.97);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            bottom: 0; left: 0; right: 0;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
             padding: 12px 16px;
-            padding-bottom: max(16px, env(safe-area-inset-bottom));
-            border-top: 1px solid rgba(0, 0, 0, 0.06);
+            padding-bottom: max(12px, env(safe-area-inset-bottom));
+            border-top: 1px solid #E2E8F0;
             z-index: 960;
-            box-shadow: 0 -4px 24px rgba(0,0,0,0.08);
             gap: 12px;
           }
         }
       `}</style>
 
-      <div className="item-container">
-        {/* Header (Desktop) */}
-        <div className="item-page-header">
-          <div className="item-page-title-badge">
-            <div className="item-page-title-icon"><Package size={18} /></div>
-            {item.name}
-          </div>
-          <div className="brand-text">ONN DA WAY</div>
-        </div>
+      {/* Mobile Topbar */}
+      <div className="mobile-only" style={{ padding: "0 0 16px 0" }}>
+        <button onClick={() => router.back()} style={{ background: "none", border: "none", color: "#0F172A", display: "flex", alignItems: "center", gap: 6, fontWeight: 700, fontSize: "0.9rem" }}>
+          <ArrowLeft size={16} /> Back
+        </button>
+      </div>
 
-        {/* Main Grid */}
+      <div className="item-page-wrap">
         <div className="item-grid">
           {/* Left: Gallery */}
-          <div className="gallery-col">
-            <button className="mobile-only" onClick={() => router.back()} style={{ marginBottom: 16, background: "transparent", border: "none", display: "flex", alignItems: "center", gap: 8, fontWeight: 700, color: "var(--text-mid)" }}>
-              <ArrowLeft size={18} /> Back
-            </button>
-            <div className="img-main-box">
-              <Image src={images[activeImageIndex]} alt={item.name} fill sizes="(max-width: 768px) 100vw, 500px" style={{ objectFit: "cover" }} />
+          <div>
+            <div className="gallery-box">
+              <div className="zoom-icon"><Search size={18} /></div>
+              <Image src={images[activeImageIndex]} alt={item.name} fill style={{ objectFit: "contain", padding: 32 }} priority />
             </div>
-            <div className="img-thumbnails">
+            <div className="thumbs-row">
               {images.map((img, idx) => (
-                <div key={idx} className={`img-thumb ${activeImageIndex === idx ? "active" : ""}`} onClick={() => setActiveImageIndex(idx)}>
-                  <Image src={img} alt={`${item.name} thumb`} fill sizes="80px" style={{ objectFit: "cover" }} />
+                <div key={idx} className={`thumb-box ${activeImageIndex === idx ? "active" : ""}`} onClick={() => setActiveImageIndex(idx)}>
+                  <Image src={img} alt={`${item.name} thumb`} width={50} height={50} style={{ objectFit: "contain" }} />
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Right: Info & Actions */}
-          <div className="info-col">
-            <div className="info-brand">ONN DA WAY</div>
-            <h1 className="info-title">{item.name}</h1>
+          {/* Right: Info */}
+          <div>
+            <div className="brand-text">ONN DA WAY</div>
+            <h1 className="title-text">{item.name}</h1>
             
-            <div className="info-rating">
-              <Stars rating={rating} />
-              <span className="rating-text">{rating}</span>
-              <span className="reviews-text">({reviews} reviews)</span>
+            <div className="reviews-text">
+              <span>☆☆☆☆☆</span>
+              <span>0 (0 reviews)</span>
             </div>
-            
-            <div className="info-desc">
-              {item.description || "Refreshing and delicious."}
+
+            <div className="desc-text">
+              {item.description || "Fresh and delicious. Order now for quick delivery."}
             </div>
-            
+
             <div className="price-box">
               <div className="price-row">
                 <span className="price-current">₹{item.price}</span>
                 {hasDiscount && <span className="price-old">₹{item.originalPrice}</span>}
                 {hasDiscount && <span className="discount-pill">{discountPct}% OFF</span>}
               </div>
-              <div className="delivery-eta">
-                <div className="delivery-eta-dot" /> Delivery in 10 mins
+              <div className="delivery-text">
+                <div className="delivery-dot" /> Delivery in 10 mins
               </div>
             </div>
 
-            <div className="controls-row">
-              <div className="qty-label">Quantity:</div>
-              <div className="qty-box">
+            <div className="qty-row desktop-only">
+              <span className="qty-label">QUANTITY:</span>
+              <div className="qty-control">
                 {cartItem ? (
                   <>
-                    <button className="qty-btn" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={16} /></button>
+                    <button className="qty-btn" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={14} /></button>
                     <div className="qty-val">{cartItem.quantity}</div>
-                    <button className="qty-btn" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity + 1)}><Plus size={16} /></button>
+                    <button className="qty-btn" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity + 1)}><Plus size={14} /></button>
                   </>
                 ) : (
                   <>
-                    <button className="qty-btn" disabled style={{ opacity: 0.3 }}><Minus size={16} /></button>
+                    <button className="qty-btn" disabled style={{ opacity: 0.3 }}><Minus size={14} /></button>
                     <div className="qty-val">0</div>
-                    <button className="qty-btn" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added to cart"); }}><Plus size={16} /></button>
+                    <button className="qty-btn" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added!"); }}><Plus size={14} /></button>
                   </>
                 )}
               </div>
             </div>
 
-            <div className="actions-row desktop-only" style={{ display: 'flex' }}>
+            <div className="actions-row desktop-only">
               {cartItem ? (
-                <button className="btn-atc" onClick={() => router.push("/cart")} style={{ background: "#10B981" }}>
+                <button className="btn-add" onClick={() => router.push("/cart")} style={{ background: "#10B981" }}>
                   <ShoppingCart size={18} /> CHECKOUT
                 </button>
               ) : (
-                <button className="btn-atc" onClick={handleAddToCart} disabled={!item.available}>
+                <button className="btn-add" onClick={handleAddToCart} disabled={!item.available}>
                   <ShoppingCart size={18} /> {item.available ? "ADD TO CART" : "SOLD OUT"}
                 </button>
               )}
-              <button className="btn-icon" onClick={() => toggleWishlist && toggleWishlist(item.id)}>
-                <Heart size={20} className={isWishlisted ? "active" : ""} fill={isWishlisted ? "#ef4444" : "none"} color={isWishlisted ? "#ef4444" : "currentColor"} />
+              <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)}>
+                <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} />
               </button>
               <button className="btn-icon">
                 <Share2 size={20} />
               </button>
             </div>
-            
-            <button className="btn-buy desktop-only" style={{ display: 'block' }}>
+
+            <button className="btn-buy desktop-only">
               BUY NOW
             </button>
 
             <div className="meta-box">
-              <div className="meta-row">
+              <div className="meta-row" style={{ marginBottom: 8 }}>
                 <span className="meta-label">Category</span>
-                <span className="meta-value">{item.category}</span>
+                <span className="meta-val">{item.category}</span>
               </div>
               <div className="meta-row">
                 <span className="meta-label">Brand</span>
-                <span className="meta-value">ONN DA WAY</span>
+                <span className="meta-val">ONN DA WAY</span>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Tabs */}
-        <div className="tabs-section">
-          <div className="tabs-container">
-            <div className={`tab ${activeTab === 'description' ? 'active' : ''}`} onClick={() => setActiveTab('description')}>DESCRIPTION</div>
-            <div className={`tab ${activeTab === 'details' ? 'active' : ''}`} onClick={() => setActiveTab('details')}>DETAILS</div>
-            <div className={`tab ${activeTab === 'reviews' ? 'active' : ''}`} onClick={() => setActiveTab('reviews')}>REVIEWS ({reviews})</div>
-          </div>
-          <div className="tab-content">
-            {activeTab === 'description' && (
-              <p>{item.description || "Enjoy the authentic taste of ONN DA WAY."}</p>
-            )}
-            {activeTab === 'details' && (
-              <p>Freshly prepared on campus. Best consumed immediately.</p>
-            )}
-            {activeTab === 'reviews' && (
-              <p>Customers love this item! Rating: {rating}/5</p>
-            )}
-          </div>
-        </div>
-
-        {/* Related */}
+        {/* Related Items Section */}
         {relatedItems.length > 0 && (
           <div className="related-section">
-            <h2 className="related-title">YOU MAY ALSO LIKE</h2>
+            <div className="related-header">
+              <h2 className="related-title">You May Also Like</h2>
+              <div className="related-line" />
+            </div>
             <div className="reco-scroll">
               {relatedItems.map(r => (
                 <div key={r.id} className="reco-item">
-                  <FoodCard item={r} />
+                  <FoodCard item={r} layout="vertical" />
                 </div>
               ))}
-              <div style={{ width: 1, flexShrink: 0 }} />
             </div>
           </div>
         )}
@@ -625,16 +486,23 @@ export default function ItemPage() {
       {/* Mobile Sticky Action Bar */}
       <div className="mobile-sticky-bar">
         {cartItem ? (
-          <button className="btn-atc" onClick={() => router.push("/cart")} style={{ background: "#10B981", padding: "12px", fontSize: "0.9rem" }}>
-            <ShoppingCart size={16} /> CHECKOUT
-          </button>
+          <>
+            <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2E8F0", borderRadius: 8, overflow: "hidden", background: "white", height: 48 }}>
+              <button className="qty-btn" style={{ color: "#0F172A", width: 40 }} onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={14} /></button>
+              <div className="qty-val" style={{ fontSize: "1rem", color: "#0F172A", width: 32 }}>{cartItem.quantity}</div>
+              <button className="qty-btn" style={{ color: "#0F172A", width: 40 }} onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity + 1)}><Plus size={14} /></button>
+            </div>
+            <button className="btn-add" onClick={() => router.push("/cart")} style={{ background: "#10B981", margin: 0, height: 48 }}>
+              <ShoppingCart size={16} /> CHECKOUT
+            </button>
+          </>
         ) : (
-          <button className="btn-atc" onClick={handleAddToCart} disabled={!item.available} style={{ padding: "12px", fontSize: "0.9rem" }}>
-            <ShoppingCart size={16} /> ADD
+          <button className="btn-add" onClick={handleAddToCart} disabled={!item.available} style={{ margin: 0, height: 48 }}>
+            <ShoppingCart size={16} /> {item.available ? "ADD TO CART" : "SOLD OUT"}
           </button>
         )}
-        <button className="btn-icon" onClick={() => toggleWishlist && toggleWishlist(item.id)} style={{ width: 44, height: 44 }}>
-          <Heart size={18} className={isWishlisted ? "active" : ""} fill={isWishlisted ? "#ef4444" : "none"} color={isWishlisted ? "#ef4444" : "currentColor"} />
+        <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)} style={{ height: 48, width: 48 }}>
+          <Heart size={18} fill={isWishlisted ? "#ef4444" : "none"} />
         </button>
       </div>
 

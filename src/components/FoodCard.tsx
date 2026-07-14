@@ -148,7 +148,7 @@ const FoodCard = ({
       {/* Image Area */}
       <div style={{
         position: "relative",
-        aspectRatio: "1 / 1",
+        aspectRatio: "4 / 5",
         background: bg,
         borderRadius: 12,
         border: "1px solid rgba(0,0,0,0.06)",

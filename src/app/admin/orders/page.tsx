@@ -385,6 +385,7 @@ export default function AdminOrdersPage() {
       {/* Filters & Search */}
       <div style={{ background: "#ffffff", border: "1px solid #E2E8F0", borderRadius: "16px", padding: "20px", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" }}>
         <div style={{ display: "flex", gap: "16px", marginBottom: "24px", flexWrap: "wrap" }}>
+          {/* Search temporarily hidden — uncomment to enable
           <div style={{ position: "relative", flex: 1, minWidth: "250px" }}>
             <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#94A3B8" }} />
             <input
@@ -397,6 +398,7 @@ export default function AdminOrdersPage() {
               onBlur={e => e.target.style.borderColor = "#E2E8F0"}
             />
           </div>
+          */}
           <div style={{ position: "relative", width: "220px" }}>
             <Filter size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "#94A3B8", zIndex: 1 }} />
             <select style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", color: "#0F172A", borderRadius: "10px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", appearance: "none", cursor: "pointer" }} value={statusFilter} onChange={e => setStatusFilter(e.target.value)}>
@@ -546,40 +548,41 @@ export default function AdminOrdersPage() {
                     {/* Actions */}
                     <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
                       {isUnconfirmed && (
-                        <>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleConfirmOrder(order.id); }}
-                            disabled={confirmingId === order.id}
-                            style={{
-                              width: "100%", padding: "14px 16px",
-                              background: "linear-gradient(135deg, #10B981, #059669)",
-                              color: "white", border: "none", borderRadius: "10px",
-                              fontWeight: 900, fontSize: "0.9rem",
-                              cursor: confirmingId === order.id ? "not-allowed" : "pointer",
-                              display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                              boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
-                              opacity: confirmingId === order.id ? 0.7 : 1,
-                            }}
-                          >
-                            <CheckCircle size={18} />
-                            {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (confirm("Cancel this unconfirmed order?")) handleUpdateStatus(order.id, "cancelled");
-                            }}
-                            disabled={confirmingId === order.id}
-                            style={{
-                              width: "100%", padding: "10px 16px",
-                              background: "transparent", color: "#EF4444",
-                              border: "1.5px solid #FCA5A5", borderRadius: "10px",
-                              fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
-                            }}
-                          >
-                            ❌ Cancel Order
-                          </button>
-                        </>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleConfirmOrder(order.id); }}
+                          disabled={confirmingId === order.id}
+                          style={{
+                            width: "100%", padding: "14px 16px",
+                            background: "linear-gradient(135deg, #10B981, #059669)",
+                            color: "white", border: "none", borderRadius: "10px",
+                            fontWeight: 900, fontSize: "0.9rem",
+                            cursor: confirmingId === order.id ? "not-allowed" : "pointer",
+                            display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                            boxShadow: "0 4px 12px rgba(16,185,129,0.3)",
+                            opacity: confirmingId === order.id ? 0.7 : 1,
+                          }}
+                        >
+                          <CheckCircle size={18} />
+                          {confirmingId === order.id ? "Confirming..." : "✅ Confirm Order"}
+                        </button>
+                      )}
+                      
+                      {order.status !== "cancelled" && order.status !== "delivered" && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm("Cancel this order?")) handleUpdateStatus(order.id, "cancelled");
+                          }}
+                          disabled={confirmingId === order.id}
+                          style={{
+                            width: "100%", padding: "10px 16px",
+                            background: "transparent", color: "#EF4444",
+                            border: "1.5px solid #FCA5A5", borderRadius: "10px",
+                            fontWeight: 700, fontSize: "0.85rem", cursor: "pointer",
+                          }}
+                        >
+                          ❌ Cancel Order
+                        </button>
                       )}
 
                       <div style={{ background: "#F8FAFC", padding: "14px", borderRadius: "10px", border: "1px solid #E2E8F0" }}>

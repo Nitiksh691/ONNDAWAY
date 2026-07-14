@@ -53,7 +53,7 @@ export default function GlobalSidebar() {
         .gsb-root {
           width: var(--sidebar-width, 260px);
           height: calc(100vh - var(--nav-height, 68px));
-          position: sticky;
+          position: fixed;
           top: var(--nav-height, 68px);
           display: flex;
           flex-direction: column;
@@ -427,7 +427,6 @@ export default function GlobalSidebar() {
           </div>
           <div>
             <div className="gsb-brand-text">ONN DA WAY</div>
-            <div className="gsb-brand-sub">Campus Delivery</div>
           </div>
           {/* Mobile close button */}
           <button
