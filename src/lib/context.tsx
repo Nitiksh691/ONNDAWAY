@@ -216,8 +216,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   const removeFromCart = useCallback((cartItemId: string) => {
     setCart((prev) => {
-      // Fallback to item.id if cartItemId doesn't match but item.id does (for legacy)
-      const updated = prev.filter((c) => c.cartItemId !== cartItemId && c.item.id !== cartItemId);
+      const updated = prev.filter((c) => c.cartItemId !== cartItemId);
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });
@@ -230,7 +229,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     }
 
     setCart((prev) => {
-      const targetItem = prev.find(c => c.cartItemId === cartItemId || c.item.id === cartItemId);
+      const targetItem = prev.find(c => c.cartItemId === cartItemId);
       if (!targetItem) return prev;
       
       const otherTotalQty = prev.filter(c => c.cartItemId !== targetItem.cartItemId).reduce((sum, c) => sum + c.quantity, 0);
@@ -245,7 +244,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         return prev;
       }
 
-      const updated = prev.map((c) => (c.cartItemId === cartItemId || c.item.id === cartItemId) ? { ...c, quantity: qty } : c);
+      const updated = prev.map((c) => c.cartItemId === cartItemId ? { ...c, quantity: qty } : c);
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });

@@ -10,8 +10,8 @@ const MenuItemSchema = new Schema({
   stock:         { type: Number, default: 0, min: 0 },
   available:     { type: Boolean, default: true },
   isPopular:     { type: Boolean, default: false },
-  isRecommended: { type: Boolean, default: false },
   isBanner:      { type: Boolean, default: false },
+  isLaunchingSoon: { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
   customizationCategories: {

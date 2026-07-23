@@ -29,6 +29,7 @@ export default function CartPage() {
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState("");
+  const [isGpsLoading, setIsGpsLoading] = useState(false);
   const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
@@ -486,18 +487,47 @@ export default function CartPage() {
               <div style={{ gridColumn: "1 / -1" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
                   <label style={{ ...labelStyle, marginBottom: 0 }}>Delivery Address</label>
-                  <button type="button" onClick={async () => {
+                  <button type="button" onClick={() => {
                     if (navigator.geolocation) {
-                      toast.loading("Fetching location...", { id: "gps" });
-                      navigator.geolocation.getCurrentPosition(pos => {
-                        toast.success("Location found!", { id: "gps" });
-                        setLocation(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
-                      }, err => {
-                        toast.error("Failed to get location", { id: "gps" });
-                      });
+                      setIsGpsLoading(true);
+                      toast.loading("Fetching precise location...", { id: "gps" });
+                      navigator.geolocation.getCurrentPosition(
+                        async pos => {
+                          try {
+                            const { latitude, longitude } = pos.coords;
+                            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=16&addressdetails=1`);
+                            const data = await res.json();
+                            let addrStr = "";
+                            if (data && data.address) {
+                              const a = data.address;
+                              const localArea = a.neighbourhood || a.suburb || a.residential || a.village || "";
+                              const city = a.city || a.town || a.state_district || "";
+                              addrStr = [localArea, city].filter(Boolean).join(", ");
+                            }
+                            if (!addrStr) addrStr = data?.display_name?.split(",")[0] || `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
+                            
+                            setLocation(addrStr);
+                            toast.success("Location found!", { id: "gps" });
+                          } catch {
+                            setLocation(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
+                            toast.success("Coordinates found!", { id: "gps" });
+                          } finally {
+                            setIsGpsLoading(false);
+                          }
+                        }, 
+                        err => {
+                          setIsGpsLoading(false);
+                          const msg = err.code === 1 ? "Location access denied. Please enable in settings." : err.code === 3 ? "Location request timed out." : "Failed to get precise location.";
+                          toast.error(msg, { id: "gps" });
+                        },
+                        { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                      );
+                    } else {
+                      toast.error("Geolocation is not supported by your browser");
                     }
-                  }} style={{ background: "transparent", border: "none", color: "#0135FB", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <MapPin size={12} /> Use GPS
+                  }} disabled={isGpsLoading} style={{ background: "transparent", border: "none", color: isGpsLoading ? "#9CA3AF" : "#0135FB", fontSize: "0.75rem", fontWeight: 700, cursor: isGpsLoading ? "not-allowed" : "pointer", display: "flex", alignItems: "center", gap: "6px" }}>
+                    {isGpsLoading ? <div style={{ width: 12, height: 12, borderRadius: "50%", border: "2px solid #9CA3AF", borderTopColor: "transparent", animation: "spin-wait 1s linear infinite" }} /> : <MapPin size={12} />}
+                    {isGpsLoading ? "Locating..." : "Use GPS"}
                   </button>
                 </div>
                 <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. 123 Main St, Apt 4B" value={location} onChange={e => setLocation(e.target.value)} />

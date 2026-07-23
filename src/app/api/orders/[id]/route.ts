@@ -10,11 +10,19 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     const body = await req.json();
     const { status, deliveryPersonId, deliveryPersonName, confirmed, otp, rating, review } = body;
 
+    const currentOrder = await Order.findById(params.id).lean();
+    if (!currentOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
     if (status === "delivered") {
-      const currentOrder = await Order.findById(params.id).lean();
-      if (!currentOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
       if (currentOrder.deliveryOtp && currentOrder.deliveryOtp !== otp) {
         return NextResponse.json({ error: "Invalid Delivery OTP" }, { status: 400 });
+      }
+    } else if (status === "cancelled" && currentOrder.status !== "cancelled") {
+      const MenuItem = (await import("@/models/MenuItem")).default;
+      for (const item of currentOrder.items) {
+        if (item.item && item.item.id) {
+          await MenuItem.updateOne({ _id: item.item.id }, { $inc: { stock: item.quantity } });
+        }
       }
     }
 

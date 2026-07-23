@@ -436,8 +436,8 @@ export default function ItemPage() {
                   <ShoppingCart size={18} /> CHECKOUT
                 </button>
               ) : (
-                <button className="btn-add" onClick={handleAddToCart} disabled={!item.available}>
-                  <ShoppingCart size={18} /> {item.available ? "ADD TO CART" : "SOLD OUT"}
+                <button className="btn-add" onClick={handleAddToCart} disabled={!item.available || item.isLaunchingSoon}>
+                  <ShoppingCart size={18} /> {item.isLaunchingSoon ? "LAUNCHING SOON" : (item.available ? "ADD TO CART" : "AVAILABLE SOON")}
                 </button>
               )}
               <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)}>
@@ -497,8 +497,8 @@ export default function ItemPage() {
             </button>
           </>
         ) : (
-          <button className="btn-add" onClick={handleAddToCart} disabled={!item.available} style={{ margin: 0, height: 48 }}>
-            <ShoppingCart size={16} /> {item.available ? "ADD TO CART" : "SOLD OUT"}
+          <button className="btn-add" onClick={handleAddToCart} disabled={!item.available || item.isLaunchingSoon} style={{ margin: 0, height: 48 }}>
+            <ShoppingCart size={16} /> {item.isLaunchingSoon ? "LAUNCHING SOON" : (item.available ? "ADD TO CART" : "AVAILABLE SOON")}
           </button>
         )}
         <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)} style={{ height: 48, width: 48 }}>

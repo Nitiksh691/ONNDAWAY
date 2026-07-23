@@ -92,23 +92,15 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
           let locationName = "";
           if (data && data.address) {
             const addr = data.address;
-            // Priority: neighbourhood > suburb > residential > quarter > city_district > road
-            locationName =
-              addr.neighbourhood ||
-              addr.suburb ||
-              addr.residential ||
-              addr.quarter ||
-              addr.village ||
-              addr.city_district ||
-              addr.county ||
-              addr.town ||
-              addr.city ||
-              "";
-            // Append city if available and different from the area name
+            const localArea = addr.neighbourhood || addr.suburb || addr.residential || addr.village || addr.city_district || "";
             const city = addr.city || addr.town || addr.state_district || "";
-            if (city && city.toLowerCase() !== locationName.toLowerCase()) {
-              locationName = locationName ? `${locationName}, ${city}` : city;
-            }
+            
+            // Format: "Neighborhood, City"
+            const parts = [];
+            if (localArea) parts.push(localArea);
+            if (city && city.toLowerCase() !== localArea.toLowerCase()) parts.push(city);
+            
+            locationName = parts.join(", ");
           }
           if (!locationName) locationName = data?.display_name?.split(",")[0] || "Your Location";
           setGeoLoading(false);

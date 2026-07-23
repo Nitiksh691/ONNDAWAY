@@ -48,7 +48,6 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const router = useRouter();
   const [order, setOrder] = useState<Order | null>(null);
   const [fetching, setFetching] = useState(true);
-  const [animTick, setAnimTick] = useState(0);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
@@ -56,10 +55,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const [showOtp, setShowOtp] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const t = setInterval(() => setAnimTick(v => v + 1), 2000);
-    return () => clearInterval(t);
-  }, []);
+
 
   useEffect(() => {
     if (!orderId) return;
@@ -126,25 +122,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
     }
   };
 
-  const cancelOrder = async () => {
-    if (!orderId) return;
-    if (!confirm("Are you sure you want to cancel this order?")) return;
-    try {
-      const res = await fetch(`/api/orders/${orderId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: "cancelled" }),
-      });
-      if (res.ok) {
-        toast.success("Order cancelled");
-        setOrder(prev => prev ? { ...prev, status: "cancelled" } : prev);
-      } else {
-        toast.error("Failed to cancel order");
-      }
-    } catch {
-      toast.error("Error cancelling order");
-    }
-  };
+
 
   /* ── Loading ── */
   if (loading || fetching || !order) {
@@ -160,9 +138,6 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const currentStepIndex = isCancelled ? -1 : getStepIndex(order.status, order.confirmed);
   const isDelivered = order.status === "delivered";
   const isOnWay = order.status === "out_for_delivery";
-  const riderProgress = isOnWay
-    ? Math.min(88, 18 + ((Date.now() - new Date(order.updatedAt).getTime()) / 1000 / 60) * 9 + (animTick % 3))
-    : isDelivered ? 100 : order.status === "preparing" ? 35 : order.confirmed ? 22 : 8;
 
   const mapEmbed = getOrderMapsEmbedUrl(order);
   const currentStep = STATUS_STEPS[Math.max(0, currentStepIndex)];
@@ -440,17 +415,20 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
               </div>
             </div>
 
-            {/* ── Cancel Order (only when placed/confirmed) ── */}
-            {currentStepIndex >= 0 && currentStepIndex <= 1 && (
+            {/* ── Change Item (only within 1.5 minutes of placement) ── */}
+            {currentStepIndex >= 0 && currentStepIndex <= 1 && (Date.now() - new Date(order.createdAt).getTime() <= 90 * 1000) && (
               <div style={{ ...cardStyle, padding: "20px", animation: "fade-up 0.65s ease", textAlign: "center" }}>
                 <p style={{ color: "#6B7280", fontSize: "0.85rem", marginBottom: "12px" }}>
-                  Need to change your mind? You can cancel your order before the kitchen starts preparing it.
+                  Need to replace an item? You can request a change within 1.5 minutes of placing your order.
                 </p>
                 <button
-                  onClick={cancelOrder}
-                  style={{ background: "#FEF2F2", color: "#DC2626", border: "1px solid #FCA5A5", padding: "10px 20px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.2s" }}
+                  onClick={() => {
+                    sendMessage("URGENT: I need to change an item in my order. Please call me ASAP!");
+                    toast.success("Request sent to admin! Please call the restaurant directly if needed.");
+                  }}
+                  style={{ background: "#EEF1FF", color: "#0135FB", border: "1px solid #0135FB", padding: "10px 20px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.2s" }}
                 >
-                  Cancel Order
+                  Request Item Change
                 </button>
               </div>
             )}

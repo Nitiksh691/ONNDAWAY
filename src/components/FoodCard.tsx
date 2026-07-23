@@ -79,6 +79,14 @@ const FoodCard = ({
               Best
             </span>
           )}
+          {item.isLaunchingSoon && (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(16, 185, 129, 0.8)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", padding: "0 8px", zIndex: 5 }}>
+              Launching<br/>Soon
+            </div>
+          )}
+          {!item.available && !item.isLaunchingSoon && (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.5)", backdropFilter: "blur(1.5px)", borderRadius: 12 }} />
+          )}
         </div>
 
         {/* Text */}
@@ -120,11 +128,11 @@ const FoodCard = ({
           ) : (
             <button
               onClick={handleAdd}
-              disabled={!item.available}
-              style={{ width: 32, height: 32, borderRadius: "50%", border: "none", background: item.available ? "#0135FB" : "#e2e8f0", color: item.available ? "#fff" : "#94a3b8", display: "flex", alignItems: "center", justifyContent: "center", cursor: item.available ? "pointer" : "not-allowed", boxShadow: item.available ? "0 3px 10px rgba(1,53,251,0.3)" : "none", transition: "transform 0.15s", flexShrink: 0 }}
-              onMouseEnter={e => item.available && (e.currentTarget.style.transform = "scale(1.12)")}
+              disabled={!item.available || item.isLaunchingSoon}
+              style={{ width: (item.available && !item.isLaunchingSoon) ? 32 : "auto", padding: (item.available && !item.isLaunchingSoon) ? 0 : "0 8px", height: 32, borderRadius: (item.available && !item.isLaunchingSoon) ? "50%" : 8, border: "none", background: (item.available && !item.isLaunchingSoon) ? "#0135FB" : "#F1F5F9", color: (item.available && !item.isLaunchingSoon) ? "#fff" : "#94A3B8", display: "flex", alignItems: "center", justifyContent: "center", cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed", boxShadow: (item.available && !item.isLaunchingSoon) ? "0 3px 10px rgba(1,53,251,0.3)" : "none", transition: "transform 0.15s", flexShrink: 0, fontWeight: 800, fontSize: "0.65rem" }}
+              onMouseEnter={e => (item.available && !item.isLaunchingSoon) && (e.currentTarget.style.transform = "scale(1.12)")}
               onMouseLeave={e => (e.currentTarget.style.transform = "")}
-            ><Plus size={14} /></button>
+            >{item.isLaunchingSoon ? "LAUNCHING" : (item.available ? <Plus size={14} /> : "SOON")}</button>
           )}
         </div>
       </div>
@@ -189,6 +197,14 @@ const FoodCard = ({
             Bestseller
           </div>
         )}
+        {item.isLaunchingSoon && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(16, 185, 129, 0.8)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
+            Launching<br/>Soon
+          </div>
+        )}
+        {!item.available && !item.isLaunchingSoon && (
+          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.5)", backdropFilter: "blur(1.5px)", borderRadius: 12 }} />
+        )}
 
         {/* ADD Button (Floating) */}
         <div style={{
@@ -220,21 +236,21 @@ const FoodCard = ({
           ) : (
             <button
               onClick={handleAdd}
-              disabled={!item.available}
+              disabled={!item.available || item.isLaunchingSoon}
               style={{
                 background: "#fff",
-                color: item.available ? "var(--primary)" : "#94A3B8",
-                border: `1px solid ${item.available ? "var(--primary)" : "#E2E8F0"}`,
+                color: (item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#94A3B8",
+                border: `1px solid ${(item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#E2E8F0"}`,
                 borderRadius: 8,
                 height: 32,
-                padding: "0 18px",
+                padding: (item.available && !item.isLaunchingSoon) ? "0 18px" : "0 12px",
                 fontWeight: 900,
-                fontSize: "0.85rem",
+                fontSize: (item.available && !item.isLaunchingSoon) ? "0.85rem" : "0.75rem",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                cursor: item.available ? "pointer" : "not-allowed"
+                cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed"
               }}
             >
-              ADD
+              {item.isLaunchingSoon ? "LAUNCHING" : (item.available ? "ADD" : "SOON")}
             </button>
           )}
         </div>

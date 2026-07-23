@@ -31,7 +31,7 @@ export function normalizeCartLine(line: CartItem): CartItem {
     buildLineDetails(customizations, specialInstructions || undefined);
 
   return {
-    cartItemId: line.cartItemId,
+    cartItemId: line.cartItemId || `${line.item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     item: {
       id: line.item.id,
       name: line.item.name,

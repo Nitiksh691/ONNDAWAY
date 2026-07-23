@@ -43,6 +43,7 @@ export interface MenuItem {
   isPopular?: boolean;
   isRecommended?: boolean;
   isBanner?: boolean;
+  isLaunchingSoon?: boolean;
   originalPrice?: number;
   section?: string;
   customizationCategories?: CustomizationCategory[];
