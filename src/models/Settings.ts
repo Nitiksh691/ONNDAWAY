@@ -30,7 +30,10 @@ const SettingsSchema = new Schema({
   // Kitchen closed: shows a banner on all pages
   kitchenClosed: { type: Boolean, default: false },
   kitchenOpenTime: { type: String, default: "7:00 AM" },
+  // Waitlist mode: redirects or blocks normal access, showing waitlist
+  waitlistMode: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now },
 });
 
-export default models.Settings || model("Settings", SettingsSchema);
+delete mongoose.models.Settings;
+export default mongoose.models.Settings || model("Settings", SettingsSchema);

@@ -32,6 +32,7 @@ const _POST = async (req: NextRequest) => {
       maintenanceMessage,
       kitchenClosed,
       kitchenOpenTime,
+      waitlistMode,
     } = body;
 
     let settings = await Settings.findOne();
@@ -42,10 +43,11 @@ const _POST = async (req: NextRequest) => {
       if (maintenanceMessage !== undefined) settings.maintenanceMessage = maintenanceMessage;
       if (kitchenClosed !== undefined) settings.kitchenClosed = kitchenClosed;
       if (kitchenOpenTime !== undefined) settings.kitchenOpenTime = kitchenOpenTime;
+      if (waitlistMode !== undefined) settings.waitlistMode = waitlistMode;
       settings.updatedAt = new Date();
       await settings.save();
     } else {
-      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime });
+      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode });
     }
     // Bust cache so next GET returns updated settings
     appCache.invalidate(CACHE_KEYS.SETTINGS);

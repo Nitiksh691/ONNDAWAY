@@ -10,6 +10,7 @@ import BottomNav from "@/components/BottomNav";
 import BottomActionBar from "@/components/BottomActionBar";
 import MaintenanceOverlay from "@/components/MaintenanceOverlay";
 import KitchenClosedBanner from "@/components/KitchenClosedBanner";
+import WaitlistOverlay from "@/components/WaitlistOverlay";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -29,13 +30,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#01235F" />
       </head>
       <body>
         <AppProvider>
           <MaintenanceOverlay />
+          <WaitlistOverlay />
           <KitchenClosedBanner />
           <Loader />
           <Navbar />

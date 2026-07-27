@@ -11,6 +11,7 @@ export default function AdminSettingsPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState<string>("We're currently under maintenance. Please call us to place your order.");
   const [kitchenClosed, setKitchenClosed] = useState<boolean>(false);
   const [kitchenOpenTime, setKitchenOpenTime] = useState<string>("7:00 AM");
+  const [waitlistMode, setWaitlistMode] = useState<boolean>(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -30,6 +31,7 @@ export default function AdminSettingsPage() {
           if (data.maintenanceMessage !== undefined) setMaintenanceMessage(data.maintenanceMessage);
           if (data.kitchenClosed !== undefined) setKitchenClosed(data.kitchenClosed);
           if (data.kitchenOpenTime !== undefined) setKitchenOpenTime(data.kitchenOpenTime);
+          if (data.waitlistMode !== undefined) setWaitlistMode(data.waitlistMode);
         }
         setLoading(false);
       })
@@ -47,10 +49,11 @@ export default function AdminSettingsPage() {
       maintenanceMessage,
       kitchenClosed,
       kitchenOpenTime,
+      waitlistMode,
     };
     
     // Only show confirmation if enabling disruptive modes
-    if (maintenanceMode || kitchenClosed) {
+    if (maintenanceMode || kitchenClosed || waitlistMode) {
       setPendingSaveData(dataToSave);
       setShowConfirmDialog(true);
     } else {
@@ -176,6 +179,23 @@ export default function AdminSettingsPage() {
             )}
           </div>
           
+          {/* Waitlist Mode Toggle */}
+          <div style={{ padding: "16px", background: waitlistMode ? "#F0FDF4" : "#F8FAFC", borderRadius: "12px", border: waitlistMode ? "1px solid #86EFAC" : "1px solid #E2E8F0", marginTop: "24px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <div>
+                <strong style={{ display: "block", color: waitlistMode ? "#16A34A" : "var(--text-dark)" }}>Waitlist Mode</strong>
+                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Redirects all traffic to the waitlist page.</span>
+              </div>
+              <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                <div style={{ position: "relative" }}>
+                  <input type="checkbox" checked={waitlistMode} onChange={e => setWaitlistMode(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                  <div style={{ width: 44, height: 24, background: waitlistMode ? "#22C55E" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                  <div style={{ position: "absolute", left: waitlistMode ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
+                </div>
+              </label>
+            </div>
+          </div>
+          
         </div>
       </div>
 
@@ -209,6 +229,7 @@ export default function AdminSettingsPage() {
                 <ul style={{ textAlign: "left", marginTop: "12px", background: "#F3F4F6", padding: "12px 12px 12px 32px", borderRadius: "8px", fontSize: "0.9rem" }}>
                   {pendingSaveData?.maintenanceMode && <li><strong>Maintenance Mode:</strong> All non-admin users will be blocked from using the app.</li>}
                   {pendingSaveData?.kitchenClosed && <li><strong>Kitchen Closed:</strong> A prominent banner will be shown to all users.</li>}
+                  {pendingSaveData?.waitlistMode && <li><strong>Waitlist Mode:</strong> All users will be redirected to the waitlist page.</li>}
                 </ul>
                 Are you sure you want to proceed?
               </Dialog.Description>
