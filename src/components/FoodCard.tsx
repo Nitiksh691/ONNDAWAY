@@ -145,12 +145,15 @@ const FoodCard = ({
       onClick={go}
       style={{
         background: "#fff",
-        borderRadius: 16,
+        borderRadius: 20,
         display: "flex",
         flexDirection: "column",
         height: "100%",
         cursor: "pointer",
-        position: "relative"
+        position: "relative",
+        padding: "10px 10px 14px 10px",
+        border: "1px solid rgba(0,0,0,0.07)",
+        boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
       }}
     >
       {/* Image Area */}
@@ -161,7 +164,8 @@ const FoodCard = ({
         borderRadius: 12,
         border: "1px solid rgba(0,0,0,0.06)",
         flexShrink: 0,
-        marginBottom: 8
+        marginBottom: 10,
+        overflow: "hidden"
       }}>
         <div style={{ position: "absolute", inset: 0, borderRadius: 12, overflow: "hidden" }}>
           {!imgError ? (
@@ -257,7 +261,7 @@ const FoodCard = ({
       </div>
 
       {/* Card Body */}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "0 4px 4px 4px" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "2px 4px 0 4px" }}>
         
         {/* Price Row */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>

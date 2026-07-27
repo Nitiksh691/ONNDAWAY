@@ -5,21 +5,12 @@ import { useApp } from "@/lib/context";
 import { Clock } from "lucide-react";
 
 export default function KitchenClosedBanner() {
-  const { profile } = useApp();
+  const { profile, settings } = useApp();
   const pathname = usePathname();
-  const [status, setStatus] = useState<{ closed: boolean; openTime: string }>({ closed: false, openTime: "7:00 AM" });
-
-  useEffect(() => {
-    fetch("/api/settings/status")
-      .then(res => res.json())
-      .then(data => {
-        setStatus({
-          closed: data.kitchenClosed,
-          openTime: data.kitchenOpenTime,
-        });
-      })
-      .catch(() => {});
-  }, []);
+  const status = settings ? {
+    closed: settings.kitchenClosed,
+    openTime: settings.kitchenOpenTime,
+  } : { closed: false, openTime: "7:00 AM" };
 
   // Hide for admins
   if (profile?.role === "admin") return null;

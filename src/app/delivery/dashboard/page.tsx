@@ -52,8 +52,26 @@ export default function DeliveryDashboard() {
 
   useEffect(() => {
     fetchOrders();
-    const interval = setInterval(fetchOrders, 3000);
-    return () => clearInterval(interval);
+
+    let eventSource: EventSource;
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change") fetchOrders();
+        } catch (e) {}
+      };
+      eventSource.onerror = () => {
+        eventSource.close();
+        setTimeout(setupSSE, 5000);
+      };
+    };
+    setupSSE();
+
+    return () => {
+      if (eventSource) eventSource.close();
+    };
   }, []);
 
   const selectedOrder = orders.find(o => o.id === selectedOrderId);

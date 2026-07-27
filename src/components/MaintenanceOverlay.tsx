@@ -5,24 +5,16 @@ import { useApp } from "@/lib/context";
 import { Phone, Wrench } from "lucide-react";
 
 export default function MaintenanceOverlay() {
-  const { profile, loading } = useApp();
+  const { profile, loading, settings } = useApp();
   const pathname = usePathname();
-  const [status, setStatus] = useState<{ mode: boolean; phone: string; message: string }>({ mode: false, phone: "", message: "" });
-  const [checking, setChecking] = useState(true);
 
-  useEffect(() => {
-    fetch("/api/settings/status")
-      .then(res => res.json())
-      .then(data => {
-        setStatus({
-          mode: data.maintenanceMode,
-          phone: data.maintenancePhone,
-          message: data.maintenanceMessage,
-        });
-        setChecking(false);
-      })
-      .catch(() => setChecking(false));
-  }, []);
+  // Wait for settings to load
+  const checking = !settings;
+  const status = settings ? {
+    mode: settings.maintenanceMode,
+    phone: settings.maintenancePhone,
+    message: settings.maintenanceMessage,
+  } : { mode: false, phone: "", message: "" };
 
   // Admins bypass maintenance mode immediately via route
   if (pathname.startsWith("/admin")) return null;

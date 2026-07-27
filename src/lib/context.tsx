@@ -9,6 +9,9 @@ interface SessionUser {
   uid: string;
 }
 
+export const customizationKey = (customizations?: SelectedCustomization[]) =>
+  JSON.stringify((customizations || []).map(c => `${c.category}:${c.option}`).sort());
+
 // ── Context shape ─────────────────────────────────────────────────────────────
 interface AppContextType {
   /** Logged-in session user (just the uid). Null if not authenticated. */
@@ -38,6 +41,8 @@ interface AppContextType {
   /** Wishlist item IDs */
   wishlist: string[];
   toggleWishlist: (itemId: string) => void;
+  /** Global settings */
+  settings: any | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -49,6 +54,15 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [wishlist, setWishlist] = useState<string[]>([]);
+  const [settings, setSettings] = useState<any | null>(null);
+
+  // ── Global Settings Fetch ───────────────────────────────────────────────────
+  useEffect(() => {
+    fetch("/api/settings/status")
+      .then(res => res.json())
+      .then(data => setSettings(data))
+      .catch(() => setSettings({ mode: false }));
+  }, []);
 
   // ── Wishlist — loaded from localStorage ──────────────────────────────────────
   useEffect(() => {
@@ -169,9 +183,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(migrated));
   }, []);
 
-  const customizationKey = (customizations?: SelectedCustomization[]) =>
-    JSON.stringify((customizations || []).map(c => `${c.category}:${c.option}`).sort());
-
   const addToCart = useCallback((item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => {
     const resolvedPrice = unitPrice ?? item.price;
     const customizations = selectedCustomizations ?? [];
@@ -286,6 +297,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         toggleSidebar: () => setSidebarOpen(prev => !prev),
         wishlist,
         toggleWishlist,
+        settings,
       }}
     >
       {children}

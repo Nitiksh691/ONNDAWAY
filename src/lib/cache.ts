@@ -73,5 +73,5 @@ export const CACHE_KEYS = {
 export const CACHE_TTL = {
   MENU: 60_000,       // 60 seconds — menu changes rarely
   SETTINGS: 30_000,   // 30 seconds — delivery fee etc.
-  ANALYTICS: 120_000, // 2 minutes — analytics can be slightly stale
+  ANALYTICS: 600_000, // 10 minutes — analytics can be slightly stale
 } as const;

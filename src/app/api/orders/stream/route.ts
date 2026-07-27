@@ -28,32 +28,40 @@ export async function GET(req: NextRequest) {
       // Send initial connection success
       sendEvent({ type: "connected" });
 
-      let prevPendingCount = -1;
-
-      // Internal polling loop (runs every 3s)
-      const interval = setInterval(async () => {
-        try {
-          // Just count unconfirmed placed orders to keep it lightweight
-          const unconfirmedCount = await Order.countDocuments({
-            status: "placed",
-            confirmed: { $ne: true }
-          });
-
-          if (unconfirmedCount !== prevPendingCount) {
+      let changeStream: any;
+      try {
+        changeStream = Order.watch();
+        
+        changeStream.on("change", async (change: any) => {
+          sendEvent({ type: "order_change", operation: change.operationType, documentKey: change.documentKey });
+          
+          try {
+            const unconfirmedCount = await Order.countDocuments({
+              status: "placed",
+              confirmed: { $ne: true }
+            });
             sendEvent({ type: "orders_update", count: unconfirmedCount });
-            prevPendingCount = unconfirmedCount;
-          } else {
-            // Keep-alive heartbeat to prevent timeouts (e.g. Vercel)
-            sendEvent({ type: "ping" });
-          }
-        } catch (error) {
-          logger.error("sse_poll_error", { error: String(error) });
-        }
-      }, 3000);
+          } catch (e) {}
+        });
+
+        changeStream.on("error", (error: any) => {
+          logger.error("sse_changestream_error", { error: String(error) });
+        });
+      } catch (err) {
+        logger.error("sse_changestream_init_error", { error: String(err) });
+      }
+
+      // Keep-alive heartbeat every 15s to prevent Vercel timeouts
+      const pingInterval = setInterval(() => {
+        sendEvent({ type: "ping" });
+      }, 15000);
 
       // Clean up when the client disconnects
       req.signal.addEventListener("abort", () => {
-        clearInterval(interval);
+        clearInterval(pingInterval);
+        if (changeStream) {
+          changeStream.close().catch(() => {});
+        }
         try {
           controller.close();
         } catch (e) {

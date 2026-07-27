@@ -10,6 +10,7 @@ import OnboardingModal from "@/components/OnboardingModal";
 import AuthModal from "@/components/AuthModal";
 import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
 import BannerSlider from "@/components/BannerSlider";
+import { useMenu } from "@/hooks/useMenu";
 
 type LayoutMode = "grid" | "list";
 
@@ -88,7 +89,6 @@ export default function HomePage() {
   const [bentoSlides, setBentoSlides] = useState<any[]>([]);
   const [bannerMode, setBannerMode] = useState<"single" | "bento">("single");
   const [bannerEnabled, setBannerEnabled] = useState(true);
-  const [loadingMenu, setLoadingMenu] = useState(true);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const { profile, cart, addToCart, updateQuantity } = useApp();
   const { location, saveLocation } = useDeliveryLocation();
@@ -120,19 +120,19 @@ export default function HomePage() {
     const cat = params.get("category");
     if (cat) setSelectedCategory(cat);
 
-    fetch("/api/menu")
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const available = data.filter((i: any) => i.available);
-          setMenuItems(available);
-          const cats = ["all", ...Array.from(new Set(available.map((i: any) => i.category as string)))];
-          setCategories(cats);
-        }
-      })
-      .catch(console.error)
-      .finally(() => setLoadingMenu(false));
+    // Menu fetch replaced by useMenu
   }, []);
+
+  const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu();
+  const availableItems = useMemo(() => rawMenuItems.filter(i => i.available), [rawMenuItems]);
+  
+  useEffect(() => {
+    if (availableItems.length > 0) {
+      setMenuItems(availableItems);
+      const cats = ["all", ...Array.from(new Set(availableItems.map((i: any) => i.category as string)))];
+      setCategories(cats);
+    }
+  }, [availableItems]);
 
   const bannerItems = useMemo(() => menuItems.filter(i => i.isBanner).map(i => ({
     id: `item-${i.id}`,
@@ -235,7 +235,7 @@ export default function HomePage() {
         .menu-grid-sq {
           display: grid;
           grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-          gap: 16px;
+          gap: 14px;
           width: 100%;
         }
         @media (max-width: 480px) {

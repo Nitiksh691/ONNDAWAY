@@ -85,8 +85,20 @@ export default function AdminDashboard() {
       }
     };
     fetchStats();
-    const interval = setInterval(fetchStats, 5000);
-    return () => clearInterval(interval);
+    // Analytics are cached server-side; only re-fetch on order changes via SSE
+    let eventSource: EventSource;
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change") fetchStats();
+        } catch (e) {}
+      };
+      eventSource.onerror = () => { eventSource.close(); setTimeout(setupSSE, 5000); };
+    };
+    setupSSE();
+    return () => { if (eventSource) eventSource.close(); };
   }, []);
 
   const handleImageUpload = async (file: File, idx: number, isBento?: boolean, bentoPos?: number) => {

@@ -25,7 +25,7 @@ async function dbConnect(): Promise<typeof mongoose> {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
-      maxPoolSize: 50,              // max concurrent DB connections
+      maxPoolSize: 10,              // max concurrent DB connections
       serverSelectionTimeoutMS: 5_000,  // fail fast if DB is unreachable
       socketTimeoutMS: 45_000,     // don't hang forever on slow queries
       bufferCommands: false,        // fail immediately if not connected (no silent queuing)

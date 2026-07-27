@@ -3,33 +3,22 @@
 import React, { useState, useEffect } from "react";
 import FoodSwipeContainer from "@/components/FoodSwipeContainer";
 import { MenuItem } from "@/lib/types";
+import { useMenu } from "@/hooks/useMenu";
 
 export default function DiscoverPage() {
+  const { menuItems: rawMenuItems, isLoading: loading } = useMenu();
   const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const res = await fetch("/api/menu");
-        if (!res.ok) throw new Error("Server returned " + res.status);
-        const data = await res.json();
-        // Shuffle items for discovery feel, only show available
-        const available = data.filter((item: MenuItem) => item.available);
-        // Fisher-Yates shuffle
-        for (let i = available.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [available[i], available[j]] = [available[j], available[i]];
-        }
-        setMenuItems(available);
-      } catch (e) {
-        console.error("Failed to fetch menu for discover:", e);
-      } finally {
-        setLoading(false);
+    if (!loading && rawMenuItems.length > 0) {
+      const available = rawMenuItems.filter(item => item.available);
+      for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
       }
-    };
-    fetchMenu();
-  }, []);
+      setMenuItems(available);
+    }
+  }, [loading, rawMenuItems]);
 
   return (
     <div

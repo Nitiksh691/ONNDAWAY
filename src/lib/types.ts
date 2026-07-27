@@ -85,6 +85,7 @@ export interface Order {
   messages?: { sender: "user" | "delivery"; text: string; timestamp: string }[];
   rating?: number;
   review?: string;
+  feedback?: string;
   createdAt: string;
   updatedAt: string;
 }

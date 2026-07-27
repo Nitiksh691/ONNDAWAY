@@ -8,7 +8,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   try {
     const params = await props.params;
     const body = await req.json();
-    const { status, deliveryPersonId, deliveryPersonName, confirmed, otp, rating, review } = body;
+    const { status, deliveryPersonId, deliveryPersonName, confirmed, otp, rating, review, feedback } = body;
 
     const currentOrder = await Order.findById(params.id).lean();
     if (!currentOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
@@ -33,6 +33,7 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     if (deliveryPersonName !== undefined) updateData.deliveryPersonName = deliveryPersonName;
     if (rating !== undefined) updateData.rating = rating;
     if (review !== undefined) updateData.review = review;
+    if (feedback !== undefined) updateData.feedback = feedback;
 
     const order = await Order.findByIdAndUpdate(params.id, updateData, { new: true }).lean();
 

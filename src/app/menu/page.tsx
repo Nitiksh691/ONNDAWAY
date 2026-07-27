@@ -9,6 +9,7 @@ import { MenuItem } from "@/lib/types";
 
 import BannerSlider from "@/components/BannerSlider";
 import { useApp } from "@/lib/context";
+import { useMenu } from "@/hooks/useMenu";
 
 const CATEGORIES = ["all", "coffee", "snacks", "meals", "drinks", "desserts"] as const;
 const CAT_EMOJI: Record<string, string> = {
@@ -127,14 +128,12 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
-
-  const timeOfDay = getTimeOfDay();
-
-  const [menu, setMenu] = useState<MenuItem[]>([]);
-  const [loading, setLoading] = useState(true);
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
   const { cart, addToCart, updateQuantity } = useApp();
+  const { menuItems: rawMenuItems, isLoading: loading } = useMenu();
+
+  const timeOfDay = getTimeOfDay();
 
   useEffect(() => {
     const fetchBanner = async () => {
@@ -158,21 +157,9 @@ export default function MenuPage() {
     if (cat && CATEGORIES.includes(cat as any)) {
       setActiveCategory(cat);
     }
-
-    const fetchMenu = async () => {
-      try {
-        const res = await fetch("/api/menu");
-        if (!res.ok) throw new Error("Server returned " + res.status);
-        const data = await res.json();
-        setMenu(data.filter((item: MenuItem) => item.available));
-      } catch (e) {
-        console.error("Failed to fetch menu:", e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchMenu();
   }, []);
+
+  const menu = useMemo(() => rawMenuItems.filter(item => item.available), [rawMenuItems]);
 
   const handleViewAll = useCallback((cat: string) => {
     setActiveCategory(cat);

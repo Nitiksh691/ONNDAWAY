@@ -4,7 +4,7 @@ import useSWR from "swr";
 import { useDebounce } from "use-debounce";
 import { Order, DeliveryPerson, CartItem } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
-import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package, ChevronDown, ChevronUp } from "lucide-react";
+import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
 // Fetcher for SWR
@@ -129,7 +129,6 @@ export default function AdminOrdersPage() {
     : `/api/orders?status=${statusFilter}`;
 
   const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(fetchUrl, fetcher, { 
-    refreshInterval: 8000, // 8s polling interval
     revalidateOnFocus: true,
   });
 
@@ -168,9 +167,29 @@ export default function AdminOrdersPage() {
     prevPlacedIds.current = currentPlacedIds;
   }, [orders]);
 
-  useEffect(() => () => {
-    if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
-  }, []);
+  useEffect(() => {
+    let eventSource: EventSource;
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change") {
+            mutateOrders();
+          }
+        } catch (e) {}
+      };
+      eventSource.onerror = () => {
+        eventSource.close();
+        setTimeout(setupSSE, 5000);
+      };
+    };
+    setupSSE();
+    return () => {
+      if (eventSource) eventSource.close();
+      if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
+    };
+  }, [mutateOrders]);
 
   const handleConfirmOrder = async (orderId: string) => {
     setConfirmingId(orderId);
@@ -531,6 +550,18 @@ export default function AdminOrdersPage() {
                         <span>{order.location}</span>
                       </div>
                     </div>
+
+                    {/* Feedback */}
+                    {order.feedback && (
+                      <div style={{ background: "#F0FDF4", border: "1px solid #BBF7D0", borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>
+                        <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "#16A34A", letterSpacing: "0.08em", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" }}>
+                          <MessageCircle size={13} /> CUSTOMER FEEDBACK
+                        </div>
+                        <p style={{ color: "#15803D", fontSize: "0.95rem", fontWeight: 600, lineHeight: 1.4, margin: 0 }}>
+                          "{order.feedback}"
+                        </p>
+                      </div>
+                    )}
 
                     {/* Items */}
                     <div style={{ background: "#ffffff", border: `1px solid ${colors.border}`, borderRadius: "12px", padding: "16px", boxShadow: "0 2px 4px rgba(0,0,0,0.02)" }}>

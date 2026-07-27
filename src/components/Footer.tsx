@@ -107,6 +107,7 @@ export default function Footer() {
                 { label: "My Orders", href: "/orders" },
                 { label: "About Us", href: "/about" },
                 { label: "Become a Partner", href: "/delivery/login" },
+                { label: "Become an Intern", href: "/intern" },
               ].map(l => (
                 <Link key={l.label} href={l.href} className="footer-link">{l.label}</Link>
               ))}

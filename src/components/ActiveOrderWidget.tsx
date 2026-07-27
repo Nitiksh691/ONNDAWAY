@@ -49,11 +49,28 @@ export default function ActiveOrderWidget() {
 
   useEffect(() => {
     load();
-    const interval = setInterval(load, 4000);
     const onActiveOrder = () => load();
     window.addEventListener("otw:active-order", onActiveOrder);
+
+    // Listen for real-time order changes via SSE instead of polling
+    let eventSource: EventSource;
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change") load();
+        } catch (e) {}
+      };
+      eventSource.onerror = () => {
+        eventSource.close();
+        setTimeout(setupSSE, 5000);
+      };
+    };
+    setupSSE();
+
     return () => {
-      clearInterval(interval);
+      if (eventSource) eventSource.close();
       window.removeEventListener("otw:active-order", onActiveOrder);
     };
   }, [load]);
@@ -67,8 +84,11 @@ export default function ActiveOrderWidget() {
     };
     checkCart();
     window.addEventListener("storage", checkCart);
-    const t = setInterval(checkCart, 1000);
-    return () => { window.removeEventListener("storage", checkCart); clearInterval(t); };
+    window.addEventListener("otw:cart-update", checkCart);
+    return () => {
+      window.removeEventListener("storage", checkCart);
+      window.removeEventListener("otw:cart-update", checkCart);
+    };
   }, []);
 
   if (!visible || !order) return null;

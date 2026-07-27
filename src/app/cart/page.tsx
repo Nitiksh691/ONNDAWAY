@@ -30,7 +30,7 @@ export default function CartPage() {
   const [locationNotes, setLocationNotes] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [isGpsLoading, setIsGpsLoading] = useState(false);
-  const pollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     setIdempotencyKey(crypto.randomUUID());
@@ -181,19 +181,27 @@ export default function CartPage() {
       setShowConfirm(false);
       setPlacedOrderId(orderResult.id);
 
-      // Start polling for confirmation
-      pollIntervalRef.current = setInterval(async () => {
-        try {
-          const pollRes = await fetch(`/api/orders/${orderResult.id}`);
-          if (pollRes.ok) {
-            const pollData = await pollRes.json();
-            if (pollData.confirmed) {
-              setIsConfirmed(true);
-              if (pollIntervalRef.current) clearInterval(pollIntervalRef.current);
+      // Start listening for confirmation via SSE
+      const setupSSE = () => {
+        const es = new EventSource("/api/orders/stream");
+        eventSourceRef.current = es;
+        es.onmessage = async (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "order_change" && data.documentKey?._id === orderResult.id) {
+              const pollRes = await fetch(`/api/orders/${orderResult.id}`);
+              if (pollRes.ok) {
+                const pollData = await pollRes.json();
+                if (pollData.confirmed) {
+                  setIsConfirmed(true);
+                  es.close();
+                }
+              }
             }
-          }
-        } catch { /* silent */ }
-      }, 3000);
+          } catch (e) {}
+        };
+      };
+      setupSSE();
 
     } catch (e: any) {
       console.error(e);
@@ -201,8 +209,6 @@ export default function CartPage() {
     } finally { setPlacing(false); }
   };
 
-  // Cleanup polling on unmount
-  useEffect(() => () => { if (pollIntervalRef.current) clearInterval(pollIntervalRef.current); }, []);
 
   /* ─── POST-ORDER SCREEN ─── */
   if (placedOrderId) {

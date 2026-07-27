@@ -4,21 +4,12 @@ import { usePathname, useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 
 export default function WaitlistOverlay() {
-  const { profile, loading } = useApp();
+  const { profile, loading, settings } = useApp();
   const pathname = usePathname();
   const router = useRouter();
-  const [waitlistMode, setWaitlistMode] = useState(false);
-  const [checking, setChecking] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/settings/status")
-      .then(res => res.json())
-      .then(data => {
-        setWaitlistMode(data.waitlistMode);
-        setChecking(false);
-      })
-      .catch(() => setChecking(false));
-  }, []);
+  
+  const waitlistMode = settings?.waitlistMode || false;
+  const checking = !settings;
 
   useEffect(() => {
     // If not waitlist mode, checking, or loading profile, do nothing

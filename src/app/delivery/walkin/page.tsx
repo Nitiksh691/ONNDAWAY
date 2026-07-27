@@ -5,6 +5,7 @@ import {
   Users, Search, Plus, X, Phone, Calendar, ArrowLeft, Gift, Coffee, ShoppingBag, Trash2, Minus, UserPlus, Sparkles, Check, ChevronRight
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { useMenu } from "@/hooks/useMenu";
 
 /* ── Types ─────────────────────────────────────────────────────────── */
 interface MenuItemData { id: string; name: string; price: number; category: string; available: boolean; }
@@ -21,7 +22,10 @@ const LOYALTY_GOAL = 7;
 export default function DeliveryWalkInPage() {
   const router = useRouter();
   const [customers, setCustomers] = useState<WalkInCustomerSummary[]>([]);
-  const [menuItems, setMenuItems] = useState<MenuItemData[]>([]);
+  const { menuItems: rawMenuItems } = useMenu();
+  const menuItems: MenuItemData[] = rawMenuItems.filter(i => i.available).map(i => ({
+    id: i.id, name: i.name, price: i.price, category: i.category, available: i.available,
+  }));
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
 
@@ -49,19 +53,7 @@ export default function DeliveryWalkInPage() {
     } catch (err) { console.error(err); } finally { setLoading(false); }
   }, []);
 
-  const fetchMenu = useCallback(async () => {
-    try {
-      const res = await fetch("/api/menu");
-      if (res.ok) {
-        const data = await res.json();
-        setMenuItems(data.filter((i: any) => i.available).map((i: any) => ({
-          id: i.id || i._id, name: i.name, price: i.price, category: i.category, available: i.available,
-        })));
-      }
-    } catch (err) { console.error(err); }
-  }, []);
-
-  useEffect(() => { fetchCustomers(); fetchMenu(); }, [fetchCustomers, fetchMenu]);
+  useEffect(() => { fetchCustomers(); }, [fetchCustomers]);
 
   const openDetail = useCallback(async (id: string) => {
     setSelectedId(id); setDetail(null); setDetailLoading(true);

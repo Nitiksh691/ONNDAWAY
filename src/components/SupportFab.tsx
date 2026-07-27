@@ -30,8 +30,11 @@ export default function SupportFab() {
     };
     check();
     window.addEventListener("otw:active-order", check);
-    const t = setInterval(check, 2000);
-    return () => { window.removeEventListener("otw:active-order", check); clearInterval(t); };
+    window.addEventListener("storage", check);
+    return () => {
+      window.removeEventListener("otw:active-order", check);
+      window.removeEventListener("storage", check);
+    };
   }, []);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;

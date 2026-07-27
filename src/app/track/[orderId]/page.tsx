@@ -53,6 +53,9 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
   const [showOtp, setShowOtp] = useState(false);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
 
 
@@ -88,11 +91,29 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
     };
     if (!loading) fetchOrder();
     
-    // Check if order is already completed/cancelled before setting interval
     if (order?.status === "delivered" || order?.status === "cancelled") return;
 
-    const interval = setInterval(fetchOrder, 6000);
-    return () => clearInterval(interval);
+    let eventSource: EventSource;
+    const setupSSE = () => {
+      eventSource = new EventSource("/api/orders/stream");
+      eventSource.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change" && data.documentKey?._id === orderId) {
+            fetchOrder();
+          }
+        } catch (e) {}
+      };
+      eventSource.onerror = () => {
+        eventSource.close();
+        setTimeout(setupSSE, 5000);
+      };
+    };
+    
+    setupSSE();
+    return () => {
+      if (eventSource) eventSource.close();
+    };
   }, [orderId, loading, router, order?.status]);
 
   useEffect(() => {
@@ -123,6 +144,27 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   };
 
 
+  const handleFeedbackSubmit = async () => {
+    if (!orderId || !feedbackText.trim() || feedbackLoading) return;
+    setFeedbackLoading(true);
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ feedback: feedbackText }),
+      });
+      if (res.ok) {
+        setFeedbackSubmitted(true);
+        toast.success("Feedback submitted! Thank you.");
+      } else {
+        toast.error("Failed to submit feedback");
+      }
+    } catch (err) {
+      toast.error("Network error. Please try again.");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   /* ── Loading ── */
   if (loading || fetching || !order) {
@@ -474,6 +516,60 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
             <span style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0135FB" }}>₹{order.total}</span>
           </div>
         </div>
+
+        {/* ── Order Feedback (Only if delivered) ── */}
+        {isDelivered && !isCancelled && (
+          <div style={{ ...cardStyle, padding: "22px 20px", animation: "fade-up 0.7s ease" }}>
+            <div style={{ fontSize: "0.7rem", color: "#6B7280", letterSpacing: "1px", textTransform: "uppercase", fontWeight: 700, marginBottom: "14px" }}>
+              How was your order?
+            </div>
+            {feedbackSubmitted || order.feedback ? (
+              <div style={{ background: "#F0FDF4", color: "#16A34A", padding: "14px", borderRadius: "10px", fontSize: "0.9rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "8px" }}>
+                <CheckCircle size={18} /> Thank you for your feedback!
+              </div>
+            ) : (
+              <div style={{ display: "flex", gap: "10px" }}>
+                <input
+                  type="text"
+                  placeholder="Share a quick thought..."
+                  value={feedbackText}
+                  onChange={(e) => setFeedbackText(e.target.value)}
+                  style={{
+                    flex: 1,
+                    padding: "12px 14px",
+                    background: "#F5F7FF",
+                    border: "1.5px solid #E0E7FF",
+                    borderRadius: "10px",
+                    outline: "none",
+                    fontSize: "0.9rem",
+                    color: "#0A0F2E",
+                    transition: "border 0.2s",
+                  }}
+                  onFocus={(e) => (e.target.style.borderColor = "#0135FB")}
+                  onBlur={(e) => (e.target.style.borderColor = "#E0E7FF")}
+                />
+                <button
+                  onClick={handleFeedbackSubmit}
+                  disabled={!feedbackText.trim() || feedbackLoading}
+                  style={{
+                    background: "#0135FB",
+                    color: "white",
+                    border: "none",
+                    borderRadius: "10px",
+                    padding: "0 18px",
+                    fontWeight: 700,
+                    fontSize: "0.9rem",
+                    cursor: feedbackText.trim() && !feedbackLoading ? "pointer" : "not-allowed",
+                    opacity: feedbackText.trim() && !feedbackLoading ? 1 : 0.6,
+                    transition: "opacity 0.2s",
+                  }}
+                >
+                  {feedbackLoading ? "..." : "Send"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* ── Support Helpline ── */}
         <div style={{ ...cardStyle, padding: "20px", animation: "fade-up 0.7s ease" }}>

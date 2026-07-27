@@ -55,6 +55,7 @@ const OrderSchema = new Schema(
     },
     rating:  { type: Number, min: 1, max: 5, default: null },
     review:  { type: String, default: null },
+    feedback: { type: String, default: null },
   },
   { timestamps: true }
 );
@@ -67,10 +68,4 @@ OrderSchema.index({ status: 1, createdAt: -1 });
 // Compound index: delivery dashboard — assigned orders by status
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
 
-// Re-register schema in dev when CartItem fields change
-if (models.Order) {
-  delete models.Order;
-}
-
-export default model("Order", OrderSchema);
-
+export default models.Order || model("Order", OrderSchema);

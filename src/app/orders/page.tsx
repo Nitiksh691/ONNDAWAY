@@ -5,6 +5,7 @@ import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { setActiveOrderId, isActiveOrderStatus } from "@/lib/activeOrder";
 import { Package, Clock, MapPin, ChevronRight, RefreshCw, Compass } from "lucide-react";
+import { useMenu } from "@/hooks/useMenu";
 
 const CAT_EMOJI: Record<string, string> = {
   coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤",
@@ -20,10 +21,11 @@ export default function OrdersPage() {
   const { user, loading } = useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
+  const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu();
   
   // For empty state categories
-  const [categories, setCategories] = useState<string[]>([]);
-  const [menuItems, setMenuItems] = useState<any[]>([]);
+  const categories = Array.from(new Set(rawMenuItems.filter(i => i.available).map(i => i.category as string)));
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -60,23 +62,6 @@ export default function OrdersPage() {
     };
     if (user) fetchOrders();
   }, [user]);
-
-  // Fetch menu for categories if empty state
-  useEffect(() => {
-    if (!fetching && orders.length === 0) {
-      fetch("/api/menu")
-        .then(r => r.json())
-        .then(data => {
-          if (Array.isArray(data)) {
-            const available = data.filter((i: any) => i.available);
-            setMenuItems(available);
-            const cats = Array.from(new Set(available.map((i: any) => i.category as string)));
-            setCategories(cats);
-          }
-        })
-        .catch(console.error);
-    }
-  }, [fetching, orders.length]);
 
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {

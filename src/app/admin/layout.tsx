@@ -58,6 +58,7 @@ const ADMIN_LINKS = [
   { href: "/admin/orders", label: "Live Orders", icon: <ShoppingBag size={18} /> },
   { href: "/admin/customers", label: "App Customers", icon: <Users size={18} /> },
   { href: "/admin/walkin", label: "Walk-in Customers", icon: <Store size={18} /> },
+  { href: "/admin/interns", label: "Interns", icon: <ClipboardList size={18} /> },
   { href: "/admin/waitlist", label: "Waitlist", icon: <ClipboardList size={18} /> },
   { href: "/admin/expenses", label: "Expenses", icon: <DollarSign size={18} /> },
   { href: "/admin/coupons", label: "Coupons", icon: <Tag size={18} /> },
@@ -382,7 +383,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => {});
 
     let eventSource: EventSource | null = null;
-    let fallbackInterval: NodeJS.Timeout | null = null;
 
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
@@ -405,41 +405,29 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       };
 
       eventSource.onerror = () => {
-        // If SSE fails (e.g. Vercel timeout), close it and fallback to slow polling
         eventSource?.close();
-        if (!fallbackInterval) {
-          setupFallbackPolling();
+        // Try to reconnect after 5s
+        setTimeout(setupSSE, 5000);
+      };
+    };
+
+    const fetchInitialCount = async () => {
+      try {
+        const res = await fetch("/api/orders?status=placed");
+        if (res.ok) {
+          const data = await res.json();
+          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          prevPendingRef.current = unconfirmed;
+          setPendingCount(unconfirmed);
         }
-      };
+      } catch (e) {}
     };
 
-    const setupFallbackPolling = () => {
-      const checkOrders = async () => {
-        try {
-          const res = await fetch("/api/orders?status=placed");
-          if (res.ok) {
-            const data = await res.json();
-            const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
-            if (unconfirmed > prevPendingRef.current) {
-              playAlarmBeep();
-            }
-            prevPendingRef.current = unconfirmed;
-            setPendingCount(unconfirmed);
-          }
-        } catch (e) {}
-      };
-      
-      // Fallback polling is slightly slower (5s) to save resources
-      fallbackInterval = setInterval(checkOrders, 5000);
-      checkOrders();
-    };
-
-    // Attempt SSE first
+    fetchInitialCount();
     setupSSE();
 
     return () => {
       if (eventSource) eventSource.close();
-      if (fallbackInterval) clearInterval(fallbackInterval);
     };
   }, [authorized]);
 

@@ -1,25 +1,12 @@
 "use client";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useMenu } from "@/hooks/useMenu";
 
 export default function NotFoundPage() {
-  const [categories, setCategories] = useState<any[]>([]);
-  const [menuItems, setMenuItems] = useState<any[]>([]);
-
-  useEffect(() => {
-    fetch("/api/menu")
-      .then(r => r.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          const available = data.filter((i: any) => i.available);
-          setMenuItems(available);
-          // Extract unique categories
-          const cats = Array.from(new Set(available.map((i: any) => i.category as string)));
-          setCategories(cats);
-        }
-      })
-      .catch(console.error);
-  }, []);
+  const { menuItems: rawMenuItems } = useMenu();
+  const menuItems = rawMenuItems.filter(i => i.available);
+  const categories = Array.from(new Set(menuItems.map(i => i.category as string)));
 
   const CAT_EMOJI: Record<string, string> = {
     coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤",
