@@ -86,8 +86,8 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
       }}>
         {items.map(item => (
           <div key={item.id} style={{ minWidth: layout === "horizontal" ? "280px" : "185px", maxWidth: layout === "horizontal" ? "280px" : "185px", flexShrink: 0 }}>
-            <FoodCard 
-              item={item} 
+            <FoodCard
+              item={item}
               layout={layout}
               cartItem={cart.find(c => c.item.id === item.id)}
               onAdd={onAdd}
@@ -103,7 +103,7 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
             style={{
               minWidth: "110px", maxWidth: "110px", flexShrink: 0, border: "2px dashed rgba(1,53,251,0.25)", cursor: "pointer",
               display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: "8px", borderRadius: "12px", 
+              gap: "8px", borderRadius: "12px",
               color: "var(--primary)", fontWeight: 700,
               fontSize: "0.8rem", background: "rgba(1,53,251,0.03)",
               transition: "background 0.2s", padding: "16px 8px", textAlign: "center",
@@ -187,7 +187,8 @@ export default function MenuPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .hscroll::-webkit-scrollbar { display: none; }
         @media (max-width: 768px) {
           .food-grid-filtered { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
@@ -248,10 +249,12 @@ export default function MenuPage() {
           {loading ? (
             /* Skeleton */
             <div style={{ display: "flex", gap: "14px", overflowX: "hidden" }}>
-              {[1,2,3,4].map(i => (
-                <div key={i} style={{ minWidth: 185, height: 240, borderRadius: 12, background: "#E2E8F0", flexShrink: 0,
+              {[1, 2, 3, 4].map(i => (
+                <div key={i} style={{
+                  minWidth: 185, height: 240, borderRadius: 12, background: "#E2E8F0", flexShrink: 0,
                   backgroundImage: "linear-gradient(90deg, #E2E8F0 25%, #F1F5F9 50%, #E2E8F0 75%)",
-                  backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite" }}
+                  backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite"
+                }}
                 />
               ))}
             </div>
@@ -331,18 +334,18 @@ export default function MenuPage() {
                   <p style={{ color: "var(--text-muted)" }}>Try a different category.</p>
                 </div>
               ) : (
-                <div className="food-grid-filtered" style={{
-                  display: "grid",
-                  gridTemplateColumns: menuLayout === "vertical"
-                    ? "repeat(auto-fill, minmax(150px, 1fr))"
-                    : "repeat(auto-fill, minmax(300px, 1fr))",
-                  gap: menuLayout === "vertical" ? 16 : 10,
-                  width: "100%",
-                }}>
+                <div className={menuLayout === "vertical" ? "food-grid" : "food-grid-filtered"} style={
+                  menuLayout === "vertical" ? { width: "100%" } : {
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                    gap: 10,
+                    width: "100%",
+                  }
+                }>
                   {filtered.map(item => (
-                    <FoodCard 
-                      key={item.id} 
-                      item={item} 
+                    <FoodCard
+                      key={item.id}
+                      item={item}
                       layout={menuLayout}
                       cartItem={cart.find(c => c.item.id === item.id)}
                       onAdd={addToCart}

@@ -27,12 +27,12 @@ const EMPTY_SLIDE = (): BannerSlide => ({
 });
 
 const CAT_OPTIONS = [
-  { label: "No link (info only)", value: "" },
   { label: "Coffee", value: "/?category=coffee" },
   { label: "Snacks", value: "/?category=snacks" },
   { label: "Meals", value: "/?category=meals" },
   { label: "Drinks", value: "/?category=drinks" },
   { label: "Desserts", value: "/?category=desserts" },
+  { label: "Menu", value: "/menu" },
 ];
 
 export default function AdminDashboard() {
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
           }
           if (bannerData.bentoSlides && Array.isArray(bannerData.bentoSlides)) {
             const fetched = bannerData.bentoSlides;
-            setBentoSlides([0,1,2,3,4].map(pos => fetched.find((g:any) => g.position === pos) || { position: pos, slides: [] }));
+            setBentoSlides([0, 1, 2, 3, 4].map(pos => fetched.find((g: any) => g.position === pos) || { position: pos, slides: [] }));
           }
           setBannerMode(bannerData.bannerMode || "single");
         }
@@ -93,7 +93,7 @@ export default function AdminDashboard() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === "order_change") fetchStats();
-        } catch (e) {}
+        } catch (e) { }
       };
       eventSource.onerror = () => { eventSource.close(); setTimeout(setupSSE, 5000); };
     };
@@ -116,9 +116,9 @@ export default function AdminDashboard() {
         const uploadData = await res.json();
         if (res.ok && uploadData.url) {
           if (isBento && bentoPos !== undefined) {
-             setBentoSlides(prev => prev.map(g => g.position === bentoPos ? { ...g, slides: g.slides.map((s, i) => i === idx ? { ...s, image: uploadData.url } : s) } : g));
+            setBentoSlides(prev => prev.map(g => g.position === bentoPos ? { ...g, slides: g.slides.map((s, i) => i === idx ? { ...s, image: uploadData.url } : s) } : g));
           } else {
-             setSlides(prev => prev.map((s, i) => i === idx ? { ...s, image: uploadData.url } : s));
+            setSlides(prev => prev.map((s, i) => i === idx ? { ...s, image: uploadData.url } : s));
           }
           import("react-hot-toast").then(({ default: toast }) => toast.success("Image uploaded!"));
         } else {
@@ -170,10 +170,10 @@ export default function AdminDashboard() {
   const chartMax = Math.max(...chartData.map((c) => c.orders), 1);
 
   const STAT_CARDS = [
-    { title: "Total Orders", value: summary.totalOrders, icon: <Package size={22}/>, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },
-    { title: "Total Revenue", value: `₹${summary.totalRevenue.toLocaleString()}`, icon: <DollarSign size={22}/>, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
-    { title: "Unique Customers", value: summary.uniqueUsers, icon: <Users size={22}/>, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.25)" },
-    { title: "Top Item", value: popularItem.name, sub: `${popularItem.count} portions sold`, icon: <TrendingUp size={22}/>, color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
+    { title: "Total Orders", value: summary.totalOrders, icon: <Package size={22} />, color: "#3b82f6", bg: "rgba(59,130,246,0.12)", border: "rgba(59,130,246,0.25)" },
+    { title: "Total Revenue", value: `₹${summary.totalRevenue.toLocaleString()}`, icon: <DollarSign size={22} />, color: "#10b981", bg: "rgba(16,185,129,0.12)", border: "rgba(16,185,129,0.25)" },
+    { title: "Unique Customers", value: summary.uniqueUsers, icon: <Users size={22} />, color: "#8b5cf6", bg: "rgba(139,92,246,0.12)", border: "rgba(139,92,246,0.25)" },
+    { title: "Top Item", value: popularItem.name, sub: `${popularItem.count} portions sold`, icon: <TrendingUp size={22} />, color: "#f59e0b", bg: "rgba(245,158,11,0.12)", border: "rgba(245,158,11,0.25)" },
   ];
 
   const renderSlideEditor = (slide: BannerSlide, idx: number, isBento: boolean, bentoPos?: number) => {
@@ -185,22 +185,22 @@ export default function AdminDashboard() {
       }
     };
     const move = (dir: -1 | 1) => {
-       if (isBento && bentoPos !== undefined) {
-         setBentoSlides(prev => prev.map(g => {
-           if (g.position !== bentoPos) return g;
-           const arr = [...g.slides];
-           const next = idx + dir;
-           if (next < 0 || next >= arr.length) return g;
-           [arr[idx], arr[next]] = [arr[next], arr[idx]];
-           return { ...g, slides: arr };
-         }));
-       } else {
-         const arr = [...slides];
-         const next = idx + dir;
-         if (next < 0 || next >= arr.length) return;
-         [arr[idx], arr[next]] = [arr[next], arr[idx]];
-         setSlides(arr);
-       }
+      if (isBento && bentoPos !== undefined) {
+        setBentoSlides(prev => prev.map(g => {
+          if (g.position !== bentoPos) return g;
+          const arr = [...g.slides];
+          const next = idx + dir;
+          if (next < 0 || next >= arr.length) return g;
+          [arr[idx], arr[next]] = [arr[next], arr[idx]];
+          return { ...g, slides: arr };
+        }));
+      } else {
+        const arr = [...slides];
+        const next = idx + dir;
+        if (next < 0 || next >= arr.length) return;
+        [arr[idx], arr[next]] = [arr[next], arr[idx]];
+        setSlides(arr);
+      }
     };
     const del = () => {
       if (isBento && bentoPos !== undefined) {
@@ -226,10 +226,10 @@ export default function AdminDashboard() {
             {slide.active ? <ToggleRight size={22} /> : <ToggleLeft size={22} />}
             {slide.active ? "Active" : "Off"}
           </button>
-          <button onClick={() => move(-1)} disabled={isFirst} style={{ background: "#e2e8f0", border: "none", cursor: isFirst ? "not-allowed" : "pointer", color: isFirst ? "#cbd5e1" : "#a1a1aa", borderRadius: "6px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronUp size={15}/></button>
-          <button onClick={() => move(1)} disabled={isLast} style={{ background: "#e2e8f0", border: "none", cursor: isLast ? "not-allowed" : "pointer", color: isLast ? "#cbd5e1" : "#a1a1aa", borderRadius: "6px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronDown size={15}/></button>
+          <button onClick={() => move(-1)} disabled={isFirst} style={{ background: "#e2e8f0", border: "none", cursor: isFirst ? "not-allowed" : "pointer", color: isFirst ? "#cbd5e1" : "#a1a1aa", borderRadius: "6px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronUp size={15} /></button>
+          <button onClick={() => move(1)} disabled={isLast} style={{ background: "#e2e8f0", border: "none", cursor: isLast ? "not-allowed" : "pointer", color: isLast ? "#cbd5e1" : "#a1a1aa", borderRadius: "6px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center" }}><ChevronDown size={15} /></button>
           <button onClick={del} style={{ background: "#450a0a", border: "1px solid #7f1d1d", color: "#ef4444", borderRadius: "6px", width: 28, height: 28, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}>
-            <Trash2 size={13}/>
+            <Trash2 size={13} />
           </button>
         </div>
 
@@ -253,7 +253,7 @@ export default function AdminDashboard() {
                 <>
                   <img src={slide.image} alt="preview" style={{ position: "absolute", inset: 0, width: "100%", height: "100%", objectFit: "cover", opacity: 0.55 }} />
                   <div style={{ position: "relative", zIndex: 1, background: "rgba(0,0,0,0.55)", borderRadius: "8px", padding: "6px 14px", display: "flex", alignItems: "center", gap: "6px", color: "#fff", fontWeight: 700, fontSize: "0.8rem" }}>
-                    <Upload size={13}/> Change Image
+                    <Upload size={13} /> Change Image
                   </div>
                 </>
               ) : (
@@ -281,12 +281,24 @@ export default function AdminDashboard() {
           </div>
 
           <div style={{ gridColumn: "1/-1" }}>
-            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>Link to Category</label>
-            <select value={slide.link}
+            <label style={{ display: "block", fontSize: "0.78rem", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.5px", marginBottom: "6px" }}>Link / URL</label>
+            <input
+              type="text"
+              placeholder="https://onndaway.vercel.app/item/... or /?category=coffee"
+              value={slide.link}
               onChange={e => updateSlide({ link: e.target.value })}
-              style={{ width: "100%", padding: "11px 14px", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "8px", color: "#0f172a", fontSize: "0.9rem", outline: "none", fontFamily: "inherit" }}>
-              {CAT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
+              style={{ width: "100%", padding: "11px 14px", background: "#f8fafc", border: "1.5px solid #cbd5e1", borderRadius: "8px", color: "#0f172a", fontSize: "0.88rem", outline: "none", boxSizing: "border-box", fontFamily: "monospace", marginBottom: "8px" }}
+            />
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", alignItems: "center" }}>
+              <span style={{ fontSize: "0.72rem", color: "#94a3b8", fontWeight: 700, textTransform: "uppercase" }}>Quick pick:</span>
+              <button onClick={() => updateSlide({ link: "" })} style={{ padding: "3px 10px", border: "1px solid #e2e8f0", borderRadius: "99px", background: slide.link === "" ? "#0055ff" : "#f8fafc", color: slide.link === "" ? "#fff" : "#64748b", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>None</button>
+              {CAT_OPTIONS.map(o => (
+                <button key={o.value} onClick={() => updateSlide({ link: o.value })} style={{ padding: "3px 10px", border: "1px solid #e2e8f0", borderRadius: "99px", background: slide.link === o.value ? "#0055ff" : "#f8fafc", color: slide.link === o.value ? "#fff" : "#64748b", fontSize: "0.75rem", fontWeight: 700, cursor: "pointer" }}>{o.label}</button>
+              ))}
+            </div>
+            {slide.link && (
+              <div style={{ marginTop: "6px", fontSize: "0.73rem", color: "#10b981", fontWeight: 600, fontFamily: "monospace" }}>→ {slide.link}</div>
+            )}
           </div>
         </div>
       </div>
@@ -302,7 +314,34 @@ export default function AdminDashboard() {
           <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", animation: "pulse-dot 1.5s ease-in-out infinite" }} /> LIVE
         </div>
       </div>
-      <p style={{ color: "#64748b", marginBottom: "32px", fontSize: "0.95rem" }}>Welcome back. Here's your business overview.</p>
+      <p style={{ color: "#64748b", marginBottom: "20px", fontSize: "0.95rem" }}>Welcome back. Here's your business overview.</p>
+
+      {/* Admin Track Feature */}
+      <div style={{ marginBottom: "32px", background: "#f8fafc", padding: "16px 20px", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+        <Package size={20} color="#0f172a" />
+        <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0f172a" }}>Track Specific Order:</div>
+        <input 
+          type="text" 
+          placeholder="Enter Order ID" 
+          id="adminTrackInput"
+          style={{ flex: 1, minWidth: "200px", padding: "10px 14px", borderRadius: "8px", border: "1px solid #cbd5e1", outline: "none", fontSize: "0.9rem" }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              const val = (e.target as HTMLInputElement).value.trim();
+              if (val) window.location.href = `/track/${val}`;
+            }
+          }}
+        />
+        <button 
+          onClick={() => {
+            const val = (document.getElementById('adminTrackInput') as HTMLInputElement).value.trim();
+            if (val) window.location.href = `/track/${val}`;
+          }}
+          style={{ padding: "10px 20px", background: "#0f172a", color: "#fff", border: "none", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.9rem" }}
+        >
+          Track Order
+        </button>
+      </div>
 
       {/* Stat Cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "16px", marginBottom: "32px" }}>
@@ -325,7 +364,7 @@ export default function AdminDashboard() {
       {/* Analytics Chart */}
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px", marginBottom: "32px" }}>
         <h3 style={{ fontSize: "1rem", fontWeight: 900, marginBottom: "24px", color: "#0f172a", display: "flex", alignItems: "center", gap: "8px" }}>
-          <Activity size={18} color="#0055ff"/> Peak Order Times
+          <Activity size={18} color="#0055ff" /> Peak Order Times
         </h3>
         <div style={{ display: "flex", alignItems: "flex-end", height: "160px", gap: "6px", borderBottom: "1px solid #e2e8f0", paddingBottom: "8px", position: "relative", overflowX: "auto" }}>
           <div style={{ position: "absolute", left: 0, right: 0, top: "25%", borderTop: "1px dashed #e2e8f0", zIndex: 0 }} />
@@ -347,10 +386,10 @@ export default function AdminDashboard() {
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px", marginBottom: "40px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px", flexWrap: "wrap", gap: "12px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <Tag size={18} color="#f59e0b"/>
+            <Tag size={18} color="#f59e0b" />
             <h3 style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a", margin: 0 }}>Banner Manager</h3>
           </div>
-          
+
           <div style={{ display: "flex", alignItems: "center", gap: "16px", flexWrap: "wrap" }}>
             {/* Mode Switcher */}
             <div style={{ display: "flex", background: "#f1f5f9", padding: "4px", borderRadius: "10px" }}>
@@ -373,8 +412,8 @@ export default function AdminDashboard() {
         {bannerMode === "single" ? (
           <>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px" }}>
-               <p style={{ color: "#64748b", fontSize: "0.85rem", maxWidth: "600px", margin: 0 }}>Manage the single full-width banner slider.</p>
-               <button onClick={() => setSlides(prev => [...prev, EMPTY_SLIDE()])} style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0055ff", color: "#ffffff", border: "none", padding: "9px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem" }}><Plus size={16}/> Add Slide</button>
+              <p style={{ color: "#64748b", fontSize: "0.85rem", maxWidth: "600px", margin: 0 }}>Manage the single full-width banner slider.</p>
+              <button onClick={() => setSlides(prev => [...prev, EMPTY_SLIDE()])} style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0055ff", color: "#ffffff", border: "none", padding: "9px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem" }}><Plus size={16} /> Add Slide</button>
             </div>
             {slides.length === 0 && (
               <div style={{ border: "2px dashed #cbd5e1", borderRadius: "12px", padding: "48px 24px", textAlign: "center" }}>
@@ -398,10 +437,10 @@ export default function AdminDashboard() {
                 </button>
               ))}
             </div>
-            
+
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "24px", flexWrap: "wrap", gap: "12px" }}>
-               <h4 style={{ margin: 0, color: "#0f172a", fontWeight: 800 }}>Slides for {["Large Cell (Hero)", "Top Right", "Top Far-Right", "Bottom Right", "Bottom Far-Right"][activeBentoTab]}</h4>
-               <button onClick={() => setBentoSlides(prev => prev.map(g => g.position === activeBentoTab ? { ...g, slides: [...g.slides, EMPTY_SLIDE()] } : g))} style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0055ff", color: "#ffffff", border: "none", padding: "9px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem" }}><Plus size={16}/> Add Slide</button>
+              <h4 style={{ margin: 0, color: "#0f172a", fontWeight: 800 }}>Slides for {["Large Cell (Hero)", "Top Right", "Top Far-Right", "Bottom Right", "Bottom Far-Right"][activeBentoTab]}</h4>
+              <button onClick={() => setBentoSlides(prev => prev.map(g => g.position === activeBentoTab ? { ...g, slides: [...g.slides, EMPTY_SLIDE()] } : g))} style={{ display: "flex", alignItems: "center", gap: "6px", background: "#0055ff", color: "#ffffff", border: "none", padding: "9px 18px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.85rem" }}><Plus size={16} /> Add Slide</button>
             </div>
 
             {bentoSlides[activeBentoTab].slides.length === 0 && (

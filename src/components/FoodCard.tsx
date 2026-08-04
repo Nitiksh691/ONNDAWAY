@@ -151,7 +151,6 @@ const FoodCard = ({
         height: "100%",
         cursor: "pointer",
         position: "relative",
-        padding: "10px 10px 14px 10px",
         border: "1px solid rgba(0,0,0,0.07)",
         boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
       }}
@@ -161,13 +160,11 @@ const FoodCard = ({
         position: "relative",
         aspectRatio: "4 / 5",
         background: bg,
-        borderRadius: 12,
-        border: "1px solid rgba(0,0,0,0.06)",
-        flexShrink: 0,
-        marginBottom: 10,
-        overflow: "hidden"
+        borderRadius: "20px 20px 0 0",
+        borderBottom: "1px solid rgba(0,0,0,0.04)",
+        flexShrink: 0
       }}>
-        <div style={{ position: "absolute", inset: 0, borderRadius: 12, overflow: "hidden" }}>
+        <div style={{ position: "absolute", inset: 0, borderRadius: "20px 20px 0 0", overflow: "hidden" }}>
           {!imgError ? (
             <Image
               src={item.image}
@@ -213,8 +210,8 @@ const FoodCard = ({
         {/* ADD Button (Floating) */}
         <div style={{
           position: "absolute",
-          bottom: -10,
-          right: 8,
+          bottom: -12,
+          right: 12,
           zIndex: 10
         }} onClick={e => e.stopPropagation()}>
           {cartItem ? (
@@ -261,7 +258,7 @@ const FoodCard = ({
       </div>
 
       {/* Card Body */}
-      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "2px 4px 0 4px" }}>
+      <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 12px 14px 12px" }}>
         
         {/* Price Row */}
         <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
@@ -310,10 +307,6 @@ const FoodCard = ({
           {item.name}
         </div>
 
-        {/* Portion / Info */}
-        <div style={{ fontSize: "0.75rem", color: "#64748B", marginBottom: 6 }}>
-          1 portion
-        </div>
 
         {/* Category Pill */}
         {item.section && (

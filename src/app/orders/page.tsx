@@ -126,7 +126,7 @@ export default function OrdersPage() {
                   {categories.map((cat, i) => {
                     const bg = CAT_COLORS[i % CAT_COLORS.length];
                     const emoji = CAT_EMOJI[cat.toLowerCase()] || "📦";
-                    const catItem = menuItems.find(item => item.category === cat && item.image);
+                    const catItem = rawMenuItems.find(item => item.category === cat && item.image);
 
                     return (
                       <Link

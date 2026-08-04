@@ -468,9 +468,8 @@ export default function GlobalSidebar() {
           <div className="gsb-section-dot" />
           Account
         </div>
-        <SidebarItem href="/track" icon={<MapPin size={17} />} label="Track Order" active={pathname.startsWith("/track")} />
+        <SidebarItem href="/orders" icon={<MapPin size={17} />} label="Track Order" active={pathname.startsWith("/orders")} />
         <SidebarItem href="/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/offers")} />
-        <SidebarItem href="/settings" icon={<Settings size={17} />} label="Settings" active={pathname.startsWith("/settings")} />
         <SidebarItem href="/support" icon={<HelpCircle size={17} />} label="Help & Support" active={pathname.startsWith("/support")} />
 
         {/* ADMIN GROUP */}
