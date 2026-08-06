@@ -176,8 +176,13 @@ export default function MenuPage() {
 
   // Group menu by category for the "All" sectioned view
   const byCategory = useMemo(() => {
-    const cats = ["coffee", "snacks", "meals", "drinks", "desserts"];
-    return cats.map(cat => ({
+    const PRIORITY = ["coffee", "snacks", "meals", "drinks", "desserts"];
+    const allCats = Array.from(new Set(menu.map(i => i.category)));
+    const ordered = [
+      ...PRIORITY.filter(c => allCats.includes(c)),
+      ...allCats.filter(c => !PRIORITY.includes(c)),
+    ];
+    return ordered.map(cat => ({
       cat,
       items: menu.filter(i => i.category === cat),
     })).filter(g => g.items.length > 0);

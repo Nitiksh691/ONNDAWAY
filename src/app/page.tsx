@@ -477,21 +477,30 @@ export default function HomePage() {
             </div>
           ) : layoutMode === "grid" && selectedCategory === "all" ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-              {categories.filter(c => c !== "all").map(cat => {
-                const catItems = fullMenuItems.filter(i => i.category === cat);
-                if (catItems.length === 0) return null;
-                return (
-                  <HSliderSection
-                    key={cat}
-                    title={cat}
-                    emoji={CAT_EMOJI[cat] || "📦"}
-                    items={catItems}
-                    cart={cart}
-                    onAdd={addToCart}
-                    onUpdateQuantity={updateQuantity}
-                  />
-                );
-              })}
+              {(() => {
+                // Priority order: coffee always first, then rest in appearance order
+                const PRIORITY = ["coffee", "snacks", "meals", "drinks", "desserts"];
+                const allCats = categories.filter(c => c !== "all");
+                const ordered = [
+                  ...PRIORITY.filter(c => allCats.includes(c)),
+                  ...allCats.filter(c => !PRIORITY.includes(c)),
+                ];
+                return ordered.map(cat => {
+                  const catItems = fullMenuItems.filter(i => i.category === cat);
+                  if (catItems.length === 0) return null;
+                  return (
+                    <HSliderSection
+                      key={cat}
+                      title={cat}
+                      emoji={CAT_EMOJI[cat] || "📦"}
+                      items={catItems}
+                      cart={cart}
+                      onAdd={addToCart}
+                      onUpdateQuantity={updateQuantity}
+                    />
+                  );
+                });
+              })()}
             </div>
           ) : layoutMode === "grid" ? (
             <div className="menu-grid-sq">
