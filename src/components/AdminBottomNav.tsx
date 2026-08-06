@@ -28,7 +28,7 @@ export default function AdminBottomNav() {
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    e.target.setPointerCapture(e.pointerId);
+    (e.target as Element).setPointerCapture(e.pointerId);
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,

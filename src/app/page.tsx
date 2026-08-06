@@ -143,7 +143,7 @@ export default function HomePage() {
   }, []);
 
   const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu();
-  const availableItems = useMemo(() => (rawMenuItems || []).filter(i => i.available), [rawMenuItems]);
+  const availableItems = useMemo(() => (Array.isArray(rawMenuItems) ? rawMenuItems : []).filter((i: any) => i.available), [rawMenuItems]);
   
   useEffect(() => {
     if (availableItems.length > 0) {

@@ -53,6 +53,7 @@ export default function ActiveOrderWidget() {
     window.addEventListener("otw:active-order", onActiveOrder);
 
     // Listen for real-time order changes via SSE instead of polling
+    let timeoutId: NodeJS.Timeout;
     let eventSource: EventSource;
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
@@ -64,13 +65,14 @@ export default function ActiveOrderWidget() {
       };
       eventSource.onerror = () => {
         eventSource.close();
-        setTimeout(setupSSE, 5000);
+        timeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
 
     return () => {
       if (eventSource) eventSource.close();
+      if (timeoutId) clearTimeout(timeoutId);
       window.removeEventListener("otw:active-order", onActiveOrder);
     };
   }, [load]);

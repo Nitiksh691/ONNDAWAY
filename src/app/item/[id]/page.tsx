@@ -69,14 +69,15 @@ export default function ItemPage() {
           background: #ffffff;
           border: 1px solid #E2E8F0;
           border-radius: 12px;
-          padding: 24px;
+          padding: 8px;
           position: relative;
-          aspect-ratio: 4/3;
+          aspect-ratio: 1 / 1;
           display: flex;
           align-items: center;
           justify-content: center;
           margin-bottom: 12px;
           box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          overflow: hidden;
         }
         .gallery-box img {
           object-fit: contain;
@@ -344,7 +345,7 @@ export default function ItemPage() {
           .mobile-only { display: flex !important; }
           
           .title-text { font-size: 1.8rem; }
-          .gallery-box { padding: 16px; aspect-ratio: 4/3; }
+          .gallery-box { padding: 8px; aspect-ratio: 1/1; }
           .thumbs-row { justify-content: flex-start; }
           
           .mobile-sticky-bar {
@@ -375,12 +376,12 @@ export default function ItemPage() {
           <div>
             <div className="gallery-box">
               <div className="zoom-icon"><Search size={18} /></div>
-              <Image src={images[activeImageIndex]} alt={item.name} fill style={{ objectFit: "contain", padding: 32 }} priority />
+              <Image src={images[activeImageIndex]} alt={item.name} fill style={{ objectFit: "contain" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
             </div>
             <div className="thumbs-row">
               {images.map((img, idx) => (
                 <div key={idx} className={`thumb-box ${activeImageIndex === idx ? "active" : ""}`} onClick={() => setActiveImageIndex(idx)}>
-                  <Image src={img} alt={`${item.name} thumb`} width={50} height={50} style={{ objectFit: "contain" }} />
+                  <Image src={img} alt={`${item.name} thumb`} width={50} height={50} style={{ objectFit: "cover" }} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
                 </div>
               ))}
             </div>
@@ -414,7 +415,7 @@ export default function ItemPage() {
             <div className="qty-row desktop-only">
               <span className="qty-label">QUANTITY:</span>
               <div className="qty-control">
-                {cartItem ? (
+                {(cartItem && !item.isLaunchingSoon) ? (
                   <>
                     <button className="qty-btn" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={14} /></button>
                     <div className="qty-val">{cartItem.quantity}</div>
@@ -424,7 +425,7 @@ export default function ItemPage() {
                   <>
                     <button className="qty-btn" disabled style={{ opacity: 0.3 }}><Minus size={14} /></button>
                     <div className="qty-val">0</div>
-                    <button className="qty-btn" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added!"); }}><Plus size={14} /></button>
+                    <button className="qty-btn" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added!"); }} disabled={item.isLaunchingSoon} style={{ opacity: item.isLaunchingSoon ? 0.3 : 1 }}><Plus size={14} /></button>
                   </>
                 )}
               </div>

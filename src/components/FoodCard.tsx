@@ -68,7 +68,7 @@ const FoodCard = ({
         {/* Image — square */}
         <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
           {!imgError ? (
-            <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} />
+            <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
           ) : (
             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem" }}>
               {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
@@ -113,7 +113,7 @@ const FoodCard = ({
             <div style={{ fontWeight: 900, fontSize: "1rem", color: "#0f172a", lineHeight: 1 }}>₹{item.price}</div>
           </div>
 
-          {cartItem ? (
+          {(cartItem && !item.isLaunchingSoon) ? (
             <div style={{ display: "flex", alignItems: "center", gap: 5 }} onClick={e => e.stopPropagation()}>
               <button
                 onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
@@ -173,6 +173,8 @@ const FoodCard = ({
               sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
               style={{ objectFit: "cover" }}
               onError={() => setImgError(true)}
+              onContextMenu={e => e.preventDefault()}
+              onDragStart={e => e.preventDefault()}
             />
           ) : (
             <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem" }}>
@@ -199,7 +201,7 @@ const FoodCard = ({
           </div>
         )}
         {item.isLaunchingSoon && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(16, 185, 129, 0.8)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
             Launching<br/>Soon
           </div>
         )}
@@ -214,7 +216,7 @@ const FoodCard = ({
           right: 12,
           zIndex: 10
         }} onClick={e => e.stopPropagation()}>
-          {cartItem ? (
+          {(cartItem && !item.isLaunchingSoon) ? (
             <div style={{
               display: "flex", alignItems: "center",
               background: "var(--primary)",
