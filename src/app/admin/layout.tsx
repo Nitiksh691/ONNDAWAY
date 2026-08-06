@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
+import { useSSEWithFallback } from "@/lib/useSSEWithFallback";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -382,56 +383,49 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })
       .catch(() => {});
 
-    let eventSource: EventSource | null = null;
-    let sseTimeoutId: NodeJS.Timeout;
-
-    const setupSSE = () => {
-      eventSource = new EventSource("/api/orders/stream");
-
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          
-          if (data.type === "orders_update") {
-            const unconfirmed = data.count;
-            if (unconfirmed > prevPendingRef.current) {
-              playAlarmBeep();
-            }
-            prevPendingRef.current = unconfirmed;
-            setPendingCount(unconfirmed);
-          }
-        } catch (e) {
-          // ignore parsing errors
-        }
-      };
-
-      eventSource.onerror = () => {
-        eventSource?.close();
-        // Try to reconnect after 5s
-        sseTimeoutId = setTimeout(setupSSE, 5000);
-      };
-    };
-
-    const fetchInitialCount = async () => {
+    const fetchPendingCount = async () => {
       try {
         const res = await fetch("/api/orders?status=placed");
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
           prevPendingRef.current = unconfirmed;
           setPendingCount(unconfirmed);
         }
       } catch (e) {}
     };
 
-    fetchInitialCount();
-    setupSSE();
-
-    return () => {
-      if (eventSource) eventSource.close();
-      if (sseTimeoutId) clearTimeout(sseTimeoutId);
-    };
+    fetchPendingCount();
   }, [authorized]);
+
+  // SSE with automatic polling fallback for pending order badge
+  useSSEWithFallback(
+    useCallback(async () => {
+      if (!authorized) return;
+      try {
+        const res = await fetch("/api/orders?status=placed");
+        if (res.ok) {
+          const data = await res.json();
+          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
+          prevPendingRef.current = unconfirmed;
+          setPendingCount(unconfirmed);
+        }
+      } catch (e) {}
+    }, [authorized]),
+    {
+      onMessage: useCallback((data: any) => {
+        if (data.type === "orders_update") {
+          const unconfirmed = data.count;
+          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
+          prevPendingRef.current = unconfirmed;
+          setPendingCount(unconfirmed);
+        }
+      }, []),
+      pollIntervalMs: 8000,
+    }
+  );
 
   const handleLogout = () => {
     localStorage.removeItem(STORAGE_KEYS.adminAuthorized);

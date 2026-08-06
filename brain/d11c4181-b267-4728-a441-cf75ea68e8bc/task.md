@@ -4,14 +4,17 @@
   - `[x]` Update `app/admin/menu/page.tsx` to add "Display Order / Position" input to edit dialog
   - `[x]` Update `app/page.tsx` to sort `fullMenuItems` by `sortOrder`
   - `[x]` Update `app/menu/page.tsx` to sort `menu` items by `sortOrder`
-- `[ ]` 2. Fix Server-Sent Events (SSE) Memory Leaks & Network Spam
-  - `[ ]` Add `clearTimeout` to `app/track/[orderId]/page.tsx`
-  - `[ ]` Add `clearTimeout` to `app/cart/page.tsx`
-  - `[ ]` Add `clearTimeout` to `app/delivery/dashboard/page.tsx`
-  - `[ ]` Add `clearTimeout` to `app/admin/page.tsx`
-  - `[ ]` Add `clearTimeout` to `app/admin/orders/page.tsx`
-  - `[ ]` Add `clearTimeout` to `app/admin/layout.tsx`
-- `[ ]` 3. Fix React Performance Warnings & State Cascading
-  - `[ ]` Refactor `lib/context.tsx` to remove synchronous `setState` in `useEffect` during component mount
-- `[ ]` 4. Cleanup Unused Imports
-  - `[ ]` Remove unused `mongoose` and `models` imports across `src/models/*.ts`
+- `[x]` 2. Fix Server-Sent Events (SSE) Memory Leaks & Network Spam
+  - `[x]` Add `clearTimeout` to `app/track/[orderId]/page.tsx`
+  - `[x]` Add `clearTimeout` to `app/cart/page.tsx`
+  - `[x]` Add `clearTimeout` to `app/delivery/dashboard/page.tsx`
+  - `[x]` Add `clearTimeout` to `app/admin/page.tsx`
+  - `[x]` Add `clearTimeout` to `app/admin/orders/page.tsx`
+  - `[x]` Add `clearTimeout` to `app/admin/layout.tsx`
+- `[x]` 3. Remove unused imports
+  - `[x]` Remove unused `mongoose` imports across all model files
+  - `[x]` Fix `InternApplication.ts` and `Settings.ts` to use imported `models` instead of `mongoose.models`
+- `[x]` 4. Widen category type to support custom categories like Matcha
+  - `[x]` Remove hardcoded enum from `models/MenuItem.ts`
+  - `[x]` Change `category` in `lib/types.ts` from narrow union to `string`
+- `[x]` 5. TypeScript clean build confirmed — `tsc --noEmit` passes with 0 errors

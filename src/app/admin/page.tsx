@@ -1,5 +1,6 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { useSSEWithFallback } from "@/lib/useSSEWithFallback";
 import { Order } from "@/lib/types";
 import { TrendingUp, Package, Users, DollarSign, Activity, Tag, Plus, Trash2, Upload, ChevronUp, ChevronDown, ToggleLeft, ToggleRight } from "lucide-react";
 
@@ -85,22 +86,25 @@ export default function AdminDashboard() {
       }
     };
     fetchStats();
-    // Analytics are cached server-side; only re-fetch on order changes via SSE
-    let eventSource: EventSource;
-    let sseTimeoutId: NodeJS.Timeout;
-    const setupSSE = () => {
-      eventSource = new EventSource("/api/orders/stream");
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "order_change") fetchStats();
-        } catch (e) { }
-      };
-      eventSource.onerror = () => { eventSource.close(); sseTimeoutId = setTimeout(setupSSE, 5000); };
-    };
-    setupSSE();
-    return () => { if (eventSource) eventSource.close(); if (sseTimeoutId) clearTimeout(sseTimeoutId); };
   }, []);
+
+  // SSE with automatic polling fallback when MongoDB is unavailable
+  const stableFetchStats = useCallback(() => {
+    fetch("/api/admin/analytics")
+      .then(res => res.ok ? res.json() : null)
+      .then(data => { if (data) setData(data); })
+      .catch(() => {});
+  }, []);
+
+  useSSEWithFallback(
+    stableFetchStats,
+    {
+      onMessage: useCallback((data: any) => {
+        if (data.type === "order_change") stableFetchStats();
+      }, [stableFetchStats]),
+      pollIntervalMs: 10000,
+    }
+  );
 
   const handleImageUpload = async (file: File, idx: number, isBento?: boolean, bentoPos?: number) => {
     const uploadId = isBento ? `bento_${bentoPos}_${idx}` : `single_${idx}`;

@@ -1,9 +1,10 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import useSWR from "swr";
 import { useDebounce } from "use-debounce";
 import { Order, DeliveryPerson, CartItem } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
+import { useSSEWithFallback } from "@/lib/useSSEWithFallback";
 import { Search, Filter, Phone, MapPin, Truck, CheckSquare, Square, Users, Bell, CheckCircle, Clock, Package, ChevronDown, ChevronUp, MessageCircle } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -167,31 +168,16 @@ export default function AdminOrdersPage() {
     prevPlacedIds.current = currentPlacedIds;
   }, [orders]);
 
-  useEffect(() => {
-    let eventSource: EventSource;
-    let sseTimeoutId: NodeJS.Timeout;
-    const setupSSE = () => {
-      eventSource = new EventSource("/api/orders/stream");
-      eventSource.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "order_change") {
-            mutateOrders();
-          }
-        } catch (e) {}
-      };
-      eventSource.onerror = () => {
-        eventSource.close();
-        sseTimeoutId = setTimeout(setupSSE, 5000);
-      };
-    };
-    setupSSE();
-    return () => {
-      if (eventSource) eventSource.close();
-      if (sseTimeoutId) clearTimeout(sseTimeoutId);
-      if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
-    };
-  }, [mutateOrders]);
+  // SSE with automatic polling fallback when MongoDB is unavailable
+  useSSEWithFallback(
+    useCallback(() => mutateOrders(), [mutateOrders]),
+    {
+      onMessage: useCallback((data: any) => {
+        if (data.type === "order_change") mutateOrders();
+      }, [mutateOrders]),
+      pollIntervalMs: 8000,
+    }
+  );
 
   const handleConfirmOrder = async (orderId: string) => {
     setConfirmingId(orderId);
