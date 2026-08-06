@@ -1,32 +1,70 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, ShoppingBag, Utensils, Settings, BarChart2, Maximize, Minimize } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Utensils, Settings, BarChart2, GripHorizontal, ChevronRight, ChevronLeft } from "lucide-react";
 
 export default function AdminBottomNav() {
   const pathname = usePathname();
-  const [navMode, setNavMode] = useState<"flowing" | "attached">("flowing");
+  const [isSqueezed, setIsSqueezed] = useState(false);
+  const [position, setPosition] = useState({ x: 20, y: window?.innerHeight - 100 || 600 });
+  const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const dragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number } | null>(null);
 
   useEffect(() => {
     setMounted(true);
-    const saved = localStorage.getItem("adminNavMode");
-    if (saved === "flowing" || saved === "attached") {
-      setNavMode(saved);
-    }
+    const savedSqueezed = localStorage.getItem("adminNavSqueezed");
+    if (savedSqueezed === "true") setIsSqueezed(true);
+    
+    // Initial position center-bottom
+    setPosition({ x: window.innerWidth / 2 - 150, y: window.innerHeight - 100 });
   }, []);
 
-  const toggleMode = () => {
-    const newMode = navMode === "flowing" ? "attached" : "flowing";
-    setNavMode(newMode);
-    localStorage.setItem("adminNavMode", newMode);
+  const toggleSqueeze = () => {
+    const newSqueezed = !isSqueezed;
+    setIsSqueezed(newSqueezed);
+    localStorage.setItem("adminNavSqueezed", newSqueezed.toString());
   };
 
-  // Only render on admin pages, but not if it's SSR phase (to avoid hydration mismatch)
-  if (!mounted || !pathname?.startsWith("/admin")) return null;
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.target.setPointerCapture(e.pointerId);
+    setIsDragging(true);
+    dragRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      initialX: position.x,
+      initialY: position.y
+    };
+  };
 
-  const isFlowing = navMode === "flowing";
+  const handlePointerMove = (e: React.PointerEvent) => {
+    if (!isDragging || !dragRef.current) return;
+    const dx = e.clientX - dragRef.current.startX;
+    const dy = e.clientY - dragRef.current.startY;
+    
+    // Basic bounds checking
+    let newX = dragRef.current.initialX + dx;
+    let newY = dragRef.current.initialY + dy;
+    
+    // clamp to window size roughly
+    const maxX = window.innerWidth - (isSqueezed ? 60 : 350);
+    const maxY = window.innerHeight - 80;
+    if (newX < 0) newX = 0;
+    if (newX > maxX) newX = maxX;
+    if (newY < 0) newY = 0;
+    if (newY > maxY) newY = maxY;
+
+    setPosition({ x: newX, y: newY });
+  };
+
+  const handlePointerUp = (e: React.PointerEvent) => {
+    e.target.releasePointerCapture(e.pointerId);
+    setIsDragging(false);
+    dragRef.current = null;
+  };
+
+  if (!mounted || !pathname?.startsWith("/admin")) return null;
 
   const links = [
     { href: "/admin", icon: LayoutDashboard, label: "Dash" },
@@ -37,75 +75,96 @@ export default function AdminBottomNav() {
   ];
 
   return (
-    <div style={{
-      position: "fixed",
-      bottom: isFlowing ? "20px" : "0",
-      left: "50%",
-      transform: "translateX(-50%)",
-      zIndex: 9999,
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-      background: "rgba(255, 255, 255, 0.95)",
-      backdropFilter: "blur(12px)",
-      padding: isFlowing ? "10px 16px" : "12px 24px",
-      borderRadius: isFlowing ? "999px" : "20px 20px 0 0",
-      border: "1px solid #E2E8F0",
-      borderBottom: isFlowing ? "1px solid #E2E8F0" : "none",
-      boxShadow: isFlowing ? "0 10px 30px rgba(0,0,0,0.1)" : "0 -4px 20px rgba(0,0,0,0.05)",
-      width: isFlowing ? "auto" : "100%",
-      maxWidth: isFlowing ? "auto" : "800px",
-      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-    }}>
-      {links.map((link) => {
-        const isActive = pathname === link.href || (link.href !== "/admin" && pathname?.startsWith(link.href));
-        return (
-          <Link
-            key={link.href}
-            href={link.href}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "4px",
-              padding: isFlowing ? "8px 12px" : "6px 16px",
-              borderRadius: "12px",
-              textDecoration: "none",
-              color: isActive ? "#0135FB" : "#64748B",
-              background: isActive ? "#EEF1FF" : "transparent",
-              transition: "all 0.2s",
-              minWidth: "60px",
-            }}
-          >
-            <link.icon size={20} strokeWidth={isActive ? 2.5 : 2} />
-            <span style={{ fontSize: "0.65rem", fontWeight: isActive ? 800 : 600 }}>
-              {link.label}
-            </span>
-          </Link>
-        );
-      })}
+    <div 
+      style={{
+        position: "fixed",
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        gap: "4px",
+        background: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(12px)",
+        padding: "8px",
+        borderRadius: "999px",
+        border: "1px solid #E2E8F0",
+        boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
+        transition: isDragging ? "none" : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        touchAction: "none"
+      }}
+    >
+      {/* Drag Handle */}
+      <div 
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
+        style={{
+          cursor: "grab",
+          padding: "8px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "#94A3B8",
+          borderRadius: "50%",
+          touchAction: "none"
+        }}
+        title="Drag me"
+      >
+        <GripHorizontal size={18} />
+      </div>
 
-      <div style={{ width: "1px", height: "30px", background: "#E2E8F0", margin: "0 4px" }} />
+      {!isSqueezed && (
+        <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+          {links.map((link) => {
+            const isActive = pathname === link.href || (link.href !== "/admin" && pathname?.startsWith(link.href));
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  gap: "2px",
+                  padding: "6px 10px",
+                  borderRadius: "12px",
+                  textDecoration: "none",
+                  color: isActive ? "#0135FB" : "#64748B",
+                  background: isActive ? "#EEF1FF" : "transparent",
+                  transition: "all 0.2s",
+                }}
+              >
+                <link.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
+                <span style={{ fontSize: "0.6rem", fontWeight: isActive ? 800 : 600 }}>
+                  {link.label}
+                </span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
 
+      {/* Squeeze Toggle */}
       <button
-        onClick={toggleMode}
-        title={`Switch to ${isFlowing ? "Attached" : "Flowing"} Navigation`}
+        onClick={toggleSqueeze}
+        title={isSqueezed ? "Expand" : "Squeeze"}
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "transparent",
+          background: "#EEF1FF",
           border: "none",
-          color: "#94A3B8",
+          color: "#0135FB",
           cursor: "pointer",
           padding: "8px",
           borderRadius: "50%",
           transition: "all 0.2s",
+          marginLeft: isSqueezed ? 0 : "4px"
         }}
-        onMouseEnter={(e) => { e.currentTarget.style.color = "#0F172A"; e.currentTarget.style.background = "#F1F5F9"; }}
-        onMouseLeave={(e) => { e.currentTarget.style.color = "#94A3B8"; e.currentTarget.style.background = "transparent"; }}
       >
-        {isFlowing ? <Maximize size={18} /> : <Minimize size={18} />}
+        {isSqueezed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </button>
     </div>
   );

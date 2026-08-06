@@ -48,7 +48,22 @@ export default function CartPage() {
     fetch(`/api/orders/${activeId}`)
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data?.confirmed) setIsConfirmed(true); })
-      .catch(() => {});
+      .catch(() => { });
+  }, []);
+
+  // Pre-fill location from storage
+  useEffect(() => {
+    const saved = localStorage.getItem("otw_delivery_location");
+    if (saved) {
+      if (saved.includes("(Near ")) {
+        const parts = saved.split("(Near ");
+        setLocation(parts[0].trim());
+        const landmarkPart = parts[1].split(")")[0].trim();
+        setLocationNotes(landmarkPart);
+      } else {
+        setLocation(saved.replace("[GPS attached]", "").trim());
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -148,7 +163,7 @@ export default function CartPage() {
 
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "Idempotency-Key": idempotencyKey
         },
@@ -162,7 +177,7 @@ export default function CartPage() {
         throw new Error("Failed to place order");
       }
       const orderResult = await res.json();
-      
+
       // Rotate idempotency key on success
       setIdempotencyKey(crypto.randomUUID());
 
@@ -198,7 +213,7 @@ export default function CartPage() {
                 }
               }
             }
-          } catch (e) {}
+          } catch (e) { }
         };
       };
       setupSSE();
@@ -492,7 +507,7 @@ export default function CartPage() {
 
               <div style={{ gridColumn: "1 / -1" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
-                  <label style={{ ...labelStyle, marginBottom: 0 }}>Delivery Address</label>
+                  <label style={{ ...labelStyle, marginBottom: 0 }}>Exact Campus Location</label>
                   <button type="button" onClick={() => {
                     if (navigator.geolocation) {
                       setIsGpsLoading(true);
@@ -511,7 +526,7 @@ export default function CartPage() {
                               addrStr = [localArea, city].filter(Boolean).join(", ");
                             }
                             if (!addrStr) addrStr = data?.display_name?.split(",")[0] || `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-                            
+
                             setLocation(addrStr);
                             toast.success("Location found!", { id: "gps" });
                           } catch {
@@ -520,7 +535,7 @@ export default function CartPage() {
                           } finally {
                             setIsGpsLoading(false);
                           }
-                        }, 
+                        },
                         err => {
                           setIsGpsLoading(false);
                           const msg = err.code === 1 ? "Location access denied. Please enable in settings." : err.code === 3 ? "Location request timed out." : "Failed to get precise location.";
@@ -536,8 +551,18 @@ export default function CartPage() {
                     {isGpsLoading ? "Locating..." : "Use GPS"}
                   </button>
                 </div>
-                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. 123 Main St, Apt 4B" value={location} onChange={e => setLocation(e.target.value)} />
+                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Civil Dept, 2nd Floor, Room 204" value={location} onChange={e => setLocation(e.target.value)} />
               </div>
+
+
+
+
+
+              <div style={{ gridColumn: "1 / -1" }}>
+                <label style={labelStyle}>Nearby Landmark (Optional)</label>
+                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Near Main Canteen, Next to Library" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
+              </div>
+
 
               <div>
                 <label style={labelStyle}>Scheduled Time</label>
@@ -556,13 +581,6 @@ export default function CartPage() {
                     )}
                   </div>
                 )}
-              </div>
-
-
-
-              <div style={{ gridColumn: "1 / -1" }}>
-                <label style={labelStyle}>Delivery Notes (optional)</label>
-                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Gate 2, call when you arrive, room 204" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
               </div>
             </div>
 

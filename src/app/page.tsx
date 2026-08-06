@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useMemo, useDeferredValue } from "react";
+import React, { useState, useEffect, useMemo, useDeferredValue } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Search, LayoutGrid, List, ChevronRight } from "lucide-react";
@@ -34,9 +34,25 @@ function HSliderSection({
   onAdd: any;
   onUpdateQuantity: any;
 }) {
+  const scrollRef = React.useRef<HTMLDivElement>(null);
+
+  // Use CSS animation instead of JS scroll for better mobile support
+  React.useEffect(() => {
+    // keeping effect hook just in case, but empty
+  }, []);
+
   if (items.length === 0) return null;
   return (
-    <section style={{ marginBottom: 36 }}>
+    <section style={{ marginBottom: 36, overflow: "hidden" }}>
+      <style>{`
+        @keyframes nudge-left {
+          0%, 100% { transform: translateX(0); }
+          50% { transform: translateX(-35px); }
+        }
+        .nudge-anim {
+          animation: nudge-left 1s ease-in-out 0.8s;
+        }
+      `}</style>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
         marginBottom: 14, padding: "0 2px",
@@ -59,7 +75,10 @@ function HSliderSection({
       </div>
 
       {/* Horizontal scroll strip */}
-      <div style={{
+      <div 
+        ref={scrollRef}
+        className="nudge-anim"
+        style={{
         display: "flex", gap: 14, overflowX: "auto",
         paddingBottom: 10, WebkitOverflowScrolling: "touch",
         scrollbarWidth: "none", msOverflowStyle: "none",
@@ -124,7 +143,7 @@ export default function HomePage() {
   }, []);
 
   const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu();
-  const availableItems = useMemo(() => rawMenuItems.filter(i => i.available), [rawMenuItems]);
+  const availableItems = useMemo(() => (rawMenuItems || []).filter(i => i.available), [rawMenuItems]);
   
   useEffect(() => {
     if (availableItems.length > 0) {

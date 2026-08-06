@@ -1,35 +1,9 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Navigation, X, ChevronDown, Search } from "lucide-react";
-
-// All supported Rohini delivery areas
-const ROHINI_AREAS = [
-  { label: "Rohini Sector 1", pincode: "110085" },
-  { label: "Rohini Sector 3", pincode: "110085" },
-  { label: "Rohini Sector 5", pincode: "110085" },
-  { label: "Rohini Sector 7", pincode: "110085" },
-  { label: "Rohini Sector 8", pincode: "110085" },
-  { label: "Rohini Sector 9", pincode: "110085" },
-  { label: "Rohini Sector 10", pincode: "110085" },
-  { label: "Rohini Sector 11", pincode: "110085" },
-  { label: "Rohini Sector 13", pincode: "110086" },
-  { label: "Rohini Sector 14", pincode: "110086" },
-  { label: "Rohini Sector 15", pincode: "110089" },
-  { label: "Rohini Sector 16", pincode: "110089" },
-  { label: "Rohini Sector 17", pincode: "110089" },
-  { label: "Rohini Sector 18", pincode: "110089" },
-  { label: "Rohini Sector 24", pincode: "110085" },
-  { label: "Rohini Sector 25", pincode: "110085" },
-  { label: "Prashant Vihar", pincode: "110085" },
-  { label: "Pitampura", pincode: "110034" },
-  { label: "Shalimar Bagh", pincode: "110088" },
-  { label: "Saraswati Vihar", pincode: "110034" },
-  { label: "Mangolpuri", pincode: "110083" },
-  { label: "Pocket 1, Rohini", pincode: "110085" },
-  { label: "Pocket 2, Rohini", pincode: "110085" },
-];
+import { MapPin, Navigation, X, ChevronDown, Building2, Map, Plus, Clock } from "lucide-react";
 
 const STORAGE_KEY = "otw_delivery_location";
+const HISTORY_KEY = "otw_saved_locations";
 
 export function useDeliveryLocation() {
   const [location, setLocationState] = useState<string | null>(null);
@@ -42,6 +16,15 @@ export function useDeliveryLocation() {
   const saveLocation = useCallback((loc: string) => {
     localStorage.setItem(STORAGE_KEY, loc);
     setLocationState(loc);
+
+    // Save to history
+    try {
+      const historyStr = localStorage.getItem(HISTORY_KEY);
+      let history = historyStr ? JSON.parse(historyStr) : [];
+      if (!Array.isArray(history)) history = [];
+      const newLocations = [loc, ...history.filter(l => l !== loc)].slice(0, 5);
+      localStorage.setItem(HISTORY_KEY, JSON.stringify(newLocations));
+    } catch (e) { }
   }, []);
 
   const clearLocation = useCallback(() => {
@@ -59,16 +42,61 @@ interface LocationModalProps {
 }
 
 export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [exactSpot, setExactSpot] = useState("");
+  const [landmark, setLandmark] = useState("");
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState("");
+  const [gpsCoordinates, setGpsCoordinates] = useState<string | null>(null);
+  const [view, setView] = useState<"list" | "form">("form");
+  const [savedLocations, setSavedLocations] = useState<string[]>([]);
 
-  const filteredAreas = ROHINI_AREAS.filter(a =>
-    a.label.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Reset form when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setExactSpot("");
+      setLandmark("");
+      setGeoError("");
+      setGpsCoordinates(null);
 
-  const handleSelect = (area: string) => {
-    onSave(area);
+      try {
+        const historyStr = localStorage.getItem(HISTORY_KEY);
+        if (historyStr) {
+          const history = JSON.parse(historyStr);
+          if (Array.isArray(history) && history.length > 0) {
+            setSavedLocations(history);
+            setView("list");
+          } else {
+            setView("form");
+          }
+        } else {
+          setView("form");
+        }
+      } catch (e) {
+        setView("form");
+      }
+    }
+  }, [isOpen]);
+
+  const handleSaveLocation = () => {
+    if (!exactSpot.trim()) {
+      alert("Please enter your exact spot (e.g. building, room).");
+      return;
+    }
+
+    let combined = exactSpot.trim();
+    if (landmark.trim()) {
+      combined += ` (Near ${landmark.trim()})`;
+    }
+    if (gpsCoordinates) {
+      combined += ` [GPS attached]`;
+    }
+
+    onSave(combined);
+    onClose();
+  };
+
+  const handleSelectSaved = (loc: string) => {
+    onSave(loc);
     onClose();
   };
 
@@ -80,45 +108,19 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
     setGeoLoading(true);
     setGeoError("");
     navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        try {
-          const { latitude, longitude } = pos.coords;
-          // Try multiple reverse geocoding approaches
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=16&addressdetails=1`,
-            { headers: { "Accept-Language": "en" } }
-          );
-          const data = await res.json();
-          let locationName = "";
-          if (data && data.address) {
-            const addr = data.address;
-            const localArea = addr.neighbourhood || addr.suburb || addr.residential || addr.village || addr.city_district || "";
-            const city = addr.city || addr.town || addr.state_district || "";
-            
-            // Format: "Neighborhood, City"
-            const parts = [];
-            if (localArea) parts.push(localArea);
-            if (city && city.toLowerCase() !== localArea.toLowerCase()) parts.push(city);
-            
-            locationName = parts.join(", ");
-          }
-          if (!locationName) locationName = data?.display_name?.split(",")[0] || "Your Location";
-          setGeoLoading(false);
-          onSave(locationName);
-          onClose();
-        } catch (e) {
-          setGeoLoading(false);
-          setGeoError("Could not get address. Please select your area below.");
-        }
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setGpsCoordinates(`${latitude},${longitude}`);
+        setGeoLoading(false);
       },
       (error) => {
         setGeoLoading(false);
         const msgs: Record<number, string> = {
           1: "Location access denied. Please enable it in browser settings.",
-          2: "Location unavailable. Try selecting manually.",
+          2: "Location unavailable. Try again.",
           3: "Location request timed out. Please try again.",
         };
-        setGeoError(msgs[error.code] || "Could not detect location. Please select manually.");
+        setGeoError(msgs[error.code] || "Could not detect location.");
       },
       { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
     );
@@ -127,146 +129,234 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "flex-end", justifyContent: "center" }}>
+    <div style={{ position: "fixed", inset: 0, zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center", padding: "16px" }}>
       {/* Backdrop */}
       <div
         onClick={onClose}
         style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.6)", backdropFilter: "blur(6px)" }}
       />
 
-      {/* Bottom Sheet */}
+      {/* Centered Modal */}
       <div style={{
-        position: "relative", width: "100%", maxWidth: "520px", zIndex: 10000,
-        background: "white", borderRadius: "24px 24px 0 0",
-        boxShadow: "0 -24px 60px rgba(0,0,0,0.2)",
-        animation: "loc-slide-up 0.3s cubic-bezier(0.16,1,0.3,1) both",
+        position: "relative", width: "100%", maxWidth: "480px", zIndex: 10000,
+        background: "white", borderRadius: "24px",
+        boxShadow: "0 24px 60px rgba(0,0,0,0.2)",
+        animation: "loc-fade-up 0.3s cubic-bezier(0.16,1,0.3,1) both",
         maxHeight: "85vh", display: "flex", flexDirection: "column",
       }}>
         <style>{`
-          @keyframes loc-slide-up {
-            from { transform: translateY(60px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+          @keyframes loc-fade-up {
+            from { transform: translateY(20px) scale(0.95); opacity: 0; }
+            to { transform: translateY(0) scale(1); opacity: 1; }
           }
         `}</style>
 
-        {/* Handle bar */}
-        <div style={{ width: 40, height: 4, borderRadius: 99, background: "#E5E7EB", margin: "12px auto 0" }} />
+
 
         {/* Header */}
-        <div style={{ padding: "20px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+        <div style={{ padding: "20px 24px 0", display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
           <div>
-            <h2 style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0A0F2E" }}>📍 Where are we delivering?</h2>
-            <p style={{ fontSize: "0.82rem", color: "#6B7280", marginTop: "4px" }}>
-              Serving Rohini's café lovers 🏡
+            <h2 style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0A0F2E" }}>
+              {view === "list" ? "📍 Choose Delivery Location" : "📍 Where exactly on campus?"}
+            </h2>
+            <p style={{ fontSize: "0.82rem", color: "#6B7280", marginTop: "4px", lineHeight: 1.4 }}>
+              {view === "list"
+                ? "Select a previous location or add a new one."
+                : "Tell us your specific department, building, or classroom so our rider can find you easily."}
             </p>
           </div>
           <button onClick={onClose} style={{
             width: 36, height: 36, borderRadius: "50%", border: "none",
             background: "#F3F4F6", display: "flex", alignItems: "center",
-            justifyContent: "center", cursor: "pointer", flexShrink: 0,
+            justifyContent: "center", cursor: "pointer", flexShrink: 0, marginLeft: "12px"
           }}>
             <X size={18} color="#6B7280" />
           </button>
         </div>
 
-        {/* Use Current Location button */}
-        <div style={{ padding: "16px 24px 0" }}>
-          <button
-            onClick={handleGeolocate}
-            disabled={geoLoading}
-            style={{
-              width: "100%", padding: "14px 18px", borderRadius: "12px",
-              border: "2px solid #0135FB", background: geoLoading ? "#EEF1FF" : "white",
-              color: "#0135FB", fontWeight: 700, fontSize: "0.9rem",
-              display: "flex", alignItems: "center", gap: "10px",
-              cursor: geoLoading ? "not-allowed" : "pointer",
-              transition: "all 0.2s", fontFamily: "inherit",
-            }}
-            onMouseEnter={e => { if (!geoLoading) (e.currentTarget as HTMLButtonElement).style.background = "#EEF1FF"; }}
-            onMouseLeave={e => { if (!geoLoading) (e.currentTarget as HTMLButtonElement).style.background = "white"; }}
-          >
-            <Navigation size={18} />
-            {geoLoading ? "Detecting location…" : "Use Current Location"}
-          </button>
-          {geoError && (
-            <p style={{ color: "#EF4444", fontSize: "0.78rem", marginTop: "8px", fontWeight: 600 }}>{geoError}</p>
-          )}
-        </div>
+        {/* Content */}
+        <div style={{ overflowY: "auto", padding: "20px 24px 24px", flex: 1 }}>
 
-        {/* Divider */}
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px 24px 0" }}>
-          <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
-          <span style={{ fontSize: "0.78rem", color: "#9CA3AF", fontWeight: 600 }}>OR SELECT AREA</span>
-          <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
-        </div>
-
-        {/* Search */}
-        <div style={{ padding: "12px 24px 0", position: "relative" }}>
-          <Search size={16} style={{ position: "absolute", left: 36, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
-          <input
-            type="text"
-            placeholder="Search Rohini area or sector…"
-            value={searchQuery}
-            onChange={e => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%", padding: "11px 14px 11px 38px", borderRadius: "10px",
-              border: "1.5px solid #E5E7EB", fontSize: "0.88rem", fontFamily: "inherit",
-              outline: "none", background: "#F9FAFB", color: "#0A0F2E",
-            }}
-            onFocus={e => (e.currentTarget.style.borderColor = "#0135FB")}
-            onBlur={e => (e.currentTarget.style.borderColor = "#E5E7EB")}
-          />
-        </div>
-
-        {/* Area List */}
-        <div style={{ overflowY: "auto", padding: "12px 24px 24px", flex: 1 }}>
-          {filteredAreas.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "32px 0", color: "#9CA3AF" }}>
-              <p style={{ fontSize: "0.9rem" }}>No areas match your search.</p>
-              <p style={{ fontSize: "0.8rem", marginTop: "6px" }}>
-                We currently serve selected areas of Rohini, Delhi.
-              </p>
-            </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
-              {filteredAreas.map(area => (
+          {view === "list" ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+              {savedLocations.map((loc, idx) => (
                 <button
-                  key={area.label}
-                  onClick={() => handleSelect(area.label)}
+                  key={idx}
+                  onClick={() => handleSelectSaved(loc)}
                   style={{
-                    display: "flex", alignItems: "center", gap: "12px",
-                    padding: "13px 16px", borderRadius: "10px", border: "none",
-                    background: "transparent", cursor: "pointer", textAlign: "left",
-                    width: "100%", transition: "background 0.15s", fontFamily: "inherit",
+                    display: "flex", alignItems: "flex-start", gap: "12px",
+                    padding: "16px", borderRadius: "14px", border: "1.5px solid #E5E7EB",
+                    background: "#F9FAFB", cursor: "pointer", textAlign: "left",
+                    transition: "all 0.2s", fontFamily: "inherit",
                   }}
-                  onMouseEnter={e => (e.currentTarget.style.background = "#F5F7FF")}
-                  onMouseLeave={e => (e.currentTarget.style.background = "transparent")}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.borderColor = "#0135FB";
+                    e.currentTarget.style.background = "#EEF1FF";
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.borderColor = "#E5E7EB";
+                    e.currentTarget.style.background = "#F9FAFB";
+                  }}
                 >
-                  <div style={{
-                    width: 34, height: 34, borderRadius: "50%",
-                    background: "#EEF1FF", display: "flex", alignItems: "center",
-                    justifyContent: "center", flexShrink: 0,
-                  }}>
-                    <MapPin size={16} color="#0135FB" />
-                  </div>
+                  <Clock size={20} color="#0135FB" style={{ flexShrink: 0, marginTop: "2px" }} />
                   <div>
-                    <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0A0F2E" }}>{area.label}</div>
-                    <div style={{ fontSize: "0.74rem", color: "#9CA3AF", marginTop: "1px" }}>Delhi · {area.pincode}</div>
+                    <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0A0F2E", lineHeight: 1.4 }}>
+                      {loc.split("(Near ")[0].replace("[GPS attached]", "").trim()}
+                    </div>
+                    {loc.includes("(Near ") && (
+                      <div style={{ fontSize: "0.8rem", color: "#6B7280", marginTop: "4px" }}>
+                        Landmark: {loc.split("(Near ")[1].split(")")[0]}
+                      </div>
+                    )}
+                    {loc.includes("[GPS attached]") && (
+                      <div style={{ fontSize: "0.75rem", color: "#16A34A", marginTop: "4px", fontWeight: 700 }}>
+                        ✓ GPS attached
+                      </div>
+                    )}
                   </div>
                 </button>
               ))}
+
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", margin: "8px 0" }}>
+                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
+                <span style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" }}>Or</span>
+                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
+              </div>
+
+              <button
+                onClick={() => setView("form")}
+                style={{
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  padding: "16px", borderRadius: "14px", border: "2px dashed #CBD5E1",
+                  background: "transparent", color: "#64748B", cursor: "pointer",
+                  fontWeight: 800, fontSize: "0.95rem", transition: "all 0.2s", fontFamily: "inherit"
+                }}
+                onMouseEnter={e => {
+                  e.currentTarget.style.borderColor = "#0135FB";
+                  e.currentTarget.style.color = "#0135FB";
+                  e.currentTarget.style.background = "#F8FAFC";
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.borderColor = "#CBD5E1";
+                  e.currentTarget.style.color = "#64748B";
+                  e.currentTarget.style.background = "transparent";
+                }}
+              >
+                <Plus size={18} />
+                Add Another Location
+              </button>
+            </div>
+          ) : (
+            <div>
+              {savedLocations.length > 0 && (
+                <button
+                  onClick={() => setView("list")}
+                  style={{
+                    background: "none", border: "none", color: "#0135FB", fontWeight: 700,
+                    fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "4px",
+                    marginBottom: "16px", padding: 0
+                  }}
+                >
+                  ← Back to saved locations
+                </button>
+              )}
+
+              {/* Exact Spot */}
+              <div style={{ marginBottom: "16px" }}>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 800, color: "#2A3060", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Exact Spot (Required)
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Building2 size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
+                  <input
+                    type="text"
+                    placeholder="e.g. Civil Dept, 2nd Floor, Room 204"
+                    value={exactSpot}
+                    onChange={e => setExactSpot(e.target.value)}
+                    style={{
+                      width: "100%", padding: "14px 14px 14px 40px", borderRadius: "12px",
+                      border: "1.5px solid #E5E7EB", fontSize: "0.95rem", fontFamily: "inherit",
+                      outline: "none", background: "#F9FAFB", color: "#0A0F2E",
+                      transition: "border-color 0.2s"
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = "#0135FB")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#E5E7EB")}
+                  />
+                </div>
+              </div>
+
+              {/* Landmark */}
+              <div style={{ marginBottom: "20px" }}>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 800, color: "#2A3060", marginBottom: "8px", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                  Nearby Landmark (Optional)
+                </label>
+                <div style={{ position: "relative" }}>
+                  <Map size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9CA3AF" }} />
+                  <input
+                    type="text"
+                    placeholder="e.g. Near Main Canteen, Next to Library"
+                    value={landmark}
+                    onChange={e => setLandmark(e.target.value)}
+                    style={{
+                      width: "100%", padding: "14px 14px 14px 40px", borderRadius: "12px",
+                      border: "1.5px solid #E5E7EB", fontSize: "0.95rem", fontFamily: "inherit",
+                      outline: "none", background: "#F9FAFB", color: "#0A0F2E",
+                      transition: "border-color 0.2s"
+                    }}
+                    onFocus={e => (e.currentTarget.style.borderColor = "#0135FB")}
+                    onBlur={e => (e.currentTarget.style.borderColor = "#E5E7EB")}
+                  />
+                </div>
+              </div>
+
+              {/* Divider */}
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
+                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
+                <span style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" }}>Or Pin Exact Location</span>
+                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
+              </div>
+
+              {/* GPS Button */}
+              <div style={{ marginBottom: "24px" }}>
+                <button
+                  onClick={handleGeolocate}
+                  disabled={geoLoading || !!gpsCoordinates}
+                  style={{
+                    width: "100%", padding: "14px 18px", borderRadius: "12px",
+                    border: gpsCoordinates ? "2px solid #22C55E" : "2px dashed #0135FB",
+                    background: gpsCoordinates ? "#F0FDF4" : (geoLoading ? "#EEF1FF" : "white"),
+                    color: gpsCoordinates ? "#16A34A" : "#0135FB", fontWeight: 700, fontSize: "0.9rem",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
+                    cursor: (geoLoading || !!gpsCoordinates) ? "default" : "pointer",
+                    transition: "all 0.2s", fontFamily: "inherit",
+                  }}
+                >
+                  <Navigation size={18} />
+                  {gpsCoordinates ? "Location Pinned! ✓" : (geoLoading ? "Detecting location…" : "Pin Current Location (Optional)")}
+                </button>
+                {geoError && (
+                  <p style={{ color: "#EF4444", fontSize: "0.78rem", marginTop: "8px", fontWeight: 600, textAlign: "center" }}>{geoError}</p>
+                )}
+              </div>
+
+              {/* Save Button */}
+              <button
+                onClick={handleSaveLocation}
+                disabled={!exactSpot.trim()}
+                style={{
+                  width: "100%", padding: "16px", borderRadius: "12px",
+                  background: exactSpot.trim() ? "#0135FB" : "#E5E7EB",
+                  color: exactSpot.trim() ? "white" : "#9CA3AF",
+                  border: "none", fontWeight: 900, fontSize: "1rem",
+                  cursor: exactSpot.trim() ? "pointer" : "not-allowed",
+                  boxShadow: exactSpot.trim() ? "0 4px 0 #0028D4" : "none",
+                  textTransform: "uppercase", letterSpacing: "1px", transition: "all 0.2s", fontFamily: "inherit"
+                }}
+              >
+                Confirm Location
+              </button>
             </div>
           )}
-
-          {/* Out of area note */}
-          <div style={{
-            marginTop: "16px", padding: "14px 16px", borderRadius: "10px",
-            background: "#FFFBEB", border: "1px solid #FDE68A",
-          }}>
-            <p style={{ fontSize: "0.78rem", color: "#92400E", lineHeight: 1.6, fontWeight: 600 }}>
-              📦 Don't see your area? We're expanding! Currently delivering across selected sectors of Rohini, Delhi.
-            </p>
-          </div>
         </div>
       </div>
     </div>
@@ -298,7 +388,7 @@ export function LocationButton({ location, onClick }: LocationButtonProps) {
     >
       <MapPin size={14} style={{ flexShrink: 0 }} />
       <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
-        {location ? location : "Delivering to?"}
+        {location ? location.split("(Near")[0].replace("[GPS attached]", "").trim() : "Delivering to?"}
       </span>
       <ChevronDown size={12} style={{ flexShrink: 0 }} />
     </button>

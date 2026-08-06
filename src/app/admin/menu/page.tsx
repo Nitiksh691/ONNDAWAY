@@ -248,11 +248,12 @@ export default function AdminMenuPage() {
                   <div>
                     <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Category</label>
                     <select className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} required>
-                      <option value="coffee">Coffee</option>
-                      <option value="snacks">Snacks</option>
-                      <option value="meals">Meals</option>
-                      <option value="drinks">Drinks</option>
-                      <option value="desserts">Desserts</option>
+                      <option value="Coffee">Coffee</option>
+                      {/* <option value="snacks">Snacks</option>
+                      <option value="meals">Meals</option> */}
+                      <option value="Drinks">Drinks</option>
+                      {/* <option value="desserts">Desserts</option> */}
+                      <option value="Mactha">Matcha</option>
                     </select>
                   </div>
                 </div>
