@@ -22,7 +22,7 @@ export function useDeliveryLocation() {
       const historyStr = localStorage.getItem(HISTORY_KEY);
       let history = historyStr ? JSON.parse(historyStr) : [];
       if (!Array.isArray(history)) history = [];
-      const newLocations = [loc, ...history.filter(l => l !== loc)].slice(0, 5);
+      const newLocations = [loc, ...history.filter((l: string) => l !== loc)].slice(0, 5);
       localStorage.setItem(HISTORY_KEY, JSON.stringify(newLocations));
     } catch (e) { }
   }, []);
