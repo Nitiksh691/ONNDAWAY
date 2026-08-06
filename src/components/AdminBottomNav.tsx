@@ -7,17 +7,18 @@ import { LayoutDashboard, ShoppingBag, Utensils, Settings, BarChart2, GripHorizo
 export default function AdminBottomNav() {
   const pathname = usePathname();
   const [isSqueezed, setIsSqueezed] = useState(false);
-  const [position, setPosition] = useState({ x: 20, y: window?.innerHeight - 100 || 600 });
+  const [position, setPosition] = useState({ x: 20, y: 600 });
   const [isDragging, setIsDragging] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const dragRef = useRef<{ startX: number, startY: number, initialX: number, initialY: number } | null>(null);
+  // Track whether the pointer has moved significantly (to block link clicks after a drag)
+  const dragRef = useRef<{ startX: number; startY: number; initialX: number; initialY: number } | null>(null);
+  const hasDragged = useRef(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setMounted(true);
     const savedSqueezed = localStorage.getItem("adminNavSqueezed");
     if (savedSqueezed === "true") setIsSqueezed(true);
-    
-    // Initial position center-bottom
     setPosition({ x: window.innerWidth / 2 - 150, y: window.innerHeight - 100 });
   }, []);
 
@@ -27,39 +28,43 @@ export default function AdminBottomNav() {
     localStorage.setItem("adminNavSqueezed", newSqueezed.toString());
   };
 
-  const handlePointerDown = (e: React.PointerEvent) => {
-    (e.target as Element).setPointerCapture(e.pointerId);
+  const handleGripPointerDown = (e: React.PointerEvent) => {
+    e.preventDefault();
+    // Capture on the container so move events don't get lost
+    containerRef.current?.setPointerCapture(e.pointerId);
+    hasDragged.current = false;
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,
       startY: e.clientY,
       initialX: position.x,
-      initialY: position.y
+      initialY: position.y,
     };
   };
 
   const handlePointerMove = (e: React.PointerEvent) => {
-    if (!isDragging || !dragRef.current) return;
+    if (!dragRef.current) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
-    
-    // Basic bounds checking
+
+    // Mark as dragged if moved more than 4px
+    if (Math.abs(dx) > 4 || Math.abs(dy) > 4) {
+      hasDragged.current = true;
+    }
+
     let newX = dragRef.current.initialX + dx;
     let newY = dragRef.current.initialY + dy;
-    
-    // clamp to window size roughly
     const maxX = window.innerWidth - (isSqueezed ? 60 : 350);
     const maxY = window.innerHeight - 80;
     if (newX < 0) newX = 0;
     if (newX > maxX) newX = maxX;
     if (newY < 0) newY = 0;
     if (newY > maxY) newY = maxY;
-
     setPosition({ x: newX, y: newY });
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    (e.target as Element).releasePointerCapture(e.pointerId);
+    containerRef.current?.releasePointerCapture(e.pointerId);
     setIsDragging(false);
     dragRef.current = null;
   };
@@ -75,7 +80,11 @@ export default function AdminBottomNav() {
   ];
 
   return (
-    <div 
+    <div
+      ref={containerRef}
+      onPointerMove={handlePointerMove}
+      onPointerUp={handlePointerUp}
+      onPointerCancel={handlePointerUp}
       style={{
         position: "fixed",
         left: `${position.x}px`,
@@ -90,39 +99,46 @@ export default function AdminBottomNav() {
         borderRadius: "999px",
         border: "1px solid #E2E8F0",
         boxShadow: "0 10px 30px rgba(0,0,0,0.15)",
-        transition: isDragging ? "none" : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-        touchAction: "none"
+        transition: isDragging ? "none" : "width 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+        touchAction: "none",
+        userSelect: "none",
+        cursor: isDragging ? "grabbing" : "default",
       }}
     >
       {/* Drag Handle */}
-      <div 
-        onPointerDown={handlePointerDown}
-        onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
-        onPointerCancel={handlePointerUp}
+      <div
+        onPointerDown={handleGripPointerDown}
         style={{
-          cursor: "grab",
+          cursor: isDragging ? "grabbing" : "grab",
           padding: "8px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           color: "#94A3B8",
           borderRadius: "50%",
-          touchAction: "none"
+          touchAction: "none",
+          flexShrink: 0,
         }}
-        title="Drag me"
+        title="Drag to move"
       >
         <GripHorizontal size={18} />
       </div>
 
       {!isSqueezed && (
-        <div style={{ display: "flex", alignItems: "center", gap: "6px", overflow: "hidden" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
           {links.map((link) => {
             const isActive = pathname === link.href || (link.href !== "/admin" && pathname?.startsWith(link.href));
             return (
               <Link
                 key={link.href}
                 href={link.href}
+                onClick={(e) => {
+                  // Block navigation if user was dragging
+                  if (hasDragged.current) {
+                    e.preventDefault();
+                    hasDragged.current = false;
+                  }
+                }}
                 style={{
                   display: "flex",
                   flexDirection: "column",
@@ -134,6 +150,7 @@ export default function AdminBottomNav() {
                   color: isActive ? "#0135FB" : "#64748B",
                   background: isActive ? "#EEF1FF" : "transparent",
                   transition: "all 0.2s",
+                  pointerEvents: isDragging ? "none" : "auto",
                 }}
               >
                 <link.icon size={18} strokeWidth={isActive ? 2.5 : 2} />
@@ -149,7 +166,7 @@ export default function AdminBottomNav() {
       {/* Squeeze Toggle */}
       <button
         onClick={toggleSqueeze}
-        title={isSqueezed ? "Expand" : "Squeeze"}
+        title={isSqueezed ? "Expand" : "Collapse"}
         style={{
           display: "flex",
           alignItems: "center",
@@ -161,7 +178,8 @@ export default function AdminBottomNav() {
           padding: "8px",
           borderRadius: "50%",
           transition: "all 0.2s",
-          marginLeft: isSqueezed ? 0 : "4px"
+          marginLeft: isSqueezed ? 0 : "4px",
+          flexShrink: 0,
         }}
       >
         {isSqueezed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
