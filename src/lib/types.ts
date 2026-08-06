@@ -37,12 +37,13 @@ export interface MenuItem {
   description: string;
   price: number;
   image: string;
-  category: "coffee" | "snacks" | "meals" | "drinks" | "desserts";
+  category: string;
   orderCount: number;
   available: boolean;
   isPopular?: boolean;
   isRecommended?: boolean;
   isBanner?: boolean;
+  sortOrder?: number;
   isLaunchingSoon?: boolean;
   originalPrice?: number;
   section?: string;

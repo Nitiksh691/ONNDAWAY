@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 // Properly typed sub-schema replaces Schema.Types.Mixed
 // Gives Mongoose validation and makes aggregation on items fields reliable

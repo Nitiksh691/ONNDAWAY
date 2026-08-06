@@ -87,6 +87,7 @@ export default function AdminDashboard() {
     fetchStats();
     // Analytics are cached server-side; only re-fetch on order changes via SSE
     let eventSource: EventSource;
+    let sseTimeoutId: NodeJS.Timeout;
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
       eventSource.onmessage = (event) => {
@@ -95,10 +96,10 @@ export default function AdminDashboard() {
           if (data.type === "order_change") fetchStats();
         } catch (e) { }
       };
-      eventSource.onerror = () => { eventSource.close(); setTimeout(setupSSE, 5000); };
+      eventSource.onerror = () => { eventSource.close(); sseTimeoutId = setTimeout(setupSSE, 5000); };
     };
     setupSSE();
-    return () => { if (eventSource) eventSource.close(); };
+    return () => { if (eventSource) eventSource.close(); if (sseTimeoutId) clearTimeout(sseTimeoutId); };
   }, []);
 
   const handleImageUpload = async (file: File, idx: number, isBento?: boolean, bentoPos?: number) => {

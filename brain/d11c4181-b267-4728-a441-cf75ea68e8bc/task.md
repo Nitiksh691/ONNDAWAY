@@ -1,0 +1,17 @@
+- `[x]` 1. Custom Product Sort Order
+  - `[x]` Update `models/MenuItem.ts` to add `sortOrder: { type: Number, default: 0 }`
+  - `[x]` Update `lib/types.ts` to add `sortOrder?: number` to `MenuItem`
+  - `[x]` Update `app/admin/menu/page.tsx` to add "Display Order / Position" input to edit dialog
+  - `[x]` Update `app/page.tsx` to sort `fullMenuItems` by `sortOrder`
+  - `[x]` Update `app/menu/page.tsx` to sort `menu` items by `sortOrder`
+- `[ ]` 2. Fix Server-Sent Events (SSE) Memory Leaks & Network Spam
+  - `[ ]` Add `clearTimeout` to `app/track/[orderId]/page.tsx`
+  - `[ ]` Add `clearTimeout` to `app/cart/page.tsx`
+  - `[ ]` Add `clearTimeout` to `app/delivery/dashboard/page.tsx`
+  - `[ ]` Add `clearTimeout` to `app/admin/page.tsx`
+  - `[ ]` Add `clearTimeout` to `app/admin/orders/page.tsx`
+  - `[ ]` Add `clearTimeout` to `app/admin/layout.tsx`
+- `[ ]` 3. Fix React Performance Warnings & State Cascading
+  - `[ ]` Refactor `lib/context.tsx` to remove synchronous `setState` in `useEffect` during component mount
+- `[ ]` 4. Cleanup Unused Imports
+  - `[ ]` Remove unused `mongoose` and `models` imports across `src/models/*.ts`

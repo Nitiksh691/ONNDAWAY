@@ -54,6 +54,7 @@ export default function DeliveryDashboard() {
     fetchOrders();
 
     let eventSource: EventSource;
+    let timeoutId: NodeJS.Timeout;
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
       eventSource.onmessage = (event) => {
@@ -64,13 +65,14 @@ export default function DeliveryDashboard() {
       };
       eventSource.onerror = () => {
         eventSource.close();
-        setTimeout(setupSSE, 5000);
+        timeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
 
     return () => {
       if (eventSource) eventSource.close();
+      if (timeoutId) clearTimeout(timeoutId);
     };
   }, []);
 

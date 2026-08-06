@@ -1,11 +1,11 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const MenuItemSchema = new Schema({
   name:          { type: String, required: true },
   description:   { type: String, required: true },
   price:         { type: Number, required: true },
   image:         { type: String, required: true },
-  category:      { type: String, enum: ["coffee", "snacks", "meals", "drinks", "desserts"], required: true },
+  category:      { type: String, required: true },
   orderCount:    { type: Number, default: 0 },
   stock:         { type: Number, default: 0, min: 0 },
   available:     { type: Boolean, default: true },
@@ -14,6 +14,7 @@ const MenuItemSchema = new Schema({
   isLaunchingSoon: { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
+  sortOrder:     { type: Number, default: 0 },
   customizationCategories: {
     type: [{
       name:     { type: String, required: true },

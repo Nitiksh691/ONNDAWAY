@@ -159,7 +159,11 @@ export default function MenuPage() {
     }
   }, []);
 
-  const menu = useMemo(() => rawMenuItems.filter(item => item.available), [rawMenuItems]);
+  const menu = useMemo(() => {
+    return [...rawMenuItems]
+      .filter(item => item.available)
+      .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  }, [rawMenuItems]);
 
   const handleViewAll = useCallback((cat: string) => {
     setActiveCategory(cat);

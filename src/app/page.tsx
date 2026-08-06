@@ -147,8 +147,9 @@ export default function HomePage() {
   
   useEffect(() => {
     if (availableItems.length > 0) {
-      setMenuItems(availableItems);
-      const cats = ["all", ...Array.from(new Set(availableItems.map((i: any) => i.category as string)))];
+      const sortedItems = [...availableItems].sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      setMenuItems(sortedItems);
+      const cats = ["all", ...Array.from(new Set(sortedItems.map((i: any) => i.category as string)))];
       setCategories(cats);
     }
   }, [availableItems]);

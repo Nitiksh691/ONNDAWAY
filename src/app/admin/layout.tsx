@@ -383,6 +383,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       .catch(() => {});
 
     let eventSource: EventSource | null = null;
+    let sseTimeoutId: NodeJS.Timeout;
 
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
@@ -407,7 +408,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       eventSource.onerror = () => {
         eventSource?.close();
         // Try to reconnect after 5s
-        setTimeout(setupSSE, 5000);
+        sseTimeoutId = setTimeout(setupSSE, 5000);
       };
     };
 
@@ -428,6 +429,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     return () => {
       if (eventSource) eventSource.close();
+      if (sseTimeoutId) clearTimeout(sseTimeoutId);
     };
   }, [authorized]);
 

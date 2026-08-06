@@ -197,6 +197,7 @@ export default function CartPage() {
       setPlacedOrderId(orderResult.id);
 
       // Start listening for confirmation via SSE
+      let timeoutId: NodeJS.Timeout;
       const setupSSE = () => {
         const es = new EventSource("/api/orders/stream");
         eventSourceRef.current = es;
@@ -210,10 +211,15 @@ export default function CartPage() {
                 if (pollData.confirmed) {
                   setIsConfirmed(true);
                   es.close();
+                  if (timeoutId) clearTimeout(timeoutId);
                 }
               }
             }
           } catch (e) { }
+        };
+        es.onerror = () => {
+          es.close();
+          timeoutId = setTimeout(setupSSE, 5000);
         };
       };
       setupSSE();

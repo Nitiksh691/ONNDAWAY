@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const CouponSchema = new Schema({
   code:           { type: String, required: true, unique: true, uppercase: true },

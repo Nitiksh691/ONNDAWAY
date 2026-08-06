@@ -169,6 +169,7 @@ export default function AdminOrdersPage() {
 
   useEffect(() => {
     let eventSource: EventSource;
+    let sseTimeoutId: NodeJS.Timeout;
     const setupSSE = () => {
       eventSource = new EventSource("/api/orders/stream");
       eventSource.onmessage = (event) => {
@@ -181,12 +182,13 @@ export default function AdminOrdersPage() {
       };
       eventSource.onerror = () => {
         eventSource.close();
-        setTimeout(setupSSE, 5000);
+        sseTimeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
     return () => {
       if (eventSource) eventSource.close();
+      if (sseTimeoutId) clearTimeout(sseTimeoutId);
       if (alarmIntervalRef.current) clearInterval(alarmIntervalRef.current);
     };
   }, [mutateOrders]);

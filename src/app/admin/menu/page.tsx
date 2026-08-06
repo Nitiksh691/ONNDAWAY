@@ -48,7 +48,7 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, customizationCategories: [] });
+      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [] });
     }
     setDialogOpen(true);
   };
@@ -257,10 +257,17 @@ export default function AdminMenuPage() {
                     </select>
                   </div>
                 </div>
-                <div>
-                  <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
-                  <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({ ...form, section: e.target.value })} />
-                  <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together on the homepage.</p>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                  <div>
+                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
+                    <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({ ...form, section: e.target.value })} />
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together.</p>
+                  </div>
+                  <div>
+                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Display Order (Position)</label>
+                    <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. 1" value={form.sortOrder ?? 0} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })} min="0" />
+                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Lower numbers appear first in sliders.</p>
+                  </div>
                 </div>
                 <div>
                   <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Description</label>

@@ -1,4 +1,4 @@
-import mongoose, { Schema, model, models } from "mongoose";
+import { Schema, model, models } from "mongoose";
 
 const SettingsSchema = new Schema({
   deliveryFee: { type: Number, default: 20 },
