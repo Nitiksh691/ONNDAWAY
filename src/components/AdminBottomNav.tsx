@@ -59,7 +59,7 @@ export default function AdminBottomNav() {
   };
 
   const handlePointerUp = (e: React.PointerEvent) => {
-    e.target.releasePointerCapture(e.pointerId);
+    (e.target as Element).releasePointerCapture(e.pointerId);
     setIsDragging(false);
     dragRef.current = null;
   };
