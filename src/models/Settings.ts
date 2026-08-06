@@ -35,5 +35,5 @@ const SettingsSchema = new Schema({
   updatedAt: { type: Date, default: Date.now },
 });
 
-delete mongoose.models.Settings;
-export default mongoose.models.Settings || model("Settings", SettingsSchema);
+delete models.Settings;
+export default models.Settings || model("Settings", SettingsSchema);

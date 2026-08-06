@@ -10,5 +10,5 @@ const InternApplicationSchema = new Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-delete mongoose.models.InternApplication;
-export default mongoose.models.InternApplication || model("InternApplication", InternApplicationSchema);
+delete models.InternApplication;
+export default models.InternApplication || model("InternApplication", InternApplicationSchema);
