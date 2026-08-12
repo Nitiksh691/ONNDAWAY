@@ -1031,8 +1031,10 @@ body main {
 }
 
 .otw-fab--support {
-  background: linear-gradient(145deg, #01235F, #0135FB);
-  box-shadow: 0 6px 20px rgba(1, 53, 251, 0.4);
+  background: rgba(1, 35, 95, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  box-shadow: 0 6px 20px rgba(1, 53, 251, 0.2);
 }
 
 .otw-fab--track {

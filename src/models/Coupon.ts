@@ -5,6 +5,8 @@ const CouponSchema = new Schema({
   discount:       { type: Number, required: true },
   type:           { type: String, enum: ["percentage", "flat"], required: true },
   label:          { type: String, required: true },
+  memeImage:      { type: String, default: "" },
+  memeSound:      { type: String, default: "" },
   active:         { type: Boolean, default: true },
   createdAt:      { type: Date, default: Date.now },
 });

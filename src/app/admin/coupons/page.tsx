@@ -8,7 +8,7 @@ export default function AdminCouponsPage() {
   const [coupons, setCoupons] = useState<any[]>([]);
   
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ code: "", label: "", discount: 0, type: "percentage", active: true });
+  const [form, setForm] = useState({ code: "", label: "", discount: 0, type: "percentage", active: true, memeImage: "", memeSound: "" });
 
   const fetchCoupons = async () => {
     try {
@@ -61,7 +61,7 @@ export default function AdminCouponsPage() {
           <h1 style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-dark)", marginBottom: "8px" }}>Coupons</h1>
           <p style={{ color: "var(--text-muted)" }}>Manage discount codes and promotions.</p>
         </div>
-        <button onClick={() => { setForm({code: "", label: "", discount: 0, type: "percentage", active: true}); setDialogOpen(true); }} className="otw-btn otw-btn-primary">
+        <button onClick={() => { setForm({code: "", label: "", discount: 0, type: "percentage", active: true, memeImage: "", memeSound: ""}); setDialogOpen(true); }} className="otw-btn otw-btn-primary">
           <Plus size={18}/> New Coupon
         </button>
       </div>
@@ -122,6 +122,20 @@ export default function AdminCouponsPage() {
                 <div>
                   <label className="otw-label">Discount Value</label>
                   <input type="number" className="otw-input" value={form.discount} onChange={e => setForm({...form, discount: Number(e.target.value)})} required min="1" />
+                </div>
+              </div>
+
+              <div style={{ marginTop: "8px", paddingTop: "16px", borderTop: "1px dashed var(--border)" }}>
+                <h4 style={{ fontSize: "0.9rem", fontWeight: 800, marginBottom: "12px", color: "var(--text-dark)" }}>🎁 Meme / Surprise (Optional)</h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                  <div>
+                    <label className="otw-label">Popup Image URL</label>
+                    <input type="url" className="otw-input" value={form.memeImage} onChange={e => setForm({...form, memeImage: e.target.value})} placeholder="e.g. https://imgur.com/meme.jpg" />
+                  </div>
+                  <div>
+                    <label className="otw-label">Surprise Audio URL</label>
+                    <input type="url" className="otw-input" value={form.memeSound} onChange={e => setForm({...form, memeSound: e.target.value})} placeholder="e.g. https://example.com/sound.mp3" />
+                  </div>
                 </div>
               </div>
 

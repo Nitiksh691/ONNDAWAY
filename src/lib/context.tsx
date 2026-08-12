@@ -55,6 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [wishlist, setWishlist] = useState<string[]>([]);
   const [settings, setSettings] = useState<any | null>(null);
+  const [showLaunchingSoon, setShowLaunchingSoon] = useState(false);
 
   // ── Global Settings Fetch ───────────────────────────────────────────────────
   useEffect(() => {
@@ -184,6 +185,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const addToCart = useCallback((item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => {
+    // Check Launching Soon Mode first!
+    if (settings?.launchingSoonMode) {
+      setShowLaunchingSoon(true);
+      return;
+    }
+
     const resolvedPrice = unitPrice ?? item.price;
     const customizations = selectedCustomizations ?? [];
     const lineDetails = buildLineDetails(customizations, specialInstructions);
@@ -223,7 +230,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(updated));
       return updated;
     });
-  }, []);
+  }, [settings?.launchingSoonMode]);
 
   const removeFromCart = useCallback((cartItemId: string) => {
     setCart((prev) => {

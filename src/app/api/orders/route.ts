@@ -55,7 +55,7 @@ const _POST = async (req: NextRequest) => {
   }
 
   const body = await req.json();
-  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, status, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, status, confirmed, scheduledTime } = body;
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -77,31 +77,18 @@ const _POST = async (req: NextRequest) => {
     }
   }
 
-  // Atomic stock decrement
-  const successfullyDecremented: { id: string; qty: number }[] = [];
-  let outOfStockItemId = null;
+  // Check availability
+  const itemIds = Object.keys(requiredStock);
+  const unavailableItems = await MenuItem.find({
+    _id: { $in: itemIds },
+    available: false
+  }).select("_id").lean();
 
-  for (const [id, qty] of Object.entries(requiredStock)) {
-    const updated = await MenuItem.findOneAndUpdate(
-      { _id: id, stock: { $gte: qty }, available: true },
-      { $inc: { stock: -qty } },
-      { new: true }
+  if (unavailableItems.length > 0) {
+    return NextResponse.json(
+      { error: "One or more items are currently unavailable", itemId: unavailableItems[0]._id },
+      { status: 409 }
     );
-
-    if (!updated) {
-      outOfStockItemId = id;
-      break; // Stop processing and rollback
-    } else {
-      successfullyDecremented.push({ id, qty });
-    }
-  }
-
-  // Rollback if any item failed
-  if (outOfStockItemId) {
-    for (const { id, qty } of successfullyDecremented) {
-      await MenuItem.updateOne({ _id: id }, { $inc: { stock: qty } });
-    }
-    return NextResponse.json({ error: "One or more items are out of stock or unavailable", itemId: outOfStockItemId }, { status: 409 });
   }
 
   try {
@@ -119,6 +106,7 @@ const _POST = async (req: NextRequest) => {
       couponCode: couponCode || null,
       discount: discount || 0,
       status: status || "placed",
+      confirmed: confirmed || false,
       scheduledTime: scheduledTime || "ASAP (~15 mins)",
       deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
       messages: [],
@@ -126,21 +114,11 @@ const _POST = async (req: NextRequest) => {
 
     return NextResponse.json({ ...order.toObject(), id: order._id.toString() }, { status: 201 });
   } catch (error: any) {
-    // Check for E11000 duplicate key error on idempotencyKey
     if (error.code === 11000 && error.keyPattern && error.keyPattern.idempotencyKey) {
-      // Rollback stock because another concurrent request already handled this order
-      for (const { id, qty } of successfullyDecremented) {
-        await MenuItem.updateOne({ _id: id }, { $inc: { stock: qty } });
-      }
       const existingOrder = await Order.findOne({ idempotencyKey });
       if (existingOrder) {
         return NextResponse.json({ ...existingOrder.toObject(), id: existingOrder._id.toString() }, { status: 200 });
       }
-    }
-    
-    // For other errors, we should theoretically rollback stock as well
-    for (const { id, qty } of successfullyDecremented) {
-      await MenuItem.updateOne({ _id: id }, { $inc: { stock: qty } });
     }
     throw error;
   }

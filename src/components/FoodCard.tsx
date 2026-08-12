@@ -85,7 +85,9 @@ const FoodCard = ({
             </div>
           )}
           {!item.available && !item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.5)", backdropFilter: "blur(1.5px)", borderRadius: 12 }} />
+            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "0.6rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", padding: "0 4px", zIndex: 5, backdropFilter: "blur(2px)" }}>
+              NOT<br/>AVAILABLE
+            </div>
           )}
         </div>
 
@@ -132,7 +134,7 @@ const FoodCard = ({
               style={{ width: (item.available && !item.isLaunchingSoon) ? 32 : "auto", padding: (item.available && !item.isLaunchingSoon) ? 0 : "0 8px", height: 32, borderRadius: (item.available && !item.isLaunchingSoon) ? "50%" : 8, border: "none", background: (item.available && !item.isLaunchingSoon) ? "#0135FB" : "#F1F5F9", color: (item.available && !item.isLaunchingSoon) ? "#fff" : "#94A3B8", display: "flex", alignItems: "center", justifyContent: "center", cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed", boxShadow: (item.available && !item.isLaunchingSoon) ? "0 3px 10px rgba(1,53,251,0.3)" : "none", transition: "transform 0.15s", flexShrink: 0, fontWeight: 800, fontSize: "0.65rem" }}
               onMouseEnter={e => (item.available && !item.isLaunchingSoon) && (e.currentTarget.style.transform = "scale(1.12)")}
               onMouseLeave={e => (e.currentTarget.style.transform = "")}
-            >{item.isLaunchingSoon ? "LAUNCHING" : (item.available ? <Plus size={14} /> : "SOON")}</button>
+            >{item.isLaunchingSoon ? "LAUNCHING" : (item.available ? <Plus size={14} /> : "NO STOCK")}</button>
           )}
         </div>
       </div>
@@ -206,7 +208,9 @@ const FoodCard = ({
           </div>
         )}
         {!item.available && !item.isLaunchingSoon && (
-          <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.5)", backdropFilter: "blur(1.5px)", borderRadius: 12 }} />
+          <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "20px 20px 0 0", color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
+            NOT<br/>AVAILABLE
+          </div>
         )}
 
         {/* ADD Button (Floating) */}
@@ -253,7 +257,7 @@ const FoodCard = ({
                 cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed"
               }}
             >
-              {item.isLaunchingSoon ? "LAUNCHING" : (item.available ? "ADD" : "SOON")}
+              {item.isLaunchingSoon ? "LAUNCHING" : (item.available ? "ADD" : "NO STOCK")}
             </button>
           )}
         </div>

@@ -51,16 +51,42 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
           onClick={handleClose}
         />
 
-        <div style={{
-          position: "relative", width: "100%", maxWidth: "440px", zIndex: 9999,
-          background: "white", borderRadius: "24px", overflow: "hidden",
-          boxShadow: "0 32px 80px rgba(0,0,0,0.35)",
-          animation: "onboard-pop 0.35s cubic-bezier(0.16,1,0.3,1) both",
-        }}>
+        <div className="onboard-modal-inner">
           <style>{`
             @keyframes onboard-pop {
               from { opacity: 0; transform: scale(0.93) translateY(20px); }
               to { opacity: 1; transform: scale(1) translateY(0); }
+            }
+            .onboard-modal-inner {
+              position: relative; width: 100%; max-width: 440px; z-index: 9999;
+              background: white; border-radius: 24px; overflow: hidden;
+              box-shadow: 0 32px 80px rgba(0,0,0,0.35);
+              animation: onboard-pop 0.35s cubic-bezier(0.16,1,0.3,1) both;
+            }
+            .onboard-hero {
+              background: linear-gradient(135deg, #0135FB 0%, #0028D4 60%, #001899 100%);
+              padding: 40px 28px 24px; text-align: center; position: relative; overflow: hidden;
+            }
+            .onboard-hero-emoji { font-size: 3.2rem; margin-bottom: 12px; }
+            .onboard-hero-title { font-size: 1.75rem; }
+            .onboard-content { padding: 24px 28px; }
+            .onboard-info-row { gap: 16px; margin-bottom: 24px; }
+            .onboard-trust { margin-bottom: 24px; }
+            
+            @media (max-width: 480px) {
+              .onboard-hero { padding: 20px 16px 16px; }
+              .onboard-hero-emoji { font-size: 2.2rem; margin-bottom: 8px; }
+              .onboard-hero-title { font-size: 1.4rem; }
+              .onboard-hero p { font-size: 0.8rem; line-height: 1.4; }
+              .onboard-content { padding: 16px; }
+              .onboard-info-row { gap: 12px; margin-bottom: 16px; }
+              .onboard-trust { margin-bottom: 16px; gap: 4px; }
+              .onboard-trust div { font-size: 0.65rem !important; padding: 4px 8px !important; }
+              .onboard-modal-inner { border-radius: 20px; }
+              .info-icon { width: 32px !important; height: 32px !important; }
+              .info-icon svg { width: 16px; height: 16px; }
+              .info-text h4 { font-size: 0.85rem !important; }
+              .info-text p { font-size: 0.75rem !important; display: none; } /* Hide descriptions to save big space */
             }
           `}</style>
 
@@ -75,20 +101,17 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
           </button>
 
           {/* Hero Header */}
-          <div style={{
-            background: "linear-gradient(135deg, #0135FB 0%, #0028D4 60%, #001899 100%)",
-            padding: "40px 28px 32px", textAlign: "center", position: "relative", overflow: "hidden",
-          }}>
+          <div className="onboard-hero">
             {/* Decorative blobs */}
             <div style={{ position: "absolute", width: 180, height: 180, borderRadius: "50%", background: "rgba(255,255,255,0.05)", top: -60, right: -40, pointerEvents: "none" }} />
             <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -30, left: -20, pointerEvents: "none" }} />
 
             {/* Emoji */}
-            <div style={{ fontSize: "3.2rem", marginBottom: "16px" }}>☕</div>
-            <h2 style={{
+            <div className="onboard-hero-emoji">☕</div>
+            <h2 className="onboard-hero-title" style={{
               fontFamily: "'Outfit', sans-serif", fontWeight: 900,
-              fontSize: "1.75rem", color: "white", lineHeight: 1.1,
-              textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: "8px",
+              color: "white", lineHeight: 1.1,
+              textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: "4px",
             }}>
               Welcome to<br />ONN D A WAY
             </h2>
@@ -98,9 +121,9 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
           </div>
 
           {/* Content */}
-          <div style={{ padding: "28px 28px 24px" }}>
+          <div className="onboard-content">
             {/* Trust pills */}
-            <div style={{ display: "flex", gap: "8px", marginBottom: "24px", flexWrap: "wrap" }}>
+            <div className="onboard-trust" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
               {[
                 { icon: <Clock size={13} />, text: "30–45 min delivery" },
                 { icon: <Coffee size={13} />, text: "Freshly prepared" },
@@ -118,16 +141,16 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
             </div>
 
             {/* Info rows */}
-            <div style={{ display: "flex", flexDirection: "column", gap: "16px", marginBottom: "28px" }}>
-              <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-                <div style={{
+            <div className="onboard-info-row" style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                <div className="info-icon" style={{
                   width: 38, height: 38, borderRadius: "10px",
                   background: "#EEF1FF", display: "flex", alignItems: "center",
                   justifyContent: "center", flexShrink: 0,
                 }}>
                   <MapPin size={18} color="#0135FB" />
                 </div>
-                <div>
+                <div className="info-text">
                   <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Serving selected areas of Rohini, Delhi</h4>
                   <p style={{ fontSize: "0.8rem", color: "#6B7280", lineHeight: 1.5 }}>
                     Set your location below to confirm we deliver to you before browsing.
@@ -135,15 +158,15 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: "14px", alignItems: "flex-start" }}>
-                <div style={{
+              <div style={{ display: "flex", gap: "14px", alignItems: "center" }}>
+                <div className="info-icon" style={{
                   width: 38, height: 38, borderRadius: "10px",
                   background: "#FEF3C7", display: "flex", alignItems: "center",
                   justifyContent: "center", flexShrink: 0,
                 }}>
                   <Shield size={18} color="#92400E" />
                 </div>
-                <div>
+                <div className="info-text">
                   <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Secure, flexible payment</h4>
                   <p style={{ fontSize: "0.8rem", color: "#6B7280", lineHeight: 1.5 }}>
                     Pay a small 20% UPI advance to confirm your order. The remaining 80% is collected at your door.

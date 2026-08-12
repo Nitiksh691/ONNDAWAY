@@ -11,7 +11,8 @@ export default function AdminSettingsPage() {
   const [maintenanceMessage, setMaintenanceMessage] = useState<string>("We're currently under maintenance. Please call us to place your order.");
   const [kitchenClosed, setKitchenClosed] = useState<boolean>(false);
   const [kitchenOpenTime, setKitchenOpenTime] = useState<string>("7:00 AM");
-  const [waitlistMode, setWaitlistMode] = useState<boolean>(false);
+  const [waitlistMode, setWaitlistMode] = useState(false);
+  const [launchingSoonMode, setLaunchingSoonMode] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -32,6 +33,7 @@ export default function AdminSettingsPage() {
           if (data.kitchenClosed !== undefined) setKitchenClosed(data.kitchenClosed);
           if (data.kitchenOpenTime !== undefined) setKitchenOpenTime(data.kitchenOpenTime);
           if (data.waitlistMode !== undefined) setWaitlistMode(data.waitlistMode);
+          if (data.launchingSoonMode !== undefined) setLaunchingSoonMode(data.launchingSoonMode);
         }
         setLoading(false);
       })
@@ -50,10 +52,11 @@ export default function AdminSettingsPage() {
       kitchenClosed,
       kitchenOpenTime,
       waitlistMode,
+      launchingSoonMode,
     };
     
     // Only show confirmation if enabling disruptive modes
-    if (maintenanceMode || kitchenClosed || waitlistMode) {
+    if (maintenanceMode || kitchenClosed || waitlistMode || launchingSoonMode) {
       setPendingSaveData(dataToSave);
       setShowConfirmDialog(true);
     } else {
@@ -180,20 +183,33 @@ export default function AdminSettingsPage() {
           </div>
           
           {/* Waitlist Mode Toggle */}
-          <div style={{ padding: "16px", background: waitlistMode ? "#F0FDF4" : "#F8FAFC", borderRadius: "12px", border: waitlistMode ? "1px solid #86EFAC" : "1px solid #E2E8F0", marginTop: "24px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <strong style={{ display: "block", color: waitlistMode ? "#16A34A" : "var(--text-dark)" }}>Waitlist Mode</strong>
-                <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Redirects all traffic to the waitlist page.</span>
-              </div>
-              <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
-                <div style={{ position: "relative" }}>
-                  <input type="checkbox" checked={waitlistMode} onChange={e => setWaitlistMode(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
-                  <div style={{ width: 44, height: 24, background: waitlistMode ? "#22C55E" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
-                  <div style={{ position: "absolute", left: waitlistMode ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
-                </div>
-              </label>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: waitlistMode ? "#FEF2F2" : "#F8FAFC", borderRadius: "12px", border: waitlistMode ? "1px solid #FCA5A5" : "1px solid #E2E8F0", marginBottom: "24px", marginTop: "24px" }}>
+            <div>
+              <strong style={{ display: "block", color: waitlistMode ? "#DC2626" : "var(--text-dark)" }}>Waitlist Mode</strong>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Blocks access to main site, captures emails.</span>
             </div>
+            <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ position: "relative" }}>
+                <input type="checkbox" checked={waitlistMode} onChange={e => setWaitlistMode(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                <div style={{ width: 44, height: 24, background: waitlistMode ? "#EF4444" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                <div style={{ position: "absolute", left: waitlistMode ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
+              </div>
+            </label>
+          </div>
+
+          {/* Launching Soon Mode Toggle */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: launchingSoonMode ? "#EFF6FF" : "#F8FAFC", borderRadius: "12px", border: launchingSoonMode ? "1px solid #93C5FD" : "1px solid #E2E8F0" }}>
+            <div>
+              <strong style={{ display: "block", color: launchingSoonMode ? "#2563EB" : "var(--text-dark)" }}>Launching Soon Mode</strong>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Allows browsing but blocks checkout with a popup.</span>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ position: "relative" }}>
+                <input type="checkbox" checked={launchingSoonMode} onChange={e => setLaunchingSoonMode(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                <div style={{ width: 44, height: 24, background: launchingSoonMode ? "#3B82F6" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                <div style={{ position: "absolute", left: launchingSoonMode ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
+              </div>
+            </label>
           </div>
           
         </div>

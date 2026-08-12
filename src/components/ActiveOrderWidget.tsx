@@ -94,7 +94,6 @@ export default function ActiveOrderWidget() {
   }, []);
 
   if (!visible || !order) return null;
-  if (pathname.startsWith("/track/")) return null;
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
 
   const fabStyle = {

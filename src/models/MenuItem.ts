@@ -7,7 +7,6 @@ const MenuItemSchema = new Schema({
   image:         { type: String, required: true },
   category:      { type: String, required: true },
   orderCount:    { type: Number, default: 0 },
-  stock:         { type: Number, default: 0, min: 0 },
   available:     { type: Boolean, default: true },
   isPopular:     { type: Boolean, default: false },
   isBanner:      { type: Boolean, default: false },

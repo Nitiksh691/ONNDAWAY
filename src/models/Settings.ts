@@ -32,6 +32,8 @@ const SettingsSchema = new Schema({
   kitchenOpenTime: { type: String, default: "7:00 AM" },
   // Waitlist mode: redirects or blocks normal access, showing waitlist
   waitlistMode: { type: Boolean, default: false },
+  // Launching Soon mode: allows browsing but shows popup on add to cart
+  launchingSoonMode: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now },
 });
 

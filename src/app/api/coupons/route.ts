@@ -24,13 +24,13 @@ export async function POST(req: NextRequest) {
   await dbConnect();
   try {
     const body = await req.json();
-    const { code, discount, type, label } = body;
+    const { code, discount, type, label, memeImage, memeSound } = body;
 
     if (!code || !discount || !type || !label) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const item = await Coupon.create({ code: code.toUpperCase(), discount, type, label });
+    const item = await Coupon.create({ code: code.toUpperCase(), discount, type, label, memeImage, memeSound });
     return NextResponse.json({ ...item.toObject(), id: item._id.toString() }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ error: "Failed to create coupon" }, { status: 500 });

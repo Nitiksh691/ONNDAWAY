@@ -12,6 +12,8 @@ import BottomActionBar from "@/components/BottomActionBar";
 import MaintenanceOverlay from "@/components/MaintenanceOverlay";
 import KitchenClosedBanner from "@/components/KitchenClosedBanner";
 import WaitlistOverlay from "@/components/WaitlistOverlay";
+import MusicPlayer from "@/components/MusicPlayer";
+import PwaInstallBanner from "@/components/PwaInstallBanner";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -23,6 +25,7 @@ export const metadata: Metadata = {
     description: "Order meals, snacks, and beverages delivered right to your campus spot.",
     type: "website",
   },
+  manifest: "/manifest.json",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -32,6 +35,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+        <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="ONNDAWAY" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <meta name="theme-color" content="#01235F" />
       </head>
@@ -77,6 +84,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             }}
           />
         </AppProvider>
+        <PwaInstallBanner />
+        <MusicPlayer />
         <Analytics />
       </body>
     </html>

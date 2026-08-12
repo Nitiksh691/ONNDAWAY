@@ -34,13 +34,6 @@ function HSliderSection({
   onAdd: any;
   onUpdateQuantity: any;
 }) {
-  const scrollRef = React.useRef<HTMLDivElement>(null);
-
-  // Use CSS animation instead of JS scroll for better mobile support
-  React.useEffect(() => {
-    // keeping effect hook just in case, but empty
-  }, []);
-
   if (items.length === 0) return null;
   return (
     <section style={{ marginBottom: 36, overflow: "hidden" }}>
@@ -75,8 +68,7 @@ function HSliderSection({
       </div>
 
       {/* Horizontal scroll strip */}
-      <div 
-        ref={scrollRef}
+      <div
         className="nudge-anim"
         style={{
         display: "flex", gap: 14, overflowX: "auto",

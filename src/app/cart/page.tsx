@@ -9,6 +9,7 @@ import { normalizeCartLines } from "@/lib/orderLine";
 import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import RazorpayButton from "@/components/RazorpayButton";
 
 const CAMPUS_LOCATIONS: string[] = []; // removed
 
@@ -18,7 +19,10 @@ export default function CartPage() {
   const [location, setLocation] = useState("");
   const [phone, setPhone] = useState("");
   const [couponCode, setCouponCode] = useState("");
-  const [appliedCoupon, setAppliedCoupon] = useState<{ discount: number; type: "percentage" | "flat"; label: string } | null>(null);
+  const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
+  
+  // Meme Coupon State
+  const [memePopup, setMemePopup] = useState<{ image: string; sound: string; visible: boolean } | null>(null);
   const [name, setName] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [isConfirmed, setIsConfirmed] = useState(false);
@@ -110,6 +114,15 @@ export default function CartPage() {
         const coupon = await res.json();
         setAppliedCoupon(coupon);
         toast.success("Coupon applied!");
+        
+        // Meme logic
+        if (coupon.memeImage || coupon.memeSound) {
+          setMemePopup({ image: coupon.memeImage, sound: coupon.memeSound, visible: true });
+          setTimeout(() => {
+            setMemePopup(prev => prev ? { ...prev, visible: false } : null);
+            setTimeout(() => setMemePopup(null), 300); // Wait for fade out
+          }, 3500); // Show for 3.5 seconds
+        }
       } else {
         setAppliedCoupon(null);
         toast.error("Invalid or expired coupon code");
@@ -125,7 +138,7 @@ export default function CartPage() {
     : 0;
   const grandTotal = Math.max(0, cartTotal - finalDiscount + deliveryFee);
 
-  const handleConfirmAndPlace = async () => {
+  const handleConfirmAndPlace = async (preConfirmed = false) => {
     setPlacing(true);
     try {
       const finalLoc = location.trim();
@@ -158,6 +171,7 @@ export default function CartPage() {
         couponCode: appliedCoupon ? couponCode : null,
         discount: finalDiscount,
         status: "placed",
+        confirmed: preConfirmed,
         scheduledTime: scheduledTime === "Custom Time" ? customTime : scheduledTime,
       };
 
@@ -172,7 +186,7 @@ export default function CartPage() {
 
       if (!res.ok) {
         if (res.status === 409) {
-          throw new Error("One or more items are out of stock or currently unavailable. Please refresh your cart.");
+          throw new Error("One or more items are currently unavailable. Please refresh your cart.");
         }
         throw new Error("Failed to place order");
       }
@@ -194,35 +208,39 @@ export default function CartPage() {
 
       clearCart();
       setShowConfirm(false);
-      setPlacedOrderId(orderResult.id);
 
-      // Start listening for confirmation via SSE
-      let timeoutId: NodeJS.Timeout;
-      const setupSSE = () => {
-        const es = new EventSource("/api/orders/stream");
-        eventSourceRef.current = es;
-        es.onmessage = async (event) => {
-          try {
-            const data = JSON.parse(event.data);
-            if (data.type === "order_change" && data.documentKey?._id === orderResult.id) {
-              const pollRes = await fetch(`/api/orders/${orderResult.id}`);
-              if (pollRes.ok) {
-                const pollData = await pollRes.json();
-                if (pollData.confirmed) {
-                  setIsConfirmed(true);
-                  es.close();
-                  if (timeoutId) clearTimeout(timeoutId);
+      if (preConfirmed) {
+        router.push(`/track/${orderResult.id}`);
+      } else {
+        setPlacedOrderId(orderResult.id);
+        // Start listening for confirmation via SSE
+        let timeoutId: NodeJS.Timeout;
+        const setupSSE = () => {
+          const es = new EventSource("/api/orders/stream");
+          eventSourceRef.current = es;
+          es.onmessage = async (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.type === "order_change" && data.documentKey?._id === orderResult.id) {
+                const pollRes = await fetch(`/api/orders/${orderResult.id}`);
+                if (pollRes.ok) {
+                  const pollData = await pollRes.json();
+                  if (pollData.confirmed) {
+                    setIsConfirmed(true);
+                    es.close();
+                    if (timeoutId) clearTimeout(timeoutId);
+                  }
                 }
               }
-            }
-          } catch (e) { }
+            } catch (e) { }
+          };
+          es.onerror = () => {
+            es.close();
+            timeoutId = setTimeout(setupSSE, 5000);
+          };
         };
-        es.onerror = () => {
-          es.close();
-          timeoutId = setTimeout(setupSSE, 5000);
-        };
-      };
-      setupSSE();
+        setupSSE();
+      }
 
     } catch (e: any) {
       console.error(e);
@@ -379,7 +397,7 @@ export default function CartPage() {
             </div>
             <div style={{ display: "flex", gap: "12px" }}>
               <button disabled={placing} onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: "14px", background: "#f3f4f6", color: "#0A0F2E", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "0.9rem" }}>Edit Number</button>
-              <button disabled={placing} onClick={handleConfirmAndPlace} style={{ flex: 1, padding: "14px", background: "#0135FB", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 0 #0028D4", fontFamily: "inherit", fontSize: "0.9rem" }}>
+              <button disabled={placing} onClick={() => handleConfirmAndPlace(false)} style={{ flex: 1, padding: "14px", background: "#0135FB", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 0 #0028D4", fontFamily: "inherit", fontSize: "0.9rem" }}>
                 {placing ? "Placing..." : "Yes, correct!"}
               </button>
             </div>
@@ -656,27 +674,52 @@ export default function CartPage() {
               </div>
             </div>
 
+            {/* ── PRIMARY: Razorpay Online Payment ── */}
+            <div style={{ marginTop: "20px" }}>
+              <RazorpayButton
+                amountRupees={grandTotal}
+                customerName={name || profile?.name}
+                customerPhone={phoneDigits || profile?.phone}
+                disabled={!canPlace || placing}
+                onSuccess={(paymentId, orderId) => {
+                  handleConfirmAndPlace(true);
+                  toast.success(`Payment ID: ${paymentId}`);
+                }}
+                onDismiss={() => { /* user cancelled modal */ }}
+              />
+            </div>
+
+            {/* ── SECONDARY: Cash on Delivery ── */}
+            <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "18px 0 0" }}>
+              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>
+                or pay on delivery
+              </span>
+              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
+            </div>
+
             <button
               id="place-order-btn"
               onClick={() => { if (canPlace) setShowConfirm(true); }}
               disabled={!canPlace || placing}
               style={{
-                width: "100%", marginTop: "22px", padding: "16px", fontSize: "0.97rem", fontWeight: 900,
-                background: canPlace ? "#0135FB" : "#e5e7eb",
-                color: canPlace ? "#fff" : "#9ca3af",
-                border: "none", borderRadius: "10px",
+                width: "100%", marginTop: "10px", padding: "14px", fontSize: "0.88rem", fontWeight: 700,
+                background: "transparent",
+                color: canPlace ? "#0A0F2E" : "#9ca3af",
+                border: canPlace ? "1.5px solid #d1d5db" : "1.5px solid #e5e7eb",
+                borderRadius: "10px",
                 cursor: canPlace ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                textTransform: "uppercase", letterSpacing: "1px",
+                textTransform: "uppercase", letterSpacing: "0.5px",
                 transition: "all 0.15s",
-                boxShadow: canPlace ? "0 4px 0 #0028D4" : "none",
                 fontFamily: "inherit",
               }}
-              onMouseOver={(e) => { if (canPlace) { e.currentTarget.style.background = "#0028D4"; e.currentTarget.style.transform = "translateY(2px)"; e.currentTarget.style.boxShadow = "0 2px 0 #0028D4"; } }}
-              onMouseOut={(e) => { if (canPlace) { e.currentTarget.style.background = "#0135FB"; e.currentTarget.style.transform = "translateY(0)"; e.currentTarget.style.boxShadow = "0 4px 0 #0028D4"; } }}
+              onMouseOver={(e) => { if (canPlace) { e.currentTarget.style.background = "#F5F7FF"; e.currentTarget.style.borderColor = "#0135FB"; e.currentTarget.style.color = "#0135FB"; } }}
+              onMouseOut={(e) => { if (canPlace) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#0A0F2E"; } }}
             >
-              {placing ? "Processing..." : <>Place Order <ArrowRight size={18} /></>}
+              {placing ? "Processing..." : <>Cash on Delivery <ArrowRight size={16} /></>}
             </button>
+
             {!location && (
               <p style={{ textAlign: "center", fontSize: "0.77rem", color: "#EF4444", marginTop: "10px", fontWeight: 600 }}>
                 Please select a delivery location
@@ -686,6 +729,33 @@ export default function CartPage() {
         </div>
 
       </div>
+      {/* ── Meme / Surprise Coupon Popup ── */}
+      {memePopup && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          pointerEvents: memePopup.visible ? "auto" : "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: memePopup.visible ? 1 : 0, transition: "opacity 0.3s ease",
+          background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)"
+        }}>
+          {memePopup.sound && (
+            <audio src={memePopup.sound} autoPlay />
+          )}
+          {memePopup.image && (
+            <img 
+              src={memePopup.image} 
+              alt="Surprise!" 
+              style={{
+                maxWidth: "90%", maxHeight: "80vh", borderRadius: "16px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                transform: memePopup.visible ? "scale(1) rotate(0deg)" : "scale(0.8) rotate(-10deg)",
+                transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+              }} 
+            />
+          )}
+        </div>
+      )}
+
     </div>
   );
 }

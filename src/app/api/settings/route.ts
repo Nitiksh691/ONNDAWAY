@@ -33,6 +33,7 @@ const _POST = async (req: NextRequest) => {
       kitchenClosed,
       kitchenOpenTime,
       waitlistMode,
+      launchingSoonMode,
     } = body;
 
     let settings = await Settings.findOne();
@@ -44,13 +45,15 @@ const _POST = async (req: NextRequest) => {
       if (kitchenClosed !== undefined) settings.kitchenClosed = kitchenClosed;
       if (kitchenOpenTime !== undefined) settings.kitchenOpenTime = kitchenOpenTime;
       if (waitlistMode !== undefined) settings.waitlistMode = waitlistMode;
+      if (launchingSoonMode !== undefined) settings.launchingSoonMode = launchingSoonMode;
       settings.updatedAt = new Date();
       await settings.save();
     } else {
-      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode });
+      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode });
     }
-    // Bust cache so next GET returns updated settings
+    // Bust both caches so all clients get fresh data immediately
     appCache.invalidate(CACHE_KEYS.SETTINGS);
+    appCache.invalidate("settings_status");
     return NextResponse.json(settings);
   } catch (error) {
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });

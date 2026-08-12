@@ -377,6 +377,11 @@ export default function ItemPage() {
             <div className="gallery-box">
               <div className="zoom-icon"><Search size={18} /></div>
               <Image src={images[activeImageIndex]} alt={item.name} fill style={{ objectFit: "contain" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+              {!item.available && !item.isLaunchingSoon && (
+                <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "16px", color: "#fff", fontSize: "1.5rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 10, backdropFilter: "blur(4px)" }}>
+                  NOT AVAILABLE
+                </div>
+              )}
             </div>
             <div className="thumbs-row">
               {images.map((img, idx) => (
@@ -436,22 +441,25 @@ export default function ItemPage() {
                 <button className="btn-add" onClick={() => router.push("/cart")} style={{ background: "#10B981" }}>
                   <ShoppingCart size={18} /> CHECKOUT
                 </button>
-              ) : (
-                <button className="btn-add" onClick={handleAddToCart} disabled={!item.available || item.isLaunchingSoon}>
-                  <ShoppingCart size={18} /> {item.isLaunchingSoon ? "LAUNCHING SOON" : (item.available ? "ADD TO CART" : "AVAILABLE SOON")}
+              ) : !item.available ? (
+                <button disabled className="btn-add" style={{ background: "#E2E8F0", color: "#94A3B8", cursor: "not-allowed" }}>
+                  <ShoppingCart size={18} /> CURRENTLY UNAVAILABLE
                 </button>
-              )}
-              <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)}>
+              ) : item.isLaunchingSoon ? (
+                <button disabled className="btn-add" style={{ background: "#E2E8F0", color: "#94A3B8", cursor: "not-allowed" }}>
+                  <ShoppingCart size={18} /> LAUNCHING SOON
+                </button>
+              ) : (
+                <button className="btn-add" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added!"); }}>
+                  <ShoppingCart size={18} /> ADD TO CART
+                </button>
+              )}<button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)}>
                 <Heart size={20} fill={isWishlisted ? "#ef4444" : "none"} />
               </button>
               <button className="btn-icon">
                 <Share2 size={20} />
               </button>
             </div>
-
-            <button className="btn-buy desktop-only">
-              BUY NOW
-            </button>
 
             <div className="meta-box">
               <div className="meta-row" style={{ marginBottom: 8 }}>
@@ -488,21 +496,21 @@ export default function ItemPage() {
       <div className="mobile-sticky-bar">
         {cartItem ? (
           <>
-            <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2E8F0", borderRadius: 8, overflow: "hidden", background: "white", height: 48 }}>
+            <div style={{ display: "flex", alignItems: "center", border: "1.5px solid #E2E8F0", borderRadius: 8, overflow: "hidden", background: "white", height: 48, flexShrink: 0 }}>
               <button className="qty-btn" style={{ color: "#0F172A", width: 40 }} onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={14} /></button>
               <div className="qty-val" style={{ fontSize: "1rem", color: "#0F172A", width: 32 }}>{cartItem.quantity}</div>
               <button className="qty-btn" style={{ color: "#0F172A", width: 40 }} onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity + 1)}><Plus size={14} /></button>
             </div>
-            <button className="btn-add" onClick={() => router.push("/cart")} style={{ background: "#10B981", margin: 0, height: 48 }}>
+            <button className="btn-add" onClick={() => router.push("/cart")} style={{ background: "#10B981", margin: 0, height: 48, flex: 1 }}>
               <ShoppingCart size={16} /> CHECKOUT
             </button>
           </>
         ) : (
           <button className="btn-add" onClick={handleAddToCart} disabled={!item.available || item.isLaunchingSoon} style={{ margin: 0, height: 48 }}>
-            <ShoppingCart size={16} /> {item.isLaunchingSoon ? "LAUNCHING SOON" : (item.available ? "ADD TO CART" : "AVAILABLE SOON")}
+            <ShoppingCart size={16} /> {item.isLaunchingSoon ? "LAUNCHING SOON" : (item.available ? "ADD TO CART" : "CURRENTLY UNAVAILABLE")}
           </button>
         )}
-        <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)} style={{ height: 48, width: 48 }}>
+        <button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)} style={{ height: 48, width: 48, flexShrink: 0 }}>
           <Heart size={18} fill={isWishlisted ? "#ef4444" : "none"} />
         </button>
       </div>
