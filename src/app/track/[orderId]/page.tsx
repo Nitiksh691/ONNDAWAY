@@ -46,8 +46,10 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
 
   const { loading } = useApp();
   const router = useRouter();
-  const [order, setOrder] = useState<Order | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [fetching, setFetching] = useState(true);
+  const eventSourceRef = useRef<EventSource | null>(null);
+  const [order, setOrder] = useState<Order | null>(null);
   const [rating, setRating] = useState(0);
   const [reviewText, setReviewText] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
@@ -93,11 +95,11 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
     
     if (order?.status === "delivered" || order?.status === "cancelled") return;
 
-    let eventSource: EventSource;
     let timeoutId: NodeJS.Timeout;
     const setupSSE = () => {
-      eventSource = new EventSource("/api/orders/stream");
-      eventSource.onmessage = (event) => {
+      const es = new EventSource("/api/orders/stream");
+      eventSourceRef.current = es;
+      es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
           if (data.type === "order_change" && data.documentKey?._id === orderId) {
@@ -105,17 +107,17 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
           }
         } catch (e) {}
       };
-      eventSource.onerror = () => {
-        eventSource.close();
+      es.onerror = () => {
+        es.close();
         timeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
     return () => {
-      if (eventSource) eventSource.close();
+      if (eventSourceRef.current) eventSourceRef.current.close();
       if (timeoutId) clearTimeout(timeoutId);
     };
-  }, [orderId, loading, router, order?.status]);
+  }, [orderId, loading, router]);
 
   useEffect(() => {
     const el = chatScrollRef.current;

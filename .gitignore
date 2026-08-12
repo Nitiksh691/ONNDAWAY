@@ -1,5 +1,14 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
+# Agent & Documentation Files
+*.md
+*.MD
+
+# IDE / Agent Directories
+brain/
+.gemini/
+.cursor/
+
 # dependencies
 /node_modules
 /.pnp
@@ -39,3 +48,8 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+#normal file
+AGENTS.md
+CLAUDE.md   
+DESIGN.MD

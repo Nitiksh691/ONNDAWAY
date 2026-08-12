@@ -39,9 +39,15 @@ const _GET = async () => {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     thirtyDaysAgo.setHours(0, 0, 0, 0);
 
-    // Run all three aggregations in parallel
-    const [summaryResult, statusResult, bestSellersResult, revenueByDayResult] =
-      await Promise.all([
+    // Run all aggregations in parallel
+    const [
+      summaryResult = [],
+      statusResult = [],
+      bestSellersResult = [],
+      revenueByDayResult = [],
+      uniqueUserIds = [],
+      ordersByHourRaw = [],
+    ] = await Promise.all([
         // 1. Summary stats
         Order.aggregate([
           {
@@ -149,11 +155,8 @@ const _GET = async () => {
       totalOrders:   totalRow.totalOrders    ?? 0,
       todayOrders:   todayAllRow.todayTotalOrders ?? 0,
       avgOrderValue: Math.round(totalRow.avgOrderValue ?? 0),
-      uniqueUsers:   Array.isArray(bestSellersResult) && Array.isArray(summaryResult[4] /* will be handled below */) ? 0 : (summaryResult[4] as unknown as string[])?.length ?? 0, // Fallback since promise array order is index-based
+      uniqueUsers:   uniqueUserIds.length,
     };
-
-    // Correcting the distinct result array which is at index 4
-    summary.uniqueUsers = (summaryResult[4] as unknown as string[])?.length ?? 0;
 
     // Shape status breakdown
     const statusBreakdown = Object.fromEntries(
@@ -161,7 +164,7 @@ const _GET = async () => {
     );
 
     // Map ordersByHour to guarantee 8:00 to 22:00
-    const rawHours = summaryResult[5] as unknown as { hour: string; orders: number }[];
+    const rawHours = ordersByHourRaw as { hour: string; orders: number }[];
     const hoursMap: Record<string, number> = {};
     for (let i = 8; i <= 22; i++) hoursMap[`${i}:00`] = 0;
     if (Array.isArray(rawHours)) {

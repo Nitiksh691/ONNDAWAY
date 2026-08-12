@@ -2,10 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import { withLogger } from "@/lib/withLogger";
 
-const razorpay = new Razorpay({
-  key_id: process.env.RAZORPAY_KEY_ID!,
-  key_secret: process.env.RAZORPAY_KEY_SECRET!,
-});
+function getRazorpay() {
+  return new Razorpay({
+    key_id: process.env.RAZORPAY_KEY_ID!,
+    key_secret: process.env.RAZORPAY_KEY_SECRET!,
+  });
+}
 
 const _POST = async (req: NextRequest) => {
   const body = await req.json().catch(() => ({}));
@@ -30,7 +32,7 @@ const _POST = async (req: NextRequest) => {
   }
 
   try {
-    const order = await razorpay.orders.create({
+    const order = await getRazorpay().orders.create({
       amount,
       currency,
       receipt: receipt ?? `rcpt_${Date.now()}`,

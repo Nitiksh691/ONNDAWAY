@@ -7,8 +7,11 @@ export async function GET(req: NextRequest) {
   try {
     const code = req.nextUrl.searchParams.get("code");
     if (code) {
-      const coupon = await Coupon.findOne({ code: code.toUpperCase() }).lean();
-      if (!coupon) return NextResponse.json({ error: "Coupon not found" }, { status: 404 });
+      const coupon = await Coupon.findOne({
+        code: code.toUpperCase(),
+        active: true,
+      }).lean();
+      if (!coupon) return NextResponse.json({ error: "Coupon not found or inactive" }, { status: 404 });
       return NextResponse.json({ ...coupon, id: (coupon as any)._id.toString() });
     }
 

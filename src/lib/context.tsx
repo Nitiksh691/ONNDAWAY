@@ -1,8 +1,9 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
+import toast from "react-hot-toast";
 import { UserProfile, CartItem, MenuItem, SelectedCustomization } from "./types";
 import { buildLineDetails, normalizeCartLine } from "./orderLine";
-import { STORAGE_KEYS } from "./constants";
+import { STORAGE_KEYS, MAX_CART_TOTAL_ITEMS, MAX_ITEM_QUANTITY } from "./constants";
 
 // ── Type for the minimal session user object ─────────────────────────────────
 interface SessionUser {
@@ -207,12 +208,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const currentTotalQty = prev.reduce((sum, c) => sum + c.quantity, 0);
       const currentItemQty = prev.filter(c => c.item.id === item.id).reduce((sum, c) => sum + c.quantity, 0);
 
-      if (currentTotalQty >= 5) {
-        import("react-hot-toast").then(mod => mod.default.error("You can only order a maximum of 5 items. If you want to order more, please place your order and request a support call, or contact the support team."));
+      if (currentTotalQty >= MAX_CART_TOTAL_ITEMS) {
+        toast.error(`You can only order a maximum of ${MAX_CART_TOTAL_ITEMS} items. If you want to order more, please place your order and request a support call, or contact the support team.`);
         return prev;
       }
-      if (currentItemQty >= 3) {
-        import("react-hot-toast").then(mod => mod.default.error(`You can only order a maximum of 3 portions of ${item.name}. If you want to order more, please contact the support team.`));
+      if (currentItemQty >= MAX_ITEM_QUANTITY) {
+        toast.error(`You can only order a maximum of ${MAX_ITEM_QUANTITY} portions of ${item.name}. If you want to order more, please contact the support team.`);
         return prev;
       }
 
@@ -253,12 +254,12 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const otherTotalQty = prev.filter(c => c.cartItemId !== targetItem.cartItemId).reduce((sum, c) => sum + c.quantity, 0);
       const otherSameItemQty = prev.filter(c => c.item.id === targetItem.item.id && c.cartItemId !== targetItem.cartItemId).reduce((sum, c) => sum + c.quantity, 0);
 
-      if (otherTotalQty + qty > 5) {
-        import("react-hot-toast").then(mod => mod.default.error("You can only order a maximum of 5 items. If you want to order more, please place your order and request a support call, or contact the support team."));
+      if (otherTotalQty + qty > MAX_CART_TOTAL_ITEMS) {
+        toast.error(`You can only order a maximum of ${MAX_CART_TOTAL_ITEMS} items. If you want to order more, please place your order and request a support call, or contact the support team.`);
         return prev;
       }
-      if (otherSameItemQty + qty > 3) {
-        import("react-hot-toast").then(mod => mod.default.error(`You can only order a maximum of 3 portions of ${targetItem.item.name}. If you want to order more, please contact the support team.`));
+      if (otherSameItemQty + qty > MAX_ITEM_QUANTITY) {
+        toast.error(`You can only order a maximum of ${MAX_ITEM_QUANTITY} portions of ${targetItem.item.name}. If you want to order more, please contact the support team.`);
         return prev;
       }
 
@@ -283,30 +284,53 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     [cart]
   );
 
+  const toggleSidebar = useCallback(() => setSidebarOpen(prev => !prev), []);
+
+  const contextValue = useMemo(
+    () => ({
+      user,
+      profile,
+      loading,
+      cart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      cartTotal,
+      cartCount,
+      refreshProfile: checkSession,
+      checkSession,
+      syncProfile,
+      isSidebarOpen,
+      setSidebarOpen,
+      toggleSidebar,
+      wishlist,
+      toggleWishlist,
+      settings,
+    }),
+    [
+      user,
+      profile,
+      loading,
+      cart,
+      addToCart,
+      removeFromCart,
+      updateQuantity,
+      clearCart,
+      cartTotal,
+      cartCount,
+      checkSession,
+      syncProfile,
+      isSidebarOpen,
+      toggleSidebar,
+      wishlist,
+      toggleWishlist,
+      settings,
+    ]
+  );
+
   return (
-    <AppContext.Provider
-      value={{
-        user,
-        profile,
-        loading,
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        cartTotal,
-        cartCount,
-        refreshProfile: checkSession,
-        checkSession,
-        syncProfile,
-        isSidebarOpen,
-        setSidebarOpen,
-        toggleSidebar: () => setSidebarOpen(prev => !prev),
-        wishlist,
-        toggleWishlist,
-        settings,
-      }}
-    >
+    <AppContext.Provider value={contextValue}>
       {children}
     </AppContext.Provider>
   );

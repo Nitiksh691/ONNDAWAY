@@ -3,17 +3,19 @@ import { useEffect, useState } from "react";
 import WalkingLoader from "./WalkingLoader";
 
 export default function Loader() {
-  const [loading, setLoading] = useState(true);
+  const [exiting, setExiting] = useState(false);
+  const [visible, setVisible] = useState(true);
 
   useEffect(() => {
     // Show loader for a much shorter time (300ms) just to mask initial mount
     const timer = setTimeout(() => {
-      setLoading(false);
+      setExiting(true);
+      setTimeout(() => setVisible(false), 400); // Wait for fadeOut animation
     }, 300);
     return () => clearTimeout(timer);
   }, []);
 
-  if (!loading) return null;
+  if (!visible) return null;
 
   return (
     <div style={{
@@ -25,7 +27,7 @@ export default function Loader() {
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "column",
-      animation: loading ? "none" : "fadeOut 0.4s ease forwards",
+      animation: !exiting ? "none" : "fadeOut 0.4s ease forwards",
     }}>
       <style dangerouslySetInnerHTML={{__html: `
         @keyframes fadeOut {

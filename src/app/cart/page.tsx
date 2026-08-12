@@ -38,6 +38,11 @@ export default function CartPage() {
 
   useEffect(() => {
     setIdempotencyKey(crypto.randomUUID());
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+      }
+    };
   }, []);
 
   // Restore post-checkout screen after refresh (only when cart is empty)

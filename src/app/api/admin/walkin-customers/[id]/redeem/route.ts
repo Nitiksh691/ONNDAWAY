@@ -36,28 +36,37 @@ export async function POST(
       );
     }
 
-    // Record the free drink as a ₹0 order
-    customer.orders.push({
+    const newOrder = {
       items: [{ name: itemName, price: 0, quantity: 1, category: "drinks" }],
       amount: 0,
       drinkCount: 1,
       isFreeRedeem: true,
       note: "🎉 Free loyalty drink redeemed!",
       createdAt: new Date(),
-    });
+    };
 
-    customer.totalDrinks = (customer.totalDrinks || 0) + 1; // completes the cycle of 7
-    customer.totalOrders = (customer.totalOrders || 0) + 1;
-    customer.loyaltyRedeemed = (customer.loyaltyRedeemed || 0) + 1;
+    const updatedCustomer = await WalkInCustomer.findOneAndUpdate(
+      { _id: params.id, totalDrinks: customer.totalDrinks },
+      {
+        $push: { orders: newOrder },
+        $inc: { totalDrinks: 1, totalOrders: 1, loyaltyRedeemed: 1 }
+      },
+      { new: true }
+    );
 
-    await customer.save();
+    if (!updatedCustomer) {
+      return NextResponse.json(
+        { error: "Race condition detected, please try again" },
+        { status: 409 }
+      );
+    }
 
     return NextResponse.json({
       success: true,
       message: "Free drink redeemed!",
-      totalDrinks: customer.totalDrinks,
-      loyaltyRedeemed: customer.loyaltyRedeemed,
-      drinksInCycle: customer.totalDrinks % 7, // should be 0 now
+      totalDrinks: updatedCustomer.totalDrinks,
+      loyaltyRedeemed: updatedCustomer.loyaltyRedeemed,
+      drinksInCycle: updatedCustomer.totalDrinks % 7, // should be 0 now
     });
   } catch (error) {
     console.error("Error redeeming free drink:", error);

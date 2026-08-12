@@ -5,15 +5,18 @@ import { AppProvider } from "@/lib/context";
 import Navbar from "@/components/Navbar";
 import GlobalSidebar from "@/components/GlobalSidebar";
 import Loader from "@/components/Loader";
-import ActiveOrderWidget from "@/components/ActiveOrderWidget";
-import SupportFab from "@/components/SupportFab";
+import dynamic from "next/dynamic";
+
+const ActiveOrderWidget = dynamic(() => import("@/components/ActiveOrderWidget"));
+const SupportFab = dynamic(() => import("@/components/SupportFab"));
+const MaintenanceOverlay = dynamic(() => import("@/components/MaintenanceOverlay"));
+const KitchenClosedBanner = dynamic(() => import("@/components/KitchenClosedBanner"));
+const WaitlistOverlay = dynamic(() => import("@/components/WaitlistOverlay"));
+const MusicPlayer = dynamic(() => import("@/components/MusicPlayer"));
+const PwaInstallBanner = dynamic(() => import("@/components/PwaInstallBanner"));
+
 import BottomNav from "@/components/BottomNav";
 import BottomActionBar from "@/components/BottomActionBar";
-import MaintenanceOverlay from "@/components/MaintenanceOverlay";
-import KitchenClosedBanner from "@/components/KitchenClosedBanner";
-import WaitlistOverlay from "@/components/WaitlistOverlay";
-import MusicPlayer from "@/components/MusicPlayer";
-import PwaInstallBanner from "@/components/PwaInstallBanner";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -36,6 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
         <link rel="apple-touch-icon" href="/icon-192x192.png" />
+        <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="ONNDAWAY" />
@@ -80,6 +84,23 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     });
                   });
                 }
+                // Auto-reload once on ChunkLoadError caused by stale SW cache
+                function handleChunkError(msg) {
+                  if (msg && (msg.indexOf('ChunkLoadError') !== -1 || msg.indexOf('Failed to load chunk') !== -1)) {
+                    var key = '__chunk_reload__';
+                    if (!sessionStorage.getItem(key)) {
+                      sessionStorage.setItem(key, '1');
+                      window.location.reload();
+                    }
+                  }
+                }
+                window.addEventListener('error', function(e) {
+                  handleChunkError(e && e.message);
+                });
+                window.addEventListener('unhandledrejection', function(e) {
+                  var msg = e && e.reason && (e.reason.message || String(e.reason));
+                  handleChunkError(msg);
+                });
               `,
             }}
           />

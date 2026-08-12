@@ -53,5 +53,11 @@ export const DEFAULT_DELIVERY_FEE = 20;
 /** Maximum quantity of a single item allowed in the cart */
 export const MAX_CART_QUANTITY = 10;
 
+/** Maximum total item count (sum of quantities) allowed in one order */
+export const MAX_CART_TOTAL_ITEMS = 20;
+
+/** Maximum portions of the same menu item per order */
+export const MAX_ITEM_QUANTITY = 5;
+
 /** Number of skeleton cards to show while menu is loading */
 export const SKELETON_CARD_COUNT = 8;

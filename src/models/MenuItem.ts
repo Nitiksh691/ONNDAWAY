@@ -8,24 +8,23 @@ const MenuItemSchema = new Schema({
   category:      { type: String, required: true },
   orderCount:    { type: Number, default: 0 },
   available:     { type: Boolean, default: true },
+  stock:         { type: Number, default: null },
   isPopular:     { type: Boolean, default: false },
+  isRecommended: { type: Boolean, default: false },
   isBanner:      { type: Boolean, default: false },
   isLaunchingSoon: { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
   sortOrder:     { type: Number, default: 0 },
-  customizationCategories: {
-    type: [{
-      name:     { type: String, required: true },
-      required: { type: Boolean, default: false },
-      multiple: { type: Boolean, default: false },
-      options:  [{
-        name:  { type: String, required: true },
-        price: { type: Number, default: 0 },
-      }],
+  customizationCategories: [{
+    name:     { type: String, required: true },
+    required: { type: Boolean, default: false },
+    multiple: { type: Boolean, default: false },
+    options:  [{
+      name:  { type: String, required: true },
+      price: { type: Number, default: 0 },
     }],
-    default: [],
-  },
+  }],
   createdAt:     { type: Date, default: Date.now },
   updatedAt:     { type: Date, default: Date.now },
 });

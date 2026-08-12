@@ -1,6 +1,7 @@
-const CACHE_NAME = "onndaway-v1";
+const CACHE_NAME = "onndaway-v3";
+
+// Only cache truly static, versioned assets — NEVER HTML pages
 const STATIC_ASSETS = [
-  "/",
   "/manifest.json",
   "/icon-192x192.png",
   "/icon-512x512.png",
@@ -28,34 +29,28 @@ self.addEventListener("activate", function (event) {
   );
 });
 
-// Network-first strategy for API calls, cache-first for static assets
+// Network-first strategy for API calls, Next.js internals, and HTML pages
 self.addEventListener("fetch", function (event) {
   const url = new URL(event.request.url);
 
-  // Always network-first for API and Next.js internals
+  // Always network-first for API, Next.js chunks/HMR, and HTML navigation requests
+  // Never cache HTML — it contains versioned chunk references that go stale
   if (
     url.pathname.startsWith("/api/") ||
     url.pathname.startsWith("/_next/") ||
-    url.pathname.startsWith("/_vercel/")
+    url.pathname.startsWith("/_vercel/") ||
+    event.request.mode === "navigate"
   ) {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return new Response(
-          JSON.stringify({ error: "You are offline. Please check your connection." }),
-          { headers: { "Content-Type": "application/json" }, status: 503 }
-        );
-      })
-    );
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Cache-first for static images and fonts
+  // Cache-first for static images and fonts only
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
       return fetch(event.request).then((response) => {
-        // Cache static assets dynamically
-        if (response.ok && (url.pathname.match(/\.(png|jpg|jpeg|svg|woff2|ico)$/))) {
+        if (response.ok && url.pathname.match(/\.(png|jpg|jpeg|svg|woff2|ico)$/)) {
           const clone = response.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
         }

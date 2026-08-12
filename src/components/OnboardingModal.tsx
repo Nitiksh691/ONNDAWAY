@@ -107,16 +107,16 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
             <div style={{ position: "absolute", width: 120, height: 120, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -30, left: -20, pointerEvents: "none" }} />
 
             {/* Emoji */}
-            <div className="onboard-hero-emoji">☕</div>
+            <div className="onboard-hero-emoji">🛵</div>
             <h2 className="onboard-hero-title" style={{
               fontFamily: "'Outfit', sans-serif", fontWeight: 900,
               color: "white", lineHeight: 1.1,
               textTransform: "uppercase", letterSpacing: "-0.01em", marginBottom: "4px",
             }}>
-              Welcome to<br />ONN D A WAY
+              ONN D A WAY
             </h2>
             <p style={{ color: "rgba(255,255,255,0.82)", fontSize: "0.9rem", lineHeight: 1.55 }}>
-              Fresh Meals & Café Favourites,<br />delivered to your door in Rohini.
+              Built by students. For students.<br />Fresh food, delivered with care.
             </p>
           </div>
 
@@ -125,8 +125,8 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
             {/* Trust pills */}
             <div className="onboard-trust" style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
               {[
-                { icon: <Clock size={13} />, text: "30–45 min delivery" },
-                { icon: <Coffee size={13} />, text: "Freshly prepared" },
+                { icon: <Clock size={13} />, text: "Fast delivery" },
+                { icon: <Coffee size={13} />, text: "Freshly made" },
                 { icon: <MapPin size={13} />, text: "Rohini, Delhi" },
               ].map(({ icon, text }) => (
                 <div key={text} style={{
@@ -151,9 +151,9 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
                   <MapPin size={18} color="#0135FB" />
                 </div>
                 <div className="info-text">
-                  <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Serving selected areas of Rohini, Delhi</h4>
+                  <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Delivering across Rohini, Delhi</h4>
                   <p style={{ fontSize: "0.8rem", color: "#6B7280", lineHeight: 1.5 }}>
-                    Set your location below to confirm we deliver to you before browsing.
+                    Drop your location so we can confirm we've got you covered.
                   </p>
                 </div>
               </div>
@@ -167,9 +167,9 @@ export default function OnboardingModal({ onLoginClick }: { onLoginClick: () => 
                   <Shield size={18} color="#92400E" />
                 </div>
                 <div className="info-text">
-                  <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Secure, flexible payment</h4>
+                  <h4 style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0A0F2E", marginBottom: "3px" }}>Pay your way, no stress</h4>
                   <p style={{ fontSize: "0.8rem", color: "#6B7280", lineHeight: 1.5 }}>
-                    Pay a small 20% UPI advance to confirm your order. The remaining 80% is collected at your door.
+                    A small UPI advance locks your order in. Rest is paid cash-on-delivery.
                   </p>
                 </div>
               </div>
