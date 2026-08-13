@@ -39,6 +39,7 @@ export default function BottomActionBar() {
   }, [drawerOpen]);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname === "/cart") return null;
   if (cartCount === 0) return null;
 
   return (

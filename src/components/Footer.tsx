@@ -1,3 +1,4 @@
+"use client";
 import Link from "next/link";
 import { Camera, MessageCircle, Mail, MapPin, Phone } from "lucide-react";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, SUPPORT_EMAIL } from "@/lib/company";
@@ -8,16 +9,11 @@ export default function Footer() {
       <style>{`
         .footer-main {
           display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 48px;
+          grid-template-columns: 1.2fr 1fr 1fr 1fr;
+          gap: 32px;
           padding: 48px 0 32px;
         }
         .footer-brand-col {}
-        .footer-right-col {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 32px;
-        }
         .footer-section-title {
           font-size: 0.7rem;
           font-weight: 800;
@@ -64,9 +60,11 @@ export default function Footer() {
           transition: background 0.2s;
         }
         .footer-social-btn:hover { background: rgba(255,255,255,0.25); }
-        @media (max-width: 640px) {
-          .footer-main { grid-template-columns: 1fr; gap: 32px; padding: 32px 0 24px; }
-          .footer-right-col { grid-template-columns: 1fr 1fr; gap: 24px; }
+        @media (max-width: 860px) {
+          .footer-main { grid-template-columns: 1fr 1fr; gap: 28px; padding: 36px 0 24px; }
+        }
+        @media (max-width: 520px) {
+          .footer-main { grid-template-columns: 1fr 1fr; gap: 24px; padding: 28px 0 20px; }
         }
       `}</style>
 
@@ -97,37 +95,48 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Right: Links + Contact */}
-          <div className="footer-right-col">
-            {/* Quick Links */}
-            <div>
-              <div className="footer-section-title">Explore</div>
-              {[
-                { label: "Menu", href: "/menu" },
-                { label: "My Orders", href: "/orders" },
-                { label: "About Us", href: "/about" },
-                { label: "Become a Partner", href: "/delivery/login" },
-                { label: "Become an Intern", href: "/intern" },
-              ].map(l => (
-                <Link key={l.label} href={l.href} className="footer-link">{l.label}</Link>
-              ))}
-            </div>
+          {/* Quick Links */}
+          <div>
+            <div className="footer-section-title">Explore</div>
+            {[
+              { label: "Menu", href: "/menu" },
+              { label: "My Orders", href: "/orders" },
+              { label: "About Us", href: "/about" },
+              { label: "Contact Us", href: "/contact-us" },
+              { label: "Become a Partner", href: "/delivery/login" },
+            ].map(l => (
+              <Link key={l.label} href={l.href} className="footer-link">{l.label}</Link>
+            ))}
+          </div>
 
-            {/* Contact */}
-            <div>
-              <div className="footer-section-title">Contact</div>
-              <div className="footer-contact-item">
-                <MapPin size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
-                <span>Rohini, Delhi</span>
-              </div>
-              <div className="footer-contact-item">
-                <Phone size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
-                <a href={SUPPORT_TEL}>{SUPPORT_PHONE_DISPLAY}</a>
-              </div>
-              <div className="footer-contact-item">
-                <Mail size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
-                <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
-              </div>
+          {/* Legal */}
+          <div>
+            <div className="footer-section-title">Legal</div>
+            {[
+              { label: "Privacy Policy", href: "/privacy-policy" },
+              { label: "Terms & Conditions", href: "/terms-and-conditions" },
+              { label: "Delivery Policy", href: "/delivery-policy" },
+              { label: "Cancellation & Refund", href: "/cancellation-and-refund" },
+              { label: "Contact Us", href: "/contact-us" },
+            ].map(l => (
+              <Link key={l.label} href={l.href} className="footer-link">{l.label}</Link>
+            ))}
+          </div>
+
+          {/* Contact */}
+          <div>
+            <div className="footer-section-title">Contact</div>
+            <div className="footer-contact-item">
+              <MapPin size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+              <span>Rohini, Delhi</span>
+            </div>
+            <div className="footer-contact-item">
+              <Phone size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+              <a href={SUPPORT_TEL}>{SUPPORT_PHONE_DISPLAY}</a>
+            </div>
+            <div className="footer-contact-item">
+              <Mail size={14} style={{ flexShrink: 0, opacity: 0.7 }} />
+              <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
             </div>
           </div>
         </div>
@@ -137,10 +146,8 @@ export default function Footer() {
           <p style={{ fontSize: "0.75rem", opacity: 0.5 }}>
             © {new Date().getFullYear()} ONN DA WAY. All rights reserved.
           </p>
-          <div style={{ display: "flex", gap: "20px" }}>
-            {["Privacy Policy", "Terms of Service"].map(l => (
-              <a key={l} href="#" style={{ fontSize: "0.72rem", opacity: 0.5, color: "white", textDecoration: "none" }}>{l}</a>
-            ))}
+          <div style={{ fontSize: "0.72rem", opacity: 0.45, color: "white" }}>
+            Built with ❤️ for students
           </div>
         </div>
       </div>

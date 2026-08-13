@@ -71,8 +71,10 @@ interface RazorpayButtonProps {
   customerPhone?: string;
   /** Disabled state (e.g. form not filled) */
   disabled?: boolean;
+  /** Function to create the backend order */
+  createOrder: () => Promise<{ order_id: string; amount: number; currency: string; internalOrderId: string }>;
   /** Called after successful payment + signature verification */
-  onSuccess?: (paymentId: string, orderId: string) => void;
+  onSuccess?: (paymentId: string, orderId: string, internalOrderId: string) => void;
   /** Called when the modal is dismissed without payment */
   onDismiss?: () => void;
   /** Hide the trust badge and inline dividers for a cleaner look */
@@ -87,6 +89,7 @@ export default function RazorpayButton({
   customerName,
   customerPhone,
   disabled = false,
+  createOrder,
   onSuccess,
   onDismiss,
   compact = false,
@@ -114,23 +117,9 @@ export default function RazorpayButton({
       return;
     }
 
-    let orderData: { order_id: string; amount: number; currency: string };
+    let orderData: { order_id: string; amount: number; currency: string; internalOrderId: string };
     try {
-      const res = await fetch("/api/razorpay/create-order", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          amount: amountPaise,
-          currency: "INR",
-          receipt: `rcpt_${Date.now()}`,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error((err as { error?: string }).error ?? "Failed to create payment order");
-      }
-      orderData = await res.json();
+      orderData = await createOrder();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Could not initiate payment";
       toast.error(message);
@@ -171,7 +160,7 @@ export default function RazorpayButton({
 
           setPaid(true);
           toast.success("Payment successful! 🎉");
-          onSuccess?.(response.razorpay_payment_id, response.razorpay_order_id);
+          onSuccess?.(response.razorpay_payment_id, response.razorpay_order_id, orderData.internalOrderId);
         } catch (vErr: unknown) {
           const msg = vErr instanceof Error ? vErr.message : "Payment verification failed";
           toast.error(msg);

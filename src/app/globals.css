@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
   --bottom-bar-height: 112px;
@@ -81,12 +82,13 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: #F5F7FF;
   color: var(--text-dark);
-  line-height: 1.5;
+  line-height: 1.6;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   max-width: 100vw;
-  letter-spacing: -0.01em;
+  letter-spacing: -0.015em;
+  font-size: 15px;
 }
 
 h1,
@@ -96,12 +98,46 @@ h4,
 h5,
 h6 {
   letter-spacing: -0.03em;
-  font-weight: 700;
+  font-weight: 800;
+  line-height: 1.15;
+  color: var(--text-dark);
 }
+
+p {
+  line-height: 1.7;
+  color: var(--text-muted);
+}
+
+/* Section headings — use Outfit for display text */
+.otw-display,
+.section-title,
+[class*='section-heading'] {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+/* Better spacing for content paragraphs */
+.prose p + p {
+  margin-top: 1em;
+}
+
+/* Body text utility classes */
+.text-body-lg { font-size: 1rem; line-height: 1.7; }
+.text-body { font-size: 0.9rem; line-height: 1.7; }
+.text-body-sm { font-size: 0.82rem; line-height: 1.6; }
+.text-label { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-mid); }
+.text-caption { font-size: 0.7rem; color: var(--text-muted); }
 
 /* Bottom nav padding — always applied since BottomNav is always present */
 body main {
   padding-bottom: var(--bottom-bar-height);
+}
+
+/* Policy and legal pages don't need the extra bottom bar padding */
+body main:has([class*='policy-section']),
+body main:has([class*='contact-fade-up']) {
+  padding-bottom: 0;
 }
 
 /* ── Scrollbar ── */
@@ -1346,3 +1382,118 @@ body main {
     gap: 12px;
   }
 }
+
+/* ═══════ GLOBAL TYPOGRAPHY IMPROVEMENTS ═══════ */
+
+/* Better section headings — matches the HSliderSection h2 usage */
+section h2 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+}
+
+/* Section category/sub-labels */
+.section-emoji-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: var(--text-dark);
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+}
+
+/* Improved card titles */
+.otw-card .card-title,
+[class*='-title'] {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Improved price/badge typography */
+.price-tag {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+/* Global link hover improvement */
+a { transition: color 0.15s; }
+
+/* Better input typography */
+input, select, textarea {
+  font-family: 'Inter', sans-serif;
+  letter-spacing: -0.01em;
+}
+
+/* Label/tag uppercase tracking */
+.otw-label, .text-label, [class*='section-title'],
+.footer-section-title {
+  letter-spacing: 1.2px;
+  font-size: 0.68rem;
+}
+
+/* Better button text */
+button, .otw-btn {
+  letter-spacing: -0.01em;
+}
+
+/* Cart page typography fixes */
+.cart-grid h1 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+}
+
+/* Marquee text */
+.marquee span {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+/* Page header subtitles */
+.page-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+  line-height: 1.6;
+  letter-spacing: -0.01em;
+}
+
+/* Better footer text */
+footer .footer-link {
+  font-size: 0.875rem;
+  letter-spacing: -0.01em;
+}
+
+/* Policy page improvements */
+.policy-section h2 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 800;
+}
+
+/* Toast font fix */
+.go2072408551 {
+  font-family: 'Inter', sans-serif !important;
+  font-size: 0.9rem !important;
+  letter-spacing: -0.01em !important;
+}
+
+/* Improved spacing for section groups */
+.home-section-group {
+  padding: 0 0 8px;
+}
+
+/* Spacing fix: horizontal slider section */
+section[style*="marginBottom"] h2 {
+  font-family: 'Outfit', 'Inter', sans-serif;
+  font-weight: 900;
+  font-size: 1.05rem;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}

@@ -43,8 +43,15 @@ const OrderSchema = new Schema(
     total:              { type: Number, required: true },
     couponCode:         { type: String, default: null },
     discount:           { type: Number, default: 0 },
-    status:             { type: String, enum: ["placed", "preparing", "out_for_delivery", "delivered", "cancelled"], default: "placed" },
-    confirmed:          { type: Boolean, default: false },
+    status:             { type: String, enum: ["payment_pending", "placed", "preparing", "out_for_delivery", "delivered", "cancelled"], default: "payment_pending" },
+    paymentStatus:      { type: String, enum: ["PENDING", "PAID", "REFUNDED"], default: "PENDING" },
+    paymentMethod:      { type: String, enum: ["COD", "RAZORPAY"], required: true },
+    paymentInitializationStatus: { type: String, enum: ["PENDING", "SUCCESS", "FAILED"], default: "PENDING" },
+    razorpayOrderId:    { type: String, default: null },
+    paymentAttempts:    {
+      type: [{ attemptId: String, status: String, method: String, createdAt: { type: Date, default: Date.now } }],
+      default: []
+    },
     scheduledTime:      { type: String, default: null },
     deliveryPersonId:   { type: String, default: null },
     deliveryPersonName: { type: String, default: null },

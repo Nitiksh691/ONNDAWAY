@@ -388,7 +388,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const res = await fetch("/api/orders?status=placed");
         if (res.ok) {
           const data = await res.json();
-          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          const unconfirmed = data.filter((o: any) => o.status === "placed").length;
           if (unconfirmed > prevPendingRef.current) playAlarmBeep();
           prevPendingRef.current = unconfirmed;
           setPendingCount(unconfirmed);
@@ -407,7 +407,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         const res = await fetch("/api/orders?status=placed");
         if (res.ok) {
           const data = await res.json();
-          const unconfirmed = data.filter((o: any) => o.status === "placed" && !o.confirmed).length;
+          const unconfirmed = data.filter((o: any) => o.status === "placed").length;
           if (unconfirmed > prevPendingRef.current) playAlarmBeep();
           prevPendingRef.current = unconfirmed;
           setPendingCount(unconfirmed);

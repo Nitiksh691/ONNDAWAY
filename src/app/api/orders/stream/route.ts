@@ -38,7 +38,6 @@ export async function GET(req: NextRequest) {
           try {
             const unconfirmedCount = await Order.countDocuments({
               status: "placed",
-              confirmed: { $ne: true }
             });
             sendEvent({ type: "orders_update", count: unconfirmedCount });
           } catch (e) {}

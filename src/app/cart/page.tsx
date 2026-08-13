@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useApp } from "@/lib/context";
@@ -10,8 +10,6 @@ import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle } 
 import toast from "react-hot-toast";
 import Link from "next/link";
 import RazorpayButton from "@/components/RazorpayButton";
-
-const CAMPUS_LOCATIONS: string[] = []; // removed
 
 export default function CartPage() {
   const { user, profile, cart, updateQuantity, removeFromCart, clearCart, cartTotal, syncProfile } = useApp();
@@ -25,25 +23,17 @@ export default function CartPage() {
   const [memePopup, setMemePopup] = useState<{ image: string; sound: string; visible: boolean } | null>(null);
   const [name, setName] = useState("");
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
-  const [isConfirmed, setIsConfirmed] = useState(false);
   const [placing, setPlacing] = useState(false);
-  const [showConfirm, setShowConfirm] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(20);
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [isGpsLoading, setIsGpsLoading] = useState(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     setIdempotencyKey(crypto.randomUUID());
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-      }
-    };
-  }, []);
+  }, [cart]);
 
   // Restore post-checkout screen after refresh (only when cart is empty)
   useEffect(() => {
@@ -54,10 +44,6 @@ export default function CartPage() {
       if (savedCart && JSON.parse(savedCart).length > 0) return;
     } catch { /* ignore */ }
     setPlacedOrderId(activeId);
-    fetch(`/api/orders/${activeId}`)
-      .then(res => res.ok ? res.json() : null)
-      .then(data => { if (data?.confirmed) setIsConfirmed(true); })
-      .catch(() => { });
   }, []);
 
   // Pre-fill location from storage
@@ -143,203 +129,103 @@ export default function CartPage() {
     : 0;
   const grandTotal = Math.max(0, cartTotal - finalDiscount + deliveryFee);
 
-  const handleConfirmAndPlace = async (preConfirmed = false) => {
+  const prepareOrderPayload = () => {
+    return {
+      userId: phoneDigits,
+      userName: name.trim(),
+      userPhone: phoneDigits,
+      items: normalizeCartLines(cart),
+      location: location.trim(),
+      locationNotes: locationNotes.trim() || null,
+      total: grandTotal,
+      couponCode: appliedCoupon ? couponCode : null,
+      discount: finalDiscount,
+      scheduledTime: scheduledTime === "Custom Time" ? customTime : scheduledTime,
+    };
+  };
+
+  const finalizeOrderClientSide = async (orderId: string, userId: string, locationStr: string) => {
+    await fetch("/api/users", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: name.trim(), phone: phoneDigits, location: locationStr, userId }),
+    });
+    localStorage.setItem("otw_user_id", userId);
+    setActiveOrderId(orderId);
+    await syncProfile(userId);
+    clearCart();
+    setPlacedOrderId(orderId);
+  };
+
+  const handlePlaceCOD = async () => {
     setPlacing(true);
     try {
-      const finalLoc = location.trim();
-      const finalUserId = phoneDigits;
-
-      let latitude: number | null = null;
-      let longitude: number | null = null;
-      if (typeof navigator !== "undefined" && navigator.geolocation) {
-        try {
-          const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
-            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 8000, maximumAge: 60000 })
-          );
-          latitude = pos.coords.latitude;
-          longitude = pos.coords.longitude;
-        } catch {
-          /* GPS optional — campus location string is still saved */
-        }
-      }
-
-      const orderData = {
-        userId: finalUserId,
-        userName: name.trim(),
-        userPhone: phoneDigits,
-        items: normalizeCartLines(cart),
-        location: finalLoc,
-        locationNotes: locationNotes.trim() || null,
-        latitude,
-        longitude,
-        total: grandTotal,
-        couponCode: appliedCoupon ? couponCode : null,
-        discount: finalDiscount,
-        status: "placed",
-        confirmed: preConfirmed,
-        scheduledTime: scheduledTime === "Custom Time" ? customTime : scheduledTime,
-      };
-
+      const payload = prepareOrderPayload();
       const res = await fetch("/api/orders", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Idempotency-Key": idempotencyKey
-        },
-        body: JSON.stringify(orderData),
+        headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) {
-        if (res.status === 409) {
-          throw new Error("One or more items are currently unavailable. Please refresh your cart.");
-        }
+        if (res.status === 409) throw new Error("One or more items are currently unavailable. Please refresh your cart.");
         throw new Error("Failed to place order");
       }
+      
       const orderResult = await res.json();
-
-      // Rotate idempotency key on success
       setIdempotencyKey(crypto.randomUUID());
-
-      // Auto-create/update user profile
-      await fetch("/api/users", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: name.trim(), phone: phoneDigits, location: finalLoc, userId: finalUserId }),
-      });
-
-      localStorage.setItem("otw_user_id", finalUserId);
-      setActiveOrderId(orderResult.id);
-      await syncProfile(finalUserId);
-
-      clearCart();
-      setShowConfirm(false);
-
-      if (preConfirmed) {
-        router.push(`/track/${orderResult.id}`);
-      } else {
-        setPlacedOrderId(orderResult.id);
-        // Start listening for confirmation via SSE
-        let timeoutId: NodeJS.Timeout;
-        const setupSSE = () => {
-          const es = new EventSource("/api/orders/stream");
-          eventSourceRef.current = es;
-          es.onmessage = async (event) => {
-            try {
-              const data = JSON.parse(event.data);
-              if (data.type === "order_change" && data.documentKey?._id === orderResult.id) {
-                const pollRes = await fetch(`/api/orders/${orderResult.id}`);
-                if (pollRes.ok) {
-                  const pollData = await pollRes.json();
-                  if (pollData.confirmed) {
-                    setIsConfirmed(true);
-                    es.close();
-                    if (timeoutId) clearTimeout(timeoutId);
-                  }
-                }
-              }
-            } catch (e) { }
-          };
-          es.onerror = () => {
-            es.close();
-            timeoutId = setTimeout(setupSSE, 5000);
-          };
-        };
-        setupSSE();
-      }
-
+      await finalizeOrderClientSide(orderResult.id, payload.userId, payload.location);
     } catch (e: any) {
-      console.error(e);
       toast.error(e.message || "Failed to place order");
     } finally { setPlacing(false); }
   };
 
+  const createRazorpayOrder = async () => {
+    const payload = prepareOrderPayload();
+    const res = await fetch("/api/razorpay/create-order", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "Idempotency-Key": idempotencyKey },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.error || "Failed to initiate payment");
+    }
+    
+    setIdempotencyKey(crypto.randomUUID());
+    return res.json();
+  };
 
   /* ─── POST-ORDER SCREEN ─── */
   if (placedOrderId) {
     return (
       <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px 20px" }}>
         <style>{`
-          @keyframes phone-ring {
-            0%, 100% { transform: rotate(0deg) scale(1); }
-            10% { transform: rotate(-15deg) scale(1.1); }
-            20% { transform: rotate(15deg) scale(1.1); }
-            30% { transform: rotate(-12deg) scale(1.05); }
-            40% { transform: rotate(12deg) scale(1.05); }
-            50% { transform: rotate(-8deg); }
-            60% { transform: rotate(8deg); }
-            70% { transform: rotate(-4deg); }
-            80% { transform: rotate(4deg); }
-            90% { transform: rotate(0deg); }
-          }
           @keyframes pulse-ring-green {
             0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
             70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(34,197,94,0); }
             100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34,197,94,0); }
           }
           @keyframes slide-up-post { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes spin-wait { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         `}</style>
-
-        {isConfirmed ? (
-          <div style={{ textAlign: "center", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "48px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "12px" }}>🎉</div>
-            <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulse-ring-green 1.5s ease-in-out infinite" }}>
-              <CheckCircle size={40} color="#22C55E" />
-            </div>
-            <h2 style={{ fontSize: "1.9rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px", color: "#22C55E" }}>Order Confirmed!</h2>
-            <p style={{ color: "#6B7280", marginBottom: "32px", fontSize: "0.95rem", lineHeight: 1.7 }}>
-              Your order has been <strong style={{ color: "#0A0F2E" }}>verified and accepted</strong>. Our team is now preparing it — track it live!
-            </p>
-            <Link
-              href={`/track/${placedOrderId}`}
-              style={{ background: "#0135FB", color: "#fff", padding: "16px 36px", borderRadius: "10px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "1rem", boxShadow: "0 4px 0 #0028D4" }}
-            >
-              Track My Order <ArrowRight size={20} />
-            </Link>
+        
+        <div style={{ textAlign: "center", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "48px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
+          <div style={{ fontSize: "4rem", marginBottom: "12px" }}>🎉</div>
+          <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulse-ring-green 1.5s ease-in-out infinite" }}>
+            <CheckCircle size={40} color="#22C55E" />
           </div>
-        ) : (
-          <div style={{ textAlign: "center", maxWidth: "460px", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "40px 32px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
-            <div style={{ fontSize: "4rem", marginBottom: "20px", display: "inline-block", animation: "phone-ring 2s ease-in-out infinite" }}>📞</div>
-            <h2 style={{ fontSize: "1.7rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px", color: "#0A0F2E" }}>Order Received!</h2>
-            <p style={{ color: "#6B7280", marginBottom: "24px", fontSize: "0.9rem", lineHeight: 1.7 }}>
-              Thanks <strong style={{ color: "#0A0F2E" }}>{name}</strong>! Our team will call you at{" "}
-              <strong style={{ color: "#0135FB" }}>+91 {phoneDigits}</strong> shortly to confirm.
-            </p>
-
-            <div style={{ background: "#EEF1FF", borderRadius: "999px", padding: "12px 22px", display: "inline-flex", alignItems: "center", gap: "10px", marginBottom: "24px" }}>
-              <div style={{ width: 18, height: 18, borderRadius: "50%", border: "3px solid #c7d2fe", borderTop: "3px solid #0135FB", animation: "spin-wait 1s linear infinite" }} />
-              <span style={{ fontWeight: 700, fontSize: "0.88rem", color: "#2A3060" }}>Waiting for admin confirmation</span>
-            </div>
-
-            <div style={{ display: "flex", flexDirection: "column", gap: "12px", textAlign: "left", background: "#F5F7FF", borderRadius: "12px", padding: "18px 20px" }}>
-              {[
-                { icon: "✅", text: "Order placed successfully", done: true },
-                { icon: "📞", text: "Awaiting admin call & confirmation", done: false, active: true },
-                { icon: "🍳", text: "Order preparation starts", done: false },
-                { icon: "🛵", text: "Rider assigned & dispatched", done: false },
-                { icon: "📍", text: "Delivered to your location", done: false },
-              ].map((step, i) => (
-                <div key={i} style={{ display: "flex", alignItems: "center", gap: "12px", opacity: step.done || step.active ? 1 : 0.35 }}>
-                  <div style={{ fontSize: "1.1rem", width: 26, textAlign: "center", flexShrink: 0 }}>{step.icon}</div>
-                  <span style={{ fontWeight: step.active ? 700 : 600, color: step.active ? "#0135FB" : step.done ? "#22C55E" : "#9ca3af", fontSize: "0.88rem" }}>
-                    {step.text}{step.active && <span style={{ color: "#9ca3af" }}> …</span>}
-                  </span>
-                  {step.done && <CheckCircle size={15} color="#22C55E" style={{ marginLeft: "auto", flexShrink: 0 }} />}
-                </div>
-              ))}
-            </div>
-
-            <Link
-              href={`/track/${placedOrderId}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: "8px", marginTop: "24px", background: "#0135FB", color: "#fff", padding: "14px 28px", borderRadius: "10px", fontWeight: 800, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px", fontSize: "0.88rem", boxShadow: "0 4px 0 #0028D4" }}
-            >
-              Track Order Live <ArrowRight size={18} />
-            </Link>
-            <p style={{ marginTop: "14px", fontSize: "0.75rem", color: "#9ca3af", lineHeight: 1.6 }}>
-              This page auto-updates every 3 seconds.
-            </p>
-          </div>
-        )}
+          <h2 style={{ fontSize: "1.9rem", fontWeight: 900, marginBottom: "10px", textTransform: "uppercase", letterSpacing: "1px", color: "#22C55E" }}>Order Placed!</h2>
+          <p style={{ color: "#6B7280", marginBottom: "32px", fontSize: "0.95rem", lineHeight: 1.7 }}>
+            Your order has been <strong style={{ color: "#0A0F2E" }}>placed successfully</strong>. Our team is now preparing it — track it live!
+          </p>
+          <Link
+            href={`/track/${placedOrderId}`}
+            style={{ background: "#0135FB", color: "#fff", padding: "16px 36px", borderRadius: "10px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "1rem", boxShadow: "0 4px 0 #0028D4" }}
+          >
+            Track My Order <ArrowRight size={20} />
+          </Link>
+        </div>
       </div>
     );
   }
@@ -387,28 +273,6 @@ export default function CartPage() {
         .otw-apply-btn:hover { background: #0028D4 !important; }
         .otw-back-btn:hover { background: #EEF1FF !important; }
       `}</style>
-
-      {/* ── Phone Confirmation Modal ── */}
-      {showConfirm && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", alignItems: "center", justifyContent: "center", padding: "20px" }}>
-          <div style={{ position: "absolute", inset: 0, background: "rgba(10,15,46,0.55)", backdropFilter: "blur(6px)" }} onClick={() => setShowConfirm(false)} />
-          <div style={{ background: "#fff", borderRadius: "20px", padding: "32px 28px", width: "100%", maxWidth: "390px", position: "relative", zIndex: 101, animation: "slide-up 0.3s ease", textAlign: "center", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 24px 48px rgba(0,0,0,0.2)" }}>
-            <div style={{ fontSize: "3rem", marginBottom: "14px" }}>📱</div>
-            <h3 style={{ fontSize: "1.35rem", fontWeight: 900, marginBottom: "8px", color: "#0A0F2E" }}>Confirm Your Number</h3>
-            <div style={{ fontSize: "1.6rem", fontWeight: 800, color: "#0135FB", letterSpacing: "2px", marginBottom: "16px" }}>+91 {phoneDigits}</div>
-            <div style={{ background: "#FEF3C7", borderRadius: "10px", padding: "12px 14px", fontSize: "0.84rem", color: "#92400E", lineHeight: 1.55, textAlign: "left", marginBottom: "24px", display: "flex", gap: "10px", alignItems: "flex-start" }}>
-              <span style={{ flexShrink: 0 }}>⚠️</span>
-              <div>Our rider will call this exact number for delivery. <strong>Wrong numbers will cause your order to be cancelled and your account to be blocked.</strong></div>
-            </div>
-            <div style={{ display: "flex", gap: "12px" }}>
-              <button disabled={placing} onClick={() => setShowConfirm(false)} style={{ flex: 1, padding: "14px", background: "#f3f4f6", color: "#0A0F2E", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", fontFamily: "inherit", fontSize: "0.9rem" }}>Edit Number</button>
-              <button disabled={placing} onClick={() => handleConfirmAndPlace(false)} style={{ flex: 1, padding: "14px", background: "#0135FB", color: "#fff", border: "none", borderRadius: "10px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 0 #0028D4", fontFamily: "inherit", fontSize: "0.9rem" }}>
-                {placing ? "Placing..." : "Yes, correct!"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Main Grid ── */}
       <div className="cart-grid" style={{ maxWidth: "1160px", margin: "0 auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 370px", gap: "24px", alignItems: "start" }}>
@@ -583,15 +447,10 @@ export default function CartPage() {
                 <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Civil Dept, 2nd Floor, Room 204" value={location} onChange={e => setLocation(e.target.value)} />
               </div>
 
-
-
-
-
               <div style={{ gridColumn: "1 / -1" }}>
                 <label style={labelStyle}>Nearby Landmark (Optional)</label>
                 <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Near Main Canteen, Next to Library" value={locationNotes} onChange={e => setLocationNotes(e.target.value)} />
               </div>
-
 
               <div>
                 <label style={labelStyle}>Scheduled Time</label>
@@ -617,7 +476,7 @@ export default function CartPage() {
               <div style={{ marginTop: "18px", padding: "12px 14px", borderRadius: "10px", background: "#FEF3C7", fontSize: "0.83rem", color: "#92400E", lineHeight: 1.55, display: "flex", gap: "10px", alignItems: "flex-start" }}>
                 <span style={{ fontSize: "1rem", flexShrink: 0 }}>⚠️</span>
                 <div>
-                  <strong style={{ color: "#D97706" }}>Please enter your real number.</strong> Our delivery partner will call this number to confirm your order. Fake numbers result in a permanent block.
+                  <strong style={{ color: "#D97706" }}>Please enter your real number.</strong> Our delivery partner will call this number to coordinate delivery. Fake numbers result in a permanent block.
                 </div>
               </div>
             )}
@@ -683,14 +542,13 @@ export default function CartPage() {
             <div style={{ marginTop: "20px" }}>
               <RazorpayButton
                 amountRupees={grandTotal}
-                customerName={name || profile?.name}
-                customerPhone={phoneDigits || profile?.phone}
+                customerName={name || (profile as any)?.name}
+                customerPhone={phoneDigits || (profile as any)?.phone}
                 disabled={!canPlace || placing}
-                onSuccess={(paymentId, orderId) => {
-                  handleConfirmAndPlace(true);
-                  toast.success(`Payment ID: ${paymentId}`);
+                createOrder={createRazorpayOrder}
+                onSuccess={async (paymentId, orderId, internalOrderId) => {
+                  await finalizeOrderClientSide(internalOrderId, phoneDigits, location.trim());
                 }}
-                onDismiss={() => { /* user cancelled modal */ }}
               />
             </div>
 
@@ -705,7 +563,7 @@ export default function CartPage() {
 
             <button
               id="place-order-btn"
-              onClick={() => { if (canPlace) setShowConfirm(true); }}
+              onClick={handlePlaceCOD}
               disabled={!canPlace || placing}
               style={{
                 width: "100%", marginTop: "10px", padding: "14px", fontSize: "0.88rem", fontWeight: 700,

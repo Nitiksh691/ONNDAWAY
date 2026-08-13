@@ -100,10 +100,7 @@ const FoodCard = ({
             {item.name}
           </div>
           <div style={{ fontSize: "0.7rem", color: "#94a3b8", fontWeight: 600, marginBottom: 4 }}>ONN DA WAY</div>
-          <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
-            <span style={{ color: "#F59E0B", fontSize: "0.62rem" }}>★</span>
-            <span style={{ fontSize: "0.68rem", color: "#64748b", fontWeight: 600 }}>{getPseudoRating(item.id)}</span>
-          </div>
+
         </div>
 
         {/* Price + Add */}
@@ -334,10 +331,21 @@ const FoodCard = ({
           </div>
         )}
 
-        {/* Rating */}
-        <div style={{ marginTop: "auto", display: "flex", alignItems: "center", gap: 4, fontSize: "0.75rem", fontWeight: 700, color: "#64748B" }}>
-          <span style={{ color: "var(--primary)" }}>★</span> {getPseudoRating(item.id)} ({(4 + parseInt(item.id.slice(-2), 16) % 96)}k)
-        </div>
+        {/* Recommended badge — same row as section pill, no extra height unless item is recommended */}
+        {item.isRecommended && (
+          <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
+            <span style={{
+              display: "inline-flex", alignItems: "center", gap: 3,
+              background: "#ECFDF5", color: "#059669",
+              fontSize: "0.6rem", fontWeight: 800,
+              padding: "2px 7px", borderRadius: 999,
+              border: "1px solid #6EE7B7",
+              textTransform: "uppercase", letterSpacing: "0.3px"
+            }}>
+              🎯 Recommended
+            </span>
+          </div>
+        )}
       </div>
     </div>
   );

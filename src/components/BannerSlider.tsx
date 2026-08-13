@@ -390,7 +390,7 @@ export default function BannerSlider({ slides = [], bentoSlides = [], variant = 
                 fill
                 sizes="(max-width: 768px) 100vw, 1200px"
                 className="home-banner-slide-img"
-                style={{ objectFit: "contain" }}
+                style={{ objectFit: "cover" }}
                 priority={idx === 0}
               />
               <div

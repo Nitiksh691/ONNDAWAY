@@ -175,6 +175,23 @@ export default function AdminMenuPage() {
                       <div>
                         <div style={{ fontWeight: 700, fontSize: "0.95rem", color: "var(--text-dark)" }}>{item.name}</div>
                         <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", maxWidth: "250px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{item.description}</div>
+                        <div style={{ display: "flex", gap: "5px", flexWrap: "wrap", marginTop: item.isPopular || item.isRecommended || item.isBanner ? "6px" : undefined }}>
+                          {item.isPopular && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#2a160c", border: "1px solid #7c2d12", color: "#f97316", fontSize: "0.68rem", fontWeight: 800, padding: "2px 7px", borderRadius: "999px", letterSpacing: "0.3px" }}>
+                              🔥 POPULAR
+                            </span>
+                          )}
+                          {item.isRecommended && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#0d2b18", border: "1px solid #14532d", color: "#22c55e", fontSize: "0.68rem", fontWeight: 800, padding: "2px 7px", borderRadius: "999px", letterSpacing: "0.3px" }}>
+                              🎯 RECOMMENDED
+                            </span>
+                          )}
+                          {item.isBanner && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#0d1b2a", border: "1px solid #1e3a8a", color: "#60a5fa", fontSize: "0.68rem", fontWeight: 800, padding: "2px 7px", borderRadius: "999px", letterSpacing: "0.3px" }}>
+                              🎇 BANNER
+                            </span>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </td>

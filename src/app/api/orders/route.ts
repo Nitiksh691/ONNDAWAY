@@ -55,7 +55,7 @@ const _POST = async (req: NextRequest) => {
   }
 
   const body = await req.json();
-  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, status, confirmed, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, scheduledTime } = body;
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -105,8 +105,9 @@ const _POST = async (req: NextRequest) => {
       total: total || 0,
       couponCode: couponCode || null,
       discount: discount || 0,
-      status: status || "placed",
-      confirmed: confirmed || false,
+      status: "placed",
+      paymentMethod: "COD",
+      paymentStatus: "PENDING",
       scheduledTime: scheduledTime || "ASAP (~15 mins)",
       deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
       messages: [],

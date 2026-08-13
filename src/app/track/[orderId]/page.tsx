@@ -14,19 +14,17 @@ import Link from "next/link";
 import WalkingLoader from "@/components/WalkingLoader";
 
 const STATUS_STEPS = [
-  { id: "placed", label: "Order Placed", subLabel: "We've received your order", icon: "📋", color: "#6366F1" },
-  { id: "confirmed", label: "Confirmed", subLabel: "Admin verified & accepted", icon: "✅", color: "#0EA5E9" },
-  { id: "preparing", label: "In Kitchen", subLabel: "Freshly being prepared", icon: "🍳", color: "#F59E0B" },
-  { id: "out_for_delivery", label: "On the Way", subLabel: "Rider heading to you", icon: "🛵", color: "#10B981" },
-  { id: "delivered", label: "Delivered!", subLabel: "Enjoy your order 😊", icon: "🎉", color: "#22C55E" },
+  { id: "placed", label: "Placed", subLabel: "We've received your order", icon: "📋", color: "#F59E0B" },
+  { id: "preparing", label: "Preparing", subLabel: "Kitchen is working its magic", icon: "🍳", color: "#8B5CF6" },
+  { id: "out_for_delivery", label: "On the Way", subLabel: "Rider is heading to you", icon: "🛵", color: "#F97316" },
+  { id: "delivered", label: "Delivered", subLabel: "Enjoy your meal!", icon: "🎉", color: "#22C55E" }
 ];
 
-function getStepIndex(status: string, confirmed?: boolean): number {
-  if (status === "placed" && !confirmed) return 0;
-  if (status === "placed" && confirmed) return 1;
-  if (status === "preparing") return 2;
-  if (status === "out_for_delivery") return 3;
-  if (status === "delivered") return 4;
+function getStepIndex(status: string): number {
+  if (status === "placed" || status === "payment_pending") return 0;
+  if (status === "preparing") return 1;
+  if (status === "out_for_delivery") return 2;
+  if (status === "delivered") return 3;
   return 0;
 }
 
@@ -180,7 +178,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   }
 
   const isCancelled = order.status === "cancelled";
-  const currentStepIndex = isCancelled ? -1 : getStepIndex(order.status, order.confirmed);
+  const currentStepIndex = isCancelled ? -1 : getStepIndex(order.status);
   const isDelivered = order.status === "delivered";
   const isOnWay = order.status === "out_for_delivery";
 

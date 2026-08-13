@@ -62,7 +62,7 @@ export interface CartItem {
   lineDetails?: string;
 }
 
-export type OrderStatus = "placed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
+export type OrderStatus = "payment_pending" | "placed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
 
 export interface Order {
   id: string;
@@ -78,7 +78,11 @@ export interface Order {
   couponCode?: string;
   discount?: number;
   status: OrderStatus;
-  confirmed?: boolean;
+  paymentStatus: "PENDING" | "PAID" | "REFUNDED";
+  paymentMethod: "COD" | "RAZORPAY";
+  paymentInitializationStatus?: "PENDING" | "SUCCESS" | "FAILED";
+  razorpayOrderId?: string;
+  paymentAttempts?: { attemptId: string; status: string; method: string; createdAt: string }[];
   scheduledTime?: string;
   deliveryPersonId?: string;
   deliveryPersonName?: string;

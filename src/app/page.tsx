@@ -166,19 +166,14 @@ export default function HomePage() {
     return matchesCategory && matchesSearch;
   }), [menuItems, selectedCategory, deferredSearch]);
 
+  // Popular items appear in both their category row AND the Popular slider below.
+  // Recommended items only show a badge on the card — no separate section, no exclusion.
   const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 10), [menuItems]);
-  const recommendedItems = useMemo(() => menuItems.filter(i => i.isRecommended).slice(0, 10), [menuItems]);
 
-  const featuredIds = useMemo(
-    () => new Set([...popularItems, ...recommendedItems].map(i => i.id)),
-    [popularItems, recommendedItems]
-  );
-
-  /* When showing "all" category without search, exclude featured from full menu to avoid dupe */
+  /* No items are excluded from the category rows — popular duplicates in slider are intentional */
   const fullMenuItems = useMemo(() => {
-    if (selectedCategory !== "all" || deferredSearch) return filteredItems;
-    return filteredItems.filter(i => !featuredIds.has(i.id));
-  }, [filteredItems, selectedCategory, deferredSearch, featuredIds]);
+    return filteredItems;
+  }, [filteredItems]);
 
   return (
     <>
@@ -537,17 +532,6 @@ export default function HomePage() {
             )}
           </div>
 
-          {/* ── RECOMMENDED (Horizontal Slider) ── */}
-          {!deferredSearch && selectedCategory === "all" && (
-            <HSliderSection
-              title="Recommended For You"
-              emoji="🎯"
-              items={recommendedItems}
-              cart={cart}
-              onAdd={addToCart}
-              onUpdateQuantity={updateQuantity}
-            />
-          )}
 
         </div>
       </section>
