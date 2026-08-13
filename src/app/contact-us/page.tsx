@@ -56,6 +56,24 @@ export default function ContactUsPage() {
           font-weight: 700;
           letter-spacing: 0.3px;
         }
+        .policy-link-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          padding: 8px 16px;
+          border-radius: 10px;
+          background: #F5F7FF;
+          border: 1.5px solid #e5e7eb;
+          color: #0135FB;
+          text-decoration: none;
+          font-size: 0.83rem;
+          font-weight: 700;
+          transition: all 0.15s;
+        }
+        .policy-link-btn:hover {
+          background: #EEF1FF;
+          border-color: #0135FB;
+        }
       `}</style>
 
       {/* Hero */}
@@ -217,16 +235,7 @@ export default function ContactUsPage() {
               <Link
                 key={link.href}
                 href={link.href}
-                style={{
-                  display: "inline-flex", alignItems: "center", gap: 6,
-                  padding: "8px 16px", borderRadius: "10px",
-                  background: "#F5F7FF", border: "1.5px solid #e5e7eb",
-                  color: "#0135FB", textDecoration: "none",
-                  fontSize: "0.83rem", fontWeight: 700,
-                  transition: "all 0.15s",
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#EEF1FF"; e.currentTarget.style.borderColor = "#0135FB"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#F5F7FF"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                className="policy-link-btn"
               >
                 {link.label}
               </Link>
