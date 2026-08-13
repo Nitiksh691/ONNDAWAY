@@ -34,6 +34,8 @@ const SettingsSchema = new Schema({
   waitlistMode: { type: Boolean, default: false },
   // Launching Soon mode: allows browsing but shows popup on add to cart
   launchingSoonMode: { type: Boolean, default: false },
+  // Online Payment Enable/Disable
+  onlinePaymentEnabled: { type: Boolean, default: true },
   updatedAt: { type: Date, default: Date.now },
 });
 

@@ -34,6 +34,7 @@ const _POST = async (req: NextRequest) => {
       kitchenOpenTime,
       waitlistMode,
       launchingSoonMode,
+      onlinePaymentEnabled,
     } = body;
 
     let settings = await Settings.findOne();
@@ -46,10 +47,11 @@ const _POST = async (req: NextRequest) => {
       if (kitchenOpenTime !== undefined) settings.kitchenOpenTime = kitchenOpenTime;
       if (waitlistMode !== undefined) settings.waitlistMode = waitlistMode;
       if (launchingSoonMode !== undefined) settings.launchingSoonMode = launchingSoonMode;
+      if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
       settings.updatedAt = new Date();
       await settings.save();
     } else {
-      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode });
+      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode, onlinePaymentEnabled });
     }
     // Bust both caches so all clients get fresh data immediately
     appCache.invalidate(CACHE_KEYS.SETTINGS);

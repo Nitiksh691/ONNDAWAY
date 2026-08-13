@@ -13,6 +13,7 @@ export default function AdminSettingsPage() {
   const [kitchenOpenTime, setKitchenOpenTime] = useState<string>("7:00 AM");
   const [waitlistMode, setWaitlistMode] = useState(false);
   const [launchingSoonMode, setLaunchingSoonMode] = useState(false);
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState<boolean>(true);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -34,6 +35,7 @@ export default function AdminSettingsPage() {
           if (data.kitchenOpenTime !== undefined) setKitchenOpenTime(data.kitchenOpenTime);
           if (data.waitlistMode !== undefined) setWaitlistMode(data.waitlistMode);
           if (data.launchingSoonMode !== undefined) setLaunchingSoonMode(data.launchingSoonMode);
+          if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
         }
         setLoading(false);
       })
@@ -53,6 +55,7 @@ export default function AdminSettingsPage() {
       kitchenOpenTime,
       waitlistMode,
       launchingSoonMode,
+      onlinePaymentEnabled,
     };
     
     // Only show confirmation if enabling disruptive modes
@@ -115,6 +118,19 @@ export default function AdminSettingsPage() {
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "8px" }}>
               Set to 0 to completely remove the delivery fee. This fee will be dynamically applied to all new orders.
             </p>
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: onlinePaymentEnabled ? "#F0FDF4" : "#FEF2F2", borderRadius: "12px", border: onlinePaymentEnabled ? "1px solid #BBF7D0" : "1px solid #FCA5A5" }}>
+            <div>
+              <strong style={{ display: "block", color: onlinePaymentEnabled ? "#15803D" : "#DC2626" }}>Online Payments</strong>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>{onlinePaymentEnabled ? "Razorpay is active." : "Disabled. Users can only use COD."}</span>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ position: "relative" }}>
+                <input type="checkbox" checked={onlinePaymentEnabled} onChange={e => setOnlinePaymentEnabled(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                <div style={{ width: 44, height: 24, background: onlinePaymentEnabled ? "#22C55E" : "#EF4444", borderRadius: 999, transition: "0.3s" }}></div>
+                <div style={{ position: "absolute", left: onlinePaymentEnabled ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
+              </div>
+            </label>
           </div>
         </div>
 

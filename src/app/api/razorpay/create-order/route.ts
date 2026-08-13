@@ -4,6 +4,7 @@ import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import MenuItem from "@/models/MenuItem";
 import Settings from "@/models/Settings";
+import Coupon from "@/models/Coupon";
 import { normalizeCartLines } from "@/lib/orderLine";
 import type { CartItem } from "@/lib/types";
 import { withLogger } from "@/lib/withLogger";
@@ -41,7 +42,8 @@ const _POST = async (req: NextRequest) => {
   }
 
   const body = await req.json().catch(() => ({}));
-  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, couponCode, discount, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, couponCode, scheduledTime } = body;
+  // Note: 'discount' from frontend is ignored for security.
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -82,8 +84,18 @@ const _POST = async (req: NextRequest) => {
     // Calculate unit price: base price + customizations
     let unitPrice = dbItem.price;
     if (cartItem.selectedCustomizations && cartItem.selectedCustomizations.length > 0) {
-       for (const cust of cartItem.selectedCustomizations) {
-         unitPrice += (cust.price || 0);
+       for (let i = 0; i < cartItem.selectedCustomizations.length; i++) {
+         const cust = cartItem.selectedCustomizations[i];
+         let validPrice = 0;
+         for (const cat of dbItem.customizationCategories || []) {
+           const option = cat.options.find((o: any) => o.name === cust.option && cat.name === cust.category);
+           if (option) {
+             validPrice = option.price;
+             break;
+           }
+         }
+         cartItem.selectedCustomizations[i].price = validPrice;
+         unitPrice += validPrice;
        }
     }
     
@@ -98,8 +110,26 @@ const _POST = async (req: NextRequest) => {
   serverTotal += deliveryFee;
 
   // Discount
-  const finalDiscount = Number(discount) || 0; // In a full implementation, you should re-verify the coupon code against DB here
+  let finalDiscount = 0;
+  if (couponCode) {
+    const dbCoupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
+    if (dbCoupon) {
+      if (dbCoupon.type === "percentage") {
+        finalDiscount = (serverTotal * dbCoupon.discount) / 100;
+      } else {
+        finalDiscount = dbCoupon.discount;
+      }
+    }
+  }
+  
   serverTotal = Math.max(0, serverTotal - finalDiscount);
+
+  // Reject 0-value orders for Razorpay (cannot create a ₹0 payment)
+  if (serverTotal <= 0) {
+    return NextResponse.json({ error: "Order total is 0. Free checkouts are not supported via online payment." }, { status: 400 });
+  }
+
+  console.log(`[PAYMENT_CREATE_STARTED] User: ${userId}, Total: ${serverTotal}`);
 
   // Create internal order first
   let internalOrder;
@@ -151,7 +181,6 @@ const _POST = async (req: NextRequest) => {
   const amountPaise = Math.round(serverTotal * 100);
   
   if (amountPaise < 100) {
-    // Edge case: if total is 0 (100% discount), we can't use Razorpay easily, but let's assume food delivery always has a cost or we handle 0 elsewhere
     await Order.findByIdAndDelete(internalOrder._id);
     return NextResponse.json({ error: "Amount must be at least ₹1" }, { status: 400 });
   }

@@ -12,12 +12,15 @@ const _POST = async (req: NextRequest) => {
 
   await dbConnect();
 
+  console.log(`[WEBHOOK_RECEIVED] Processing webhook event`);
+
   // Razorpay explicitly requires raw body for verification
   const rawBody = await req.text();
   const signature = req.headers.get("x-razorpay-signature");
   const eventId = req.headers.get("x-razorpay-event-id");
 
   if (!signature || !eventId) {
+    console.error(`[WEBHOOK_FAILED] Missing signature or event ID`);
     return NextResponse.json({ error: "Missing signature or event ID" }, { status: 400 });
   }
 
@@ -28,6 +31,7 @@ const _POST = async (req: NextRequest) => {
     .digest("hex");
 
   if (expectedSignature !== signature) {
+    console.error(`[WEBHOOK_FAILED] Invalid signature for event ${eventId}`);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
@@ -41,6 +45,7 @@ const _POST = async (req: NextRequest) => {
   const paymentId = paymentEntity?.id;
 
   if (!razorpayOrderId) {
+    console.error(`[WEBHOOK_FAILED] No order ID in payload for event ${eventId}`);
     return NextResponse.json({ error: "No order ID in payload" }, { status: 400 });
   }
 
@@ -48,15 +53,18 @@ const _POST = async (req: NextRequest) => {
   try {
     const existingEvent = await WebhookEvent.findOne({ eventId });
     if (existingEvent) {
+      console.log(`[WEBHOOK_DUPLICATE] Event ${eventId} already processed`);
       return NextResponse.json({ success: true, message: "Already processed" }, { status: 200 });
     }
   } catch (error) {
+    console.error(`[WEBHOOK_ERROR] DB Error checking idempotency for ${eventId}`, error);
     return NextResponse.json({ error: "DB Error" }, { status: 500 });
   }
 
   // Retrieve Order
   const order = await Order.findOne({ razorpayOrderId });
   if (!order) {
+    console.error(`[WEBHOOK_FAILED] Internal order not found for ${razorpayOrderId}`);
     return NextResponse.json({ error: "Internal order not found" }, { status: 404 });
   }
 
@@ -64,17 +72,30 @@ const _POST = async (req: NextRequest) => {
   if (eventType === "payment.captured" || eventType === "order.paid") {
     // Only update if not already paid
     if (order.paymentStatus !== "PAID") {
-      // Verify amount (optional but good practice)
+      
       const receivedAmount = paymentEntity?.amount || orderEntity?.amount;
+      const receivedCurrency = paymentEntity?.currency || orderEntity?.currency;
       const expectedAmount = Math.round(order.total * 100);
       
       if (receivedAmount !== expectedAmount) {
-         console.warn(`Amount mismatch for order ${order._id}: expected ${expectedAmount}, received ${receivedAmount}`);
-         // Depending on business logic, you might flag this. For now, we still mark it paid but log it.
+         console.error(`[PAYMENT_AMOUNT_MISMATCH] Webhook amount mismatch for order ${order._id}: expected ${expectedAmount}, received ${receivedAmount}`);
+         // Return 200 to acknowledge the webhook, but DO NOT mark as PAID
+         return NextResponse.json({ success: true, message: "Amount mismatch, flagged" }, { status: 200 });
       }
 
+      if (receivedCurrency !== "INR") {
+         console.error(`[WEBHOOK_FAILED] Currency mismatch. Expected INR, got ${receivedCurrency}`);
+         return NextResponse.json({ success: true, message: "Currency mismatch, flagged" }, { status: 200 });
+      }
+
+      console.log(`[WEBHOOK_PAYMENT_CAPTURED] Payment captured for order ${order._id}`);
+      
       order.paymentStatus = "PAID";
-      order.status = "placed";
+      // Atomic state transition protection
+      if (order.status === "payment_pending") {
+        order.status = "placed";
+      }
+      
       order.paymentAttempts.push({
         attemptId: paymentId || "unknown",
         status: "CAPTURED",
@@ -87,6 +108,7 @@ const _POST = async (req: NextRequest) => {
   } else if (eventType === "payment.failed") {
     // Only record the attempt, do NOT change paymentStatus if it's already PAID
     if (order.paymentStatus !== "PAID") {
+       console.log(`[WEBHOOK_PAYMENT_FAILED] Payment failed for order ${order._id}`);
        order.paymentAttempts.push({
           attemptId: paymentId || "unknown",
           status: "FAILED",

@@ -25,6 +25,7 @@ export default function CartPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(20);
+  const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
@@ -65,8 +66,9 @@ export default function CartPage() {
     fetch("/api/settings")
       .then(res => res.json())
       .then(data => {
-        if (data && data.deliveryFee !== undefined) {
-          setDeliveryFee(data.deliveryFee);
+        if (data) {
+          if (data.deliveryFee !== undefined) setDeliveryFee(data.deliveryFee);
+          if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
         }
       })
       .catch(err => console.error("Failed to load settings:", err));
@@ -540,16 +542,24 @@ export default function CartPage() {
 
             {/* ── PRIMARY: Razorpay Online Payment ── */}
             <div style={{ marginTop: "20px" }}>
-              <RazorpayButton
-                amountRupees={grandTotal}
-                customerName={name || (profile as any)?.name}
-                customerPhone={phoneDigits || (profile as any)?.phone}
-                disabled={!canPlace || placing}
-                createOrder={createRazorpayOrder}
-                onSuccess={async (paymentId, orderId, internalOrderId) => {
-                  await finalizeOrderClientSide(internalOrderId, phoneDigits, location.trim());
-                }}
-              />
+              {onlinePaymentEnabled ? (
+                <RazorpayButton
+                  amountRupees={grandTotal}
+                  customerName={name || (profile as any)?.name}
+                  customerPhone={phoneDigits || (profile as any)?.phone}
+                  disabled={!canPlace || placing}
+                  createOrder={createRazorpayOrder}
+                  onSuccess={async (paymentId, orderId, internalOrderId) => {
+                    await finalizeOrderClientSide(internalOrderId, phoneDigits, location.trim());
+                  }}
+                />
+              ) : (
+                <div style={{ padding: "14px", background: "rgba(1, 53, 251, 0.08)", border: "1.5px solid rgba(1, 53, 251, 0.2)", borderRadius: "10px", textAlign: "center" }}>
+                  <p style={{ color: "#0135FB", fontSize: "0.88rem", fontWeight: 700, margin: 0 }}>
+                    We will resume online delivery in few days.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* ── SECONDARY: Cash on Delivery ── */}
@@ -567,9 +577,9 @@ export default function CartPage() {
               disabled={!canPlace || placing}
               style={{
                 width: "100%", marginTop: "10px", padding: "14px", fontSize: "0.88rem", fontWeight: 700,
-                background: "transparent",
-                color: canPlace ? "#0A0F2E" : "#9ca3af",
-                border: canPlace ? "1.5px solid #d1d5db" : "1.5px solid #e5e7eb",
+                background: !onlinePaymentEnabled && canPlace ? "#0135FB" : "transparent",
+                color: !onlinePaymentEnabled && canPlace ? "#ffffff" : (canPlace ? "#0A0F2E" : "#9ca3af"),
+                border: !onlinePaymentEnabled && canPlace ? "1.5px solid #0028D4" : (canPlace ? "1.5px solid #d1d5db" : "1.5px solid #e5e7eb"),
                 borderRadius: "10px",
                 cursor: canPlace ? "pointer" : "not-allowed",
                 display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
@@ -577,8 +587,24 @@ export default function CartPage() {
                 transition: "all 0.15s",
                 fontFamily: "inherit",
               }}
-              onMouseOver={(e) => { if (canPlace) { e.currentTarget.style.background = "#F5F7FF"; e.currentTarget.style.borderColor = "#0135FB"; e.currentTarget.style.color = "#0135FB"; } }}
-              onMouseOut={(e) => { if (canPlace) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#0A0F2E"; } }}
+              onMouseOver={(e) => { 
+                if (canPlace) { 
+                  if (!onlinePaymentEnabled) {
+                    e.currentTarget.style.background = "#0028D4";
+                  } else {
+                    e.currentTarget.style.background = "#F5F7FF"; e.currentTarget.style.borderColor = "#0135FB"; e.currentTarget.style.color = "#0135FB"; 
+                  }
+                } 
+              }}
+              onMouseOut={(e) => { 
+                if (canPlace) { 
+                  if (!onlinePaymentEnabled) {
+                    e.currentTarget.style.background = "#0135FB";
+                  } else {
+                    e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#0A0F2E"; 
+                  }
+                } 
+              }}
             >
               {placing ? "Processing..." : <>Cash on Delivery <ArrowRight size={16} /></>}
             </button>
