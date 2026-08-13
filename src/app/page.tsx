@@ -323,10 +323,10 @@ export default function HomePage() {
             <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)", marginBottom: 20, fontSize: "0.8rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
               🛵 Campus Food Delivery
             </div>
-            <h1 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(2.6rem, 7vw, 4.8rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.03em" }}>
+            <h1 style={{ fontFamily: "'Outfit', sans-serif", color: "white", fontWeight: 900, fontSize: "clamp(2.6rem, 7vw, 4.8rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.03em" }}>
               LIFE BEGINS <br /> AFTER <span style={{ background: "linear-gradient(135deg, #93C5FD, #BAE6FD)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>FLAVOR</span>.
             </h1>
-            <p style={{ fontSize: "1.05rem", maxWidth: "480px", opacity: 0.88, marginBottom: "32px", fontWeight: 500, lineHeight: 1.65 }}>
+            <p style={{ color: "white", fontSize: "1.05rem", maxWidth: "480px", opacity: 0.88, marginBottom: "32px", fontWeight: 500, lineHeight: 1.65 }}>
               Curated meals, snacks &amp; beverages — delivered to your campus spot in minutes.
             </p>
             <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>

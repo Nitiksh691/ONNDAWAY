@@ -66,9 +66,9 @@ function BentoCell({ slides, isLarge }: { slides: BannerSlide[]; isLarge?: boole
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2, padding: isLarge ? "clamp(16px, 4vw, 32px)" : "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
             {slide.text && <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: isLarge ? "clamp(1.5rem, 4vw, 2.5rem)" : "clamp(1rem, 2.5vw, 1.3rem)", lineHeight: 1.05, color: "#fff", textTransform: "uppercase", margin: 0, letterSpacing: "-0.02em" }}>{slide.text}</h3>}
             {slide.subText && <p style={{ color: "rgba(255,255,255,0.9)", fontSize: isLarge ? "clamp(0.9rem, 2vw, 1.1rem)" : "0.8rem", fontWeight: 500, margin: 0, textShadow: "0 2px 8px rgba(0,0,0,0.5)" }}>{slide.subText}</p>}
-            {isLarge && slide.link && (
-              <Link href={slide.link} style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "10px", background: "var(--primary)", color: "#fff", padding: "12px 24px", borderRadius: "99px", fontWeight: 800, fontSize: "0.9rem", textDecoration: "none", textTransform: "uppercase", width: "fit-content", boxShadow: "0 6px 20px rgba(1,53,251,0.4)", transition: "transform 0.2s" }} onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")} onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
-                ORDER NOW <ArrowRight size={16} />
+            {slide.link && (
+              <Link href={slide.link} style={{ display: "inline-flex", alignItems: "center", gap: "6px", marginTop: "10px", background: "var(--primary)", color: "#fff", padding: isLarge ? "12px 24px" : "8px 16px", borderRadius: "99px", fontWeight: 800, fontSize: isLarge ? "0.9rem" : "0.75rem", textDecoration: "none", textTransform: "uppercase", width: "fit-content", boxShadow: "0 6px 20px rgba(1,53,251,0.4)", transition: "transform 0.2s", position: "relative", zIndex: 11 }} onMouseEnter={(e) => (e.currentTarget.style.transform = "scale(1.04)")} onMouseLeave={(e) => (e.currentTarget.style.transform = "scale(1)")}>
+                ORDER NOW <ArrowRight size={isLarge ? 16 : 14} />
               </Link>
             )}
             {!isLarge && slide.link && (

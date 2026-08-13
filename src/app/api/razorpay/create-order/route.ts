@@ -127,16 +127,24 @@ const _POST = async (req: NextRequest) => {
   } catch (error: any) {
     if (error.code === 11000 && error.keyPattern && error.keyPattern.idempotencyKey) {
       const existing = await Order.findOne({ idempotencyKey });
-      if (existing?.razorpayOrderId) {
-        return NextResponse.json({
-          order_id: existing.razorpayOrderId,
-          amount: Math.round(existing.total * 100),
-          currency: "INR",
-          internalOrderId: existing._id.toString(),
-        }, { status: 200 });
+      if (existing) {
+        if (existing.razorpayOrderId) {
+          return NextResponse.json({
+            order_id: existing.razorpayOrderId,
+            amount: Math.round(existing.total * 100),
+            currency: "INR",
+            internalOrderId: existing._id.toString(),
+          }, { status: 200 });
+        } else {
+          // Order exists but failed to create Razorpay Order previously. Resume.
+          internalOrder = existing;
+        }
+      } else {
+        throw error;
       }
+    } else {
+      throw error;
     }
-    throw error;
   }
 
   // Now create Razorpay Order
