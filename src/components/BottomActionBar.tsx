@@ -233,12 +233,10 @@ export default function BottomActionBar() {
           </button>
 
           <div className="bottom-action-bar__actions">
-            {hasActiveOrder && (
-              <Link href="/orders" className="bottom-action-bar__orders">
-                <Package size={15} />
-                <span className="bottom-action-bar__orders-label">Orders</span>
-              </Link>
-            )}
+            <Link href="/orders" className="bottom-action-bar__orders">
+              <Package size={15} />
+              <span className="bottom-action-bar__orders-label">Orders</span>
+            </Link>
             <Link href="/cart" className="bottom-action-bar__checkout">
               Checkout <ArrowRight size={15} />
             </Link>

@@ -86,7 +86,7 @@ export default function Footer() {
                 <div style={{ fontSize: "0.62rem", opacity: 0.6, letterSpacing: "1.5px", marginTop: "2px" }}>FOOD DELIVERY</div>
               </div>
             </div>
-            <p style={{ fontSize: "0.85rem", opacity: 0.75, lineHeight: 1.7, maxWidth: "280px" }}>
+            <p style={{ fontSize: "0.85rem", color: "white", opacity: 0.75, lineHeight: 1.7, maxWidth: "280px" }}>
               Fresh meals, snacks & beverages delivered fast — built by students, for students.
             </p>
             <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>

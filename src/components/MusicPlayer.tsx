@@ -5,9 +5,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, SkipForward, X, Music } from "lucide-react";
 
 const TRACKS = [
-  { id: 1, name: "Track 1", url: "/music/track1.mp3" },
-  { id: 2, name: "Track 2", url: "/music/track2.mp3" },
-  { id: 3, name: "Track 3", url: "/music/track3.mp3" },
+  { id: 1, name: "Chill Vibes", url: "/music/track1.mp3" },
+  { id: 2, name: "Good Mood", url: "/music/track2.mp3" },
 ];
 
 export default function MusicPlayer() {
@@ -61,6 +60,19 @@ export default function MusicPlayer() {
 
   return (
     <>
+      <style>{`
+        @keyframes music-glow-ring {
+          0% { box-shadow: 0 0 0 0 rgba(1,53,251,0.6), 0 0 12px rgba(0,200,255,0.3); }
+          50% { box-shadow: 0 0 0 10px rgba(1,53,251,0), 0 0 20px rgba(0,200,255,0.5); }
+          100% { box-shadow: 0 0 0 0 rgba(1,53,251,0), 0 0 12px rgba(0,200,255,0.3); }
+        }
+        @keyframes music-spin-border {
+          0% { border-color: rgba(0,200,255,0.7); }
+          33% { border-color: rgba(1,53,251,0.7); }
+          66% { border-color: rgba(34,197,94,0.7); }
+          100% { border-color: rgba(0,200,255,0.7); }
+        }
+      `}</style>
       <audio
         ref={audioRef}
         src={TRACKS[currentTrackIndex].url}
@@ -73,23 +85,23 @@ export default function MusicPlayer() {
         animate={{ y: 0, opacity: 1 }}
         style={{
           position: "fixed",
-          bottom: "100px", // High enough to avoid bottom nav
+          bottom: "100px",
           left: "20px",
           zIndex: 99999,
-          backgroundColor: isCollapsed ? "rgba(26, 26, 26, 0.85)" : "#1A1A1A",
+          backgroundColor: isCollapsed ? "rgba(1, 53, 251, 0.9)" : "#0135FB",
           backdropFilter: isCollapsed ? "blur(8px)" : "none",
           color: "#ffffff",
           borderRadius: isCollapsed ? "50%" : "14px",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.4)",
           cursor: "grab",
           touchAction: "none",
-          border: "1px solid rgba(255,255,255,0.1)",
+          border: isCollapsed ? "2px solid rgba(0,200,255,0.7)" : "1px solid rgba(255,255,255,0.1)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           overflow: "hidden",
           width: isCollapsed ? "52px" : "auto",
           height: isCollapsed ? "52px" : "auto",
+          animation: isCollapsed ? "music-glow-ring 2s ease-in-out infinite, music-spin-border 3s linear infinite" : "none",
         }}
         whileTap={{ cursor: "grabbing" }}
       >

@@ -171,41 +171,93 @@ export default function OrdersPage() {
             )}
           </div>
         ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
-            {orders.map(order => (
-              <div key={order.id} className="otw-card" style={{ padding: "24px" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
-                  <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
-                      <span style={{ fontWeight: 800, fontSize: "1.1rem" }}>Order #{order.id.slice(-6).toUpperCase()}</span>
-                      {getStatusBadge(order.status)}
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                      <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><MapPin size={14}/> {order.location}</span>
-                    </div>
-                  </div>
-                  <div style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--primary)" }}>
-                    ₹{order.total}
-                  </div>
-                </div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+            
+            {/* CURRENT ORDERS */}
+            {orders.filter(o => isActiveOrderStatus(o.status)).length > 0 && (
+              <div>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "16px", color: "var(--primary)" }}>Current Orders</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {orders.filter(o => isActiveOrderStatus(o.status)).map(order => (
+                    <div key={order.id} className="otw-card" style={{ padding: "24px", border: "2px solid var(--primary)", boxShadow: "0 8px 24px rgba(1,53,251,0.15)" }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                            <span style={{ fontWeight: 800, fontSize: "1.1rem" }}>Order #{order.id.slice(-6).toUpperCase()}</span>
+                            {getStatusBadge(order.status)}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><MapPin size={14}/> {order.location}</span>
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "var(--primary)" }}>
+                          ₹{order.total}
+                        </div>
+                      </div>
 
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
-                  {order.items.map((item, idx) => (
-                    <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
-                      <span style={{ fontWeight: 600 }}>{item.quantity}x {item.item.name}</span>
-                      <span style={{ color: "var(--text-muted)" }}>₹{item.item.price * item.quantity}</span>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
+                        {order.items.map((item, idx) => (
+                          <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                            <span style={{ fontWeight: 600 }}>{item.quantity}x {item.item.name}</span>
+                            <span style={{ color: "var(--text-muted)" }}>₹{item.item.price * item.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-primary" style={{ width: "100%", textAlign: "center", justifyContent: "center" }}>
+                          Track Order Live <ChevronRight size={16}/>
+                        </Link>
+                      </div>
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                  <Link href={`/track/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm">
-                    {order.status === "delivered" ? "View Details" : "Track Order"} <ChevronRight size={14}/>
-                  </Link>
+            {/* PREVIOUS ORDERS */}
+            {orders.filter(o => !isActiveOrderStatus(o.status)).length > 0 && (
+              <div>
+                <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "16px", color: "var(--text-dark)" }}>Previous Orders</h2>
+                <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+                  {orders.filter(o => !isActiveOrderStatus(o.status)).map(order => (
+                    <div key={order.id} className="otw-card" style={{ padding: "24px", opacity: 0.8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
+                        <div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+                            <span style={{ fontWeight: 800, fontSize: "1.1rem" }}>Order #{order.id.slice(-6).toUpperCase()}</span>
+                            {getStatusBadge(order.status)}
+                          </div>
+                          <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><MapPin size={14}/> {order.location}</span>
+                          </div>
+                        </div>
+                        <div style={{ fontWeight: 800, fontSize: "1.2rem", color: "var(--text-dark)" }}>
+                          ₹{order.total}
+                        </div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginBottom: "20px" }}>
+                        {order.items.map((item, idx) => (
+                          <div key={idx} style={{ display: "flex", justifyContent: "space-between", fontSize: "0.95rem" }}>
+                            <span style={{ fontWeight: 500 }}>{item.quantity}x {item.item.name}</span>
+                            <span style={{ color: "var(--text-muted)" }}>₹{item.item.price * item.quantity}</span>
+                          </div>
+                        ))}
+                      </div>
+
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
+                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm">
+                          View Details <ChevronRight size={14}/>
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-            ))}
+            )}
           </div>
         )}
 

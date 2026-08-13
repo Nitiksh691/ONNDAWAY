@@ -401,23 +401,6 @@ export default function HomePage() {
       <section style={{ padding: "24px 0 120px", background: "var(--bg-cream)", minHeight: "60vh" }}>
         <div className="otw-container">
 
-          {/* ── MOBILE CTA BANNER (Food Swipe CTA) ── */}
-          <div className="mobile-only" style={{ marginBottom: "20px" }}>
-            <div style={{
-              background: "linear-gradient(135deg, var(--primary), #2A55FF)",
-              borderRadius: "16px", padding: "16px", color: "white",
-              display: "flex", alignItems: "center", justifyContent: "space-between",
-              boxShadow: "0 8px 24px rgba(1,53,251,0.25)"
-            }}>
-              <div>
-                <h3 style={{ fontSize: "1.15rem", fontWeight: 900, marginBottom: "4px" }}>Can't Decide?</h3>
-                <p style={{ fontSize: "0.85rem", opacity: 0.9, lineHeight: 1.3 }}>Let us pick the perfect meal for you based on your cravings.</p>
-              </div>
-              <div style={{ fontSize: "2.5rem", paddingLeft: "12px" }}>
-                ✨
-              </div>
-            </div>
-          </div>
 
           {/* ── FULL MENU HEADER ── */}
           <div style={{

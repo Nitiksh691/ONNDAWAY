@@ -221,11 +221,30 @@ export default function CartPage() {
           <p style={{ color: "#6B7280", marginBottom: "32px", fontSize: "0.95rem", lineHeight: 1.7 }}>
             Your order has been <strong style={{ color: "#0A0F2E" }}>placed successfully</strong>. Our team is now preparing it — track it live!
           </p>
+          <div style={{ padding: "16px 36px" }} /> {/* Spacer since button moved to bottom */}
+        </div>
+
+        {/* ── Fixed Bottom Track Order Bar ── */}
+        <div style={{
+          position: "fixed", bottom: 0, left: 0, right: 0,
+          background: "#0135FB", padding: "14px 20px",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+          boxShadow: "0 -4px 20px rgba(1, 53, 251, 0.3)", zIndex: 999
+        }}>
+          <div style={{ color: "white", fontSize: "0.9rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
+            <span style={{ fontSize: "1.3rem" }}>🛵</span> Order is active!
+          </div>
           <Link
             href={`/track/${placedOrderId}`}
-            style={{ background: "#0135FB", color: "#fff", padding: "16px 36px", borderRadius: "10px", fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "1px", display: "inline-flex", alignItems: "center", gap: "10px", fontSize: "1rem", boxShadow: "0 4px 0 #0028D4" }}
+            style={{
+              background: "#ffffff", color: "#0135FB",
+              padding: "10px 24px", borderRadius: "10px",
+              fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px",
+              display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem",
+              boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+            }}
           >
-            Track My Order <ArrowRight size={20} />
+            Track My Order <ArrowRight size={18} />
           </Link>
         </div>
       </div>
