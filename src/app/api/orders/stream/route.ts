@@ -1,3 +1,4 @@
+// good be with me and guide me in your this world
 import { NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const stream = new ReadableStream({
     async start(controller) {
       const encoder = new TextEncoder();
-      
+
       const sendEvent = (data: any) => {
         try {
           const formattedData = `data: ${JSON.stringify(data)}\n\n`;
@@ -31,16 +32,16 @@ export async function GET(req: NextRequest) {
       let changeStream: any;
       try {
         changeStream = Order.watch();
-        
+
         changeStream.on("change", async (change: any) => {
           sendEvent({ type: "order_change", operation: change.operationType, documentKey: change.documentKey });
-          
+
           try {
             const unconfirmedCount = await Order.countDocuments({
               status: "placed",
             });
             sendEvent({ type: "orders_update", count: unconfirmedCount });
-          } catch (e) {}
+          } catch (e) { }
         });
 
         changeStream.on("error", (error: any) => {
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
       req.signal.addEventListener("abort", () => {
         clearInterval(pingInterval);
         if (changeStream) {
-          changeStream.close().catch(() => {});
+          changeStream.close().catch(() => { });
         }
         try {
           controller.close();
