@@ -18,7 +18,7 @@ export default function AdminMenuPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", customizationCategories: [] });
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", customizationCategories: [], details: [], sizes: [] });
   const [uploadingImage, setUploadingImage] = useState(false);
 
 
@@ -48,7 +48,7 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [] });
+      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
     }
     setDialogOpen(true);
   };
@@ -357,6 +357,69 @@ export default function AdminMenuPage() {
                       <span style={{ fontSize: "0.8rem", color: "#1D4ED8" }}>Item will appear in the large moving carousel on the homepage.</span>
                     </div>
                   </div>
+                </div>
+
+                {/* ── Beverage Details ── */}
+                <div style={{ padding: "20px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", marginTop: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-dark)", margin: 0 }}>Item Details (Ingredients, Quantity)</h3>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, details: [...(f.details || []), { label: "", value: "" }] }))} style={{ background: "#e2e8f0", color: "#0f172a", border: "1px solid #cbd5e1", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>+ Add Detail</button>
+                  </div>
+                  {(!form.details || form.details.length === 0) && (
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No details added (e.g. Ingredients: Milk, Sugar).</div>
+                  )}
+                  {form.details?.map((detail, idx) => (
+                    <div key={idx} style={{ display: "flex", gap: "12px", marginBottom: "12px", alignItems: "center" }}>
+                      <input type="text" placeholder="Label (e.g. Ingredients)" style={{ flex: 1, background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "6px", padding: "8px 12px", outline: "none", fontSize: "0.9rem" }} value={detail.label} onChange={e => {
+                        const newDetails = [...form.details!];
+                        newDetails[idx].label = e.target.value;
+                        setForm({ ...form, details: newDetails });
+                      }} />
+                      <input type="text" placeholder="Value (e.g. Coffee, Milk)" style={{ flex: 2, background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "6px", padding: "8px 12px", outline: "none", fontSize: "0.9rem" }} value={detail.value} onChange={e => {
+                        const newDetails = [...form.details!];
+                        newDetails[idx].value = e.target.value;
+                        setForm({ ...form, details: newDetails });
+                      }} />
+                      <button type="button" onClick={() => {
+                        const newDetails = [...form.details!];
+                        newDetails.splice(idx, 1);
+                        setForm({ ...form, details: newDetails });
+                      }} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={16} /></button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* ── Glass Sizes ── */}
+                <div style={{ padding: "20px", background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "12px", marginTop: "16px" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+                    <h3 style={{ fontSize: "1rem", fontWeight: 800, color: "var(--text-dark)", margin: 0 }}>Glass/Item Sizes</h3>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, sizes: [...(f.sizes || []), { name: "", price: form.price || 0 }] }))} style={{ background: "#e2e8f0", color: "#0f172a", border: "1px solid #cbd5e1", padding: "6px 12px", borderRadius: "6px", fontSize: "0.8rem", fontWeight: 700, cursor: "pointer" }}>+ Add Size</button>
+                  </div>
+                  {(!form.sizes || form.sizes.length === 0) && (
+                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>No additional sizes. Item uses base price.</div>
+                  )}
+                  {form.sizes?.map((size, idx) => (
+                    <div key={idx} style={{ display: "flex", gap: "12px", marginBottom: "12px", alignItems: "center" }}>
+                      <input type="text" placeholder="Size Name (e.g. Large)" style={{ flex: 1, background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "6px", padding: "8px 12px", outline: "none", fontSize: "0.9rem" }} value={size.name} onChange={e => {
+                        const newSizes = [...form.sizes!];
+                        newSizes[idx].name = e.target.value;
+                        setForm({ ...form, sizes: newSizes });
+                      }} />
+                      <div style={{ display: "flex", alignItems: "center", background: "#ffffff", border: "1px solid #cbd5e1", borderRadius: "6px", overflow: "hidden", flex: 1 }}>
+                        <span style={{ padding: "8px 10px", color: "var(--text-muted)", fontSize: "0.85rem", borderRight: "1px solid #cbd5e1", background: "#f8fafc" }}>₹</span>
+                        <input type="number" placeholder="Price" style={{ width: "100%", background: "transparent", border: "none", color: "#0f172a", padding: "8px 12px", outline: "none", fontSize: "0.9rem" }} value={size.price} onChange={e => {
+                          const newSizes = [...form.sizes!];
+                          newSizes[idx].price = Number(e.target.value);
+                          setForm({ ...form, sizes: newSizes });
+                        }} />
+                      </div>
+                      <button type="button" onClick={() => {
+                        const newSizes = [...form.sizes!];
+                        newSizes.splice(idx, 1);
+                        setForm({ ...form, sizes: newSizes });
+                      }} style={{ background: "transparent", border: "none", color: "#ef4444", cursor: "pointer" }}><Trash2 size={16} /></button>
+                    </div>
+                  ))}
                 </div>
 
                 {/* ── Customizations Section ── */}

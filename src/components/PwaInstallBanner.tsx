@@ -20,6 +20,9 @@ export default function PwaInstallBanner() {
   const [isIos, setIsIos] = useState(false);
 
   useEffect(() => {
+    // Don't show on admin pages
+    if (window.location.pathname.startsWith('/admin')) return;
+
     // Don't show if already installed as a PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 

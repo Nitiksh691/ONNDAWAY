@@ -48,6 +48,8 @@ export interface MenuItem {
   originalPrice?: number;
   section?: string;
   customizationCategories?: CustomizationCategory[];
+  details?: { label: string; value: string }[];
+  sizes?: { name: string; price: number }[];
   createdAt?: string;
 }
 

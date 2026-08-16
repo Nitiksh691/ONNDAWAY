@@ -772,11 +772,19 @@ body main:has([class*='contact-fade-up']) {
   width: 100%;
   border-radius: 24px;
   overflow: hidden;
-  aspect-ratio: 21 / 9;
-  min-height: 220px;
-  max-height: 480px;
+  height: 85svh;
+  max-height: 800px;
   background: #111;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+}
+
+@media (min-width: 768px) {
+  .home-banner-slider {
+    aspect-ratio: 21 / 9;
+    height: auto;
+    min-height: 300px;
+    max-height: 480px;
+  }
 }
 
 .home-banner-slide-img {

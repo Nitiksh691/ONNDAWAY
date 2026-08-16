@@ -17,6 +17,7 @@ export default function ItemPage() {
   const router = useRouter();
   const { cart, addToCart, updateQuantity, wishlist, toggleWishlist } = useApp();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedSize, setSelectedSize] = useState<{name: string, price: number} | null>(null);
 
   const { data: menu = [], isLoading } = useSWR<MenuItem[]>("/api/menu", fetcher, {
     revalidateOnFocus: false,
@@ -24,6 +25,14 @@ export default function ItemPage() {
   });
 
   const item = useMemo(() => menu.find(m => m.id === id), [menu, id]);
+  
+  // Set default selected size when item loads
+  useMemo(() => {
+    if (item && item.sizes && item.sizes.length > 0 && !selectedSize) {
+      setSelectedSize(item.sizes[0]);
+    }
+  }, [item, selectedSize]);
+
   const cartItem = useMemo(() => cart.find(c => c.item.id === item?.id), [cart, item]);
   const relatedItems = useMemo(() => {
     if (!item) return [];
@@ -32,7 +41,9 @@ export default function ItemPage() {
 
   const handleAddToCart = () => {
     if (!item) return;
-    addToCart(item, "", [], item.price);
+    const currentPrice = selectedSize ? selectedSize.price : item.price;
+    const customizations = selectedSize ? [{ category: "Size", option: selectedSize.name, price: selectedSize.price }] : [];
+    addToCart(item, "", customizations, currentPrice);
     toast.success("Added to cart");
   };
 
@@ -44,7 +55,8 @@ export default function ItemPage() {
     );
   }
 
-  const hasDiscount = !!item.originalPrice && item.originalPrice > item.price;
+  const currentPrice = selectedSize ? selectedSize.price : item.price;
+  const hasDiscount = !!item.originalPrice && item.originalPrice > item.price; // Keep base item logic for original price
   const discountPct = hasDiscount ? Math.round(((item.originalPrice! - item.price) / item.originalPrice!) * 100) : 0;
   const isWishlisted = wishlist?.includes(item.id);
   const images = [item.image, item.image]; // Mocking multiple images for now
@@ -68,15 +80,17 @@ export default function ItemPage() {
         .gallery-box {
           background: #ffffff;
           border: 1px solid #E2E8F0;
-          border-radius: 12px;
-          padding: 8px;
+          border-radius: 20px;
+          padding: 12px;
           position: relative;
+          width: 100%;
+          max-width: 380px;
           aspect-ratio: 1 / 1;
           display: flex;
           align-items: center;
           justify-content: center;
-          margin-bottom: 12px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+          margin: 0 auto 16px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.06);
           overflow: hidden;
         }
         .gallery-box img {
@@ -86,21 +100,25 @@ export default function ItemPage() {
         }
         .zoom-icon {
           position: absolute;
-          top: 16px;
-          right: 16px;
-          color: #94A3B8;
+          top: 14px;
+          right: 14px;
+          color: #CBD5E1;
+          background: #F8FAFC;
+          border-radius: 8px;
+          padding: 4px;
         }
         .thumbs-row {
           display: flex;
-          gap: 12px;
+          gap: 10px;
+          justify-content: center;
         }
         .thumb-box {
-          width: 72px;
-          height: 72px;
+          width: 60px;
+          height: 60px;
           background: #ffffff;
-          border: 1px solid #E2E8F0;
-          border-radius: 8px;
-          padding: 8px;
+          border: 1.5px solid #E2E8F0;
+          border-radius: 10px;
+          padding: 6px;
           cursor: pointer;
           transition: border-color 0.2s;
           display: flex;
@@ -120,66 +138,143 @@ export default function ItemPage() {
         /* Info */
         .brand-text {
           color: #0135FB;
-          font-size: 0.75rem;
+          font-size: 0.7rem;
           font-weight: 800;
-          letter-spacing: 1.5px;
+          letter-spacing: 2px;
           text-transform: uppercase;
-          margin-bottom: 10px;
+          margin-bottom: 8px;
         }
         .title-text {
-          font-size: 2.2rem;
+          font-size: 2rem;
           font-weight: 900;
           text-transform: uppercase;
           line-height: 1.1;
-          margin: 0 0 12px 0;
+          margin: 0 0 10px 0;
           letter-spacing: -0.5px;
+          color: #0A0F2E;
         }
         .reviews-text {
           display: flex;
           align-items: center;
           gap: 8px;
-          color: #64748B;
-          font-size: 0.85rem;
-          margin-bottom: 24px;
+          color: #94A3B8;
+          font-size: 0.82rem;
+          margin-bottom: 16px;
         }
         .desc-text {
           color: #475569;
-          font-size: 0.95rem;
-          line-height: 1.5;
-          margin-bottom: 24px;
+          font-size: 0.92rem;
+          line-height: 1.6;
+          margin-bottom: 20px;
         }
+
+        /* Feature chips */
+        .feature-chips {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+        .feature-chip {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          background: #F8FAFC;
+          border: 1px solid #E2E8F0;
+          border-radius: 12px;
+          padding: 12px 16px;
+          min-width: 90px;
+          font-size: 0.72rem;
+          font-weight: 700;
+          color: #475569;
+          text-align: center;
+          line-height: 1.3;
+        }
+
+        /* Size buttons — square */
+        .size-label {
+          font-size: 0.75rem;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          margin-bottom: 10px;
+        }
+        .size-buttons {
+          display: flex;
+          gap: 10px;
+          margin-bottom: 8px;
+        }
+        .size-btn {
+          width: 80px;
+          height: 80px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          gap: 5px;
+          border: 2px solid #E2E8F0;
+          border-radius: 14px;
+          background: #ffffff;
+          color: #0F172A;
+          font-weight: 800;
+          font-size: 0.75rem;
+          cursor: pointer;
+          transition: all 0.18s;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+        .size-btn:hover { border-color: #0135FB; background: #EEF3FF; }
+        .size-btn.active {
+          border-color: #0135FB;
+          background: #0135FB;
+          color: #ffffff;
+        }
+        .size-btn svg path { transition: stroke 0.18s; }
+        .size-mrp-line {
+          font-size: 0.82rem;
+          color: #64748B;
+          margin-bottom: 16px;
+        }
+        .size-mrp-line s { color: #94A3B8; font-weight: 600; }
+        .size-mrp-line strong { color: #10B981; font-weight: 800; margin-left: 6px; }
 
         /* Price Box */
         .price-box {
           background: #ffffff;
           border: 1px solid #E2E8F0;
-          border-radius: 12px;
-          padding: 20px 24px;
-          margin-bottom: 24px;
-          box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+          border-radius: 14px;
+          padding: 18px 22px;
+          margin-bottom: 20px;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.03);
         }
         .price-row {
           display: flex;
           align-items: baseline;
-          gap: 12px;
-          margin-bottom: 12px;
+          gap: 10px;
+          margin-bottom: 10px;
         }
         .price-current {
-          font-size: 2.2rem;
-          font-weight: 800;
+          font-size: 2.4rem;
+          font-weight: 900;
+          color: #0A0F2E;
+          line-height: 1;
         }
         .price-old {
-          font-size: 1rem;
+          font-size: 1.3rem;
           color: #94A3B8;
           text-decoration: line-through;
+          font-weight: 600;
         }
         .discount-pill {
           background: #10B981;
           color: #fff;
-          font-size: 0.75rem;
-          font-weight: 800;
-          padding: 4px 8px;
+          font-size: 0.72rem;
+          font-weight: 900;
+          padding: 3px 8px;
           border-radius: 4px;
+          letter-spacing: 0.3px;
         }
         .delivery-text {
           color: #10B981;
@@ -200,36 +295,38 @@ export default function ItemPage() {
           display: flex;
           align-items: center;
           gap: 16px;
-          margin-bottom: 24px;
+          margin-bottom: 20px;
         }
         .qty-label {
           color: #64748B;
-          font-size: 0.75rem;
+          font-size: 0.72rem;
           font-weight: 800;
-          letter-spacing: 1px;
+          letter-spacing: 1.2px;
+          text-transform: uppercase;
         }
         .qty-control {
           display: flex;
           align-items: center;
           background: #ffffff;
-          border: 1px solid #E2E8F0;
-          border-radius: 8px;
+          border: 1.5px solid #E2E8F0;
+          border-radius: 10px;
+          overflow: hidden;
         }
         .qty-btn {
-          width: 40px; height: 36px;
+          width: 40px; height: 38px;
           background: transparent;
           border: none;
           color: #0F172A;
           cursor: pointer;
-          font-size: 1.1rem;
           display: flex; align-items: center; justify-content: center;
         }
         .qty-btn:hover { background: #F8FAFC; }
         .qty-val {
           width: 32px;
           text-align: center;
-          font-size: 0.9rem;
-          font-weight: 700;
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: #0A0F2E;
         }
 
         /* Buttons */
@@ -243,7 +340,8 @@ export default function ItemPage() {
           background: #0135FB;
           color: #fff;
           border: none;
-          border-radius: 8px;
+          border-radius: 12px;
+          padding: 14px;
           font-weight: 800;
           font-size: 0.95rem;
           display: flex;
@@ -252,55 +350,80 @@ export default function ItemPage() {
           gap: 8px;
           cursor: pointer;
           transition: background 0.2s;
+          letter-spacing: 0.2px;
         }
         .btn-add:hover { background: #002be0; }
         .btn-icon {
           width: 48px; height: 48px;
           background: #ffffff;
-          border: 1px solid #E2E8F0;
-          border-radius: 8px;
+          border: 1.5px solid #E2E8F0;
+          border-radius: 12px;
           display: flex; align-items: center; justify-content: center;
           color: #64748B;
           cursor: pointer;
           transition: all 0.2s;
+          flex-shrink: 0;
         }
         .btn-icon:hover { border-color: #CBD5E1; color: #0F172A; }
         .btn-icon.active { color: #ef4444; border-color: #ef4444; background: #FEF2F2; }
-        
-        .btn-buy {
-          width: 100%;
-          padding: 14px;
-          background: #ffffff;
-          border: 2px solid #0135FB;
-          border-radius: 8px;
-          color: #0135FB;
-          font-weight: 800;
-          font-size: 0.9rem;
-          cursor: pointer;
-          transition: all 0.2s;
-          margin-bottom: 24px;
-        }
-        .btn-buy:hover { background: #0135FB; color: #fff; }
 
         /* Meta Table */
         .meta-box {
           border: 1px solid #E2E8F0;
-          border-radius: 8px;
-          padding: 16px;
+          border-radius: 12px;
+          padding: 14px 16px;
           background: #ffffff;
+          margin-bottom: 0;
         }
         .meta-row {
           display: flex;
           justify-content: space-between;
+          align-items: center;
           font-size: 0.85rem;
-          padding: 4px 0;
+          padding: 6px 0;
+          border-bottom: 1px solid #F1F5F9;
         }
-        .meta-label { color: #64748B; font-weight: 600; }
+        .meta-row:last-child { border-bottom: none; }
+        .meta-label { color: #94A3B8; font-weight: 600; }
         .meta-val { color: #0F172A; font-weight: 800; text-transform: capitalize; }
+
+        /* Product details in left column */
+        .prod-details-box {
+          border: 1px solid #E2E8F0;
+          border-radius: 16px;
+          background: #ffffff;
+          margin-top: 16px;
+          overflow: hidden;
+          max-width: 380px;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        .prod-details-header {
+          background: #F8FAFC;
+          padding: 10px 16px;
+          font-size: 0.7rem;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          border-bottom: 1px solid #E2E8F0;
+        }
+        .prod-detail-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 12px;
+          padding: 10px 16px;
+          font-size: 0.85rem;
+          border-bottom: 1px solid #F1F5F9;
+        }
+        .prod-detail-row:last-child { border-bottom: none; }
+        .prod-detail-label { color: #64748B; font-weight: 600; flex-shrink: 0; padding-top: 1px; }
+        .prod-detail-val { color: #0F172A; font-weight: 700; text-align: right; }
 
         /* Related Items */
         .related-section {
-          padding-top: 56px;
+          padding-top: 48px;
         }
         .related-header {
           display: flex;
@@ -310,10 +433,11 @@ export default function ItemPage() {
         }
         .related-title {
           font-family: 'Outfit', sans-serif;
-          font-size: 1.4rem;
+          font-size: 1.3rem;
           font-weight: 900;
           color: #0F172A;
           letter-spacing: -0.02em;
+          white-space: nowrap;
         }
         .related-line {
           flex: 1;
@@ -322,7 +446,7 @@ export default function ItemPage() {
         }
         .reco-scroll {
           display: flex;
-          gap: 20px;
+          gap: 16px;
           overflow-x: auto;
           scrollbar-width: none;
           margin: 0 -24px;
@@ -330,7 +454,7 @@ export default function ItemPage() {
         }
         .reco-scroll::-webkit-scrollbar { display: none; }
         .reco-item {
-          width: 220px;
+          width: 200px;
           flex-shrink: 0;
         }
 
@@ -339,26 +463,28 @@ export default function ItemPage() {
         .mobile-sticky-bar { display: none; }
 
         @media (max-width: 900px) {
-          .item-grid { grid-template-columns: 1fr; gap: 24px; }
-          .item-page-wrap { padding: 16px 20px 100px; }
+          .item-grid { grid-template-columns: 1fr; gap: 20px; }
+          .item-page-wrap { padding: 12px 16px 110px; }
           .desktop-only { display: none !important; }
           .mobile-only { display: flex !important; }
-          
-          .title-text { font-size: 1.8rem; }
-          .gallery-box { padding: 8px; aspect-ratio: 1/1; }
+
+          .gallery-box { max-width: 280px; padding: 8px; }
+          .title-text { font-size: 1.5rem; }
+          .price-current { font-size: 2rem; }
           .thumbs-row { justify-content: flex-start; }
-          
+          .size-btn { width: 72px; height: 72px; font-size: 0.7rem; }
+
           .mobile-sticky-bar {
             display: flex;
             position: fixed;
             bottom: 0; left: 0; right: 0;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
+            background: rgba(255, 255, 255, 0.97);
+            backdrop-filter: blur(12px);
             padding: 12px 16px;
             padding-bottom: max(12px, env(safe-area-inset-bottom));
             border-top: 1px solid #E2E8F0;
             z-index: 960;
-            gap: 12px;
+            gap: 10px;
           }
         }
       `}</style>
@@ -372,7 +498,7 @@ export default function ItemPage() {
 
       <div className="item-page-wrap">
         <div className="item-grid">
-          {/* Left: Gallery */}
+          {/* Left: Gallery + Product Details */}
           <div>
             <div className="gallery-box">
               <div className="zoom-icon"><Search size={18} /></div>
@@ -390,27 +516,82 @@ export default function ItemPage() {
                 </div>
               ))}
             </div>
+
+            {/* Product Details — left column desktop */}
+            {item.details && item.details.length > 0 && (
+              <div className="prod-details-box desktop-only">
+                <div className="prod-details-header">Product Details</div>
+                {item.details.map((d, i) => (
+                  <div key={i} className="prod-detail-row">
+                    <span className="prod-detail-label">{d.label}</span>
+                    <span className="prod-detail-val">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Right: Info */}
           <div>
             <div className="brand-text">ONN DA WAY</div>
             <h1 className="title-text">{item.name}</h1>
-            
+
             <div className="reviews-text">
               <span>☆☆☆☆☆</span>
               <span>0 (0 reviews)</span>
             </div>
 
-            <div className="desc-text">
-              {item.description || "Fresh and delicious. Order now for quick delivery."}
-            </div>
+            <div className="desc-text">{item.description}</div>
+
+            {/* Sizes */}
+            {item.sizes && item.sizes.length > 0 && (
+              <div style={{ marginBottom: "16px" }}>
+                <div className="size-label">Select Size</div>
+                <div className="size-buttons">
+                  {item.sizes.map(size => {
+                    const isActive = selectedSize?.name === size.name;
+                    return (
+                      <button
+                        key={size.name}
+                        onClick={() => setSelectedSize(size)}
+                        className={`size-btn${isActive ? " active" : ""}`}
+                      >
+                        {/* Product image in size button */}
+                        <div style={{
+                          width: 40, height: 40,
+                          borderRadius: 8,
+                          overflow: "hidden",
+                          position: "relative",
+                          border: isActive ? "2px solid rgba(255,255,255,0.4)" : "2px solid #E2E8F0",
+                          flexShrink: 0
+                        }}>
+                          <Image src={item.image} alt={size.name} fill sizes="40px" style={{ objectFit: "cover" }} />
+                        </div>
+                        <span style={{ fontSize: "0.7rem", marginTop: 2 }}>{size.name}</span>
+                        <span style={{ fontSize: "0.72rem", opacity: 0.8 }}>₹{size.price}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {/* MRP line below sizes */}
+                {hasDiscount && (
+                  <div className="size-mrp-line">
+                    <s>MRP ₹{item.originalPrice}</s>
+                    <strong>₹{item.originalPrice! - item.price} OFF</strong>
+                  </div>
+                )}
+              </div>
+            )}
 
             <div className="price-box">
               <div className="price-row">
-                <span className="price-current">₹{item.price}</span>
-                {hasDiscount && <span className="price-old">₹{item.originalPrice}</span>}
-                {hasDiscount && <span className="discount-pill">{discountPct}% OFF</span>}
+                <div className="price-current">₹{currentPrice}</div>
+                {hasDiscount && (
+                  <>
+                    <div className="price-old">₹{item.originalPrice}</div>
+                    <span className="discount-pill">{discountPct}% OFF</span>
+                  </>
+                )}
               </div>
               <div className="delivery-text">
                 <div className="delivery-dot" /> Delivery in 10 mins
@@ -450,7 +631,7 @@ export default function ItemPage() {
                   <ShoppingCart size={18} /> LAUNCHING SOON
                 </button>
               ) : (
-                <button className="btn-add" onClick={() => { addToCart(item, "", [], item.price); toast.success("Added!"); }}>
+                <button className="btn-add" onClick={handleAddToCart}>
                   <ShoppingCart size={18} /> ADD TO CART
                 </button>
               )}<button className={`btn-icon ${isWishlisted ? "active" : ""}`} onClick={() => toggleWishlist && toggleWishlist(item.id)}>
@@ -461,8 +642,9 @@ export default function ItemPage() {
               </button>
             </div>
 
+            {/* Category + Brand */}
             <div className="meta-box">
-              <div className="meta-row" style={{ marginBottom: 8 }}>
+              <div className="meta-row" style={{ marginBottom: 0 }}>
                 <span className="meta-label">Category</span>
                 <span className="meta-val">{item.category}</span>
               </div>
@@ -471,6 +653,19 @@ export default function ItemPage() {
                 <span className="meta-val">ONN DA WAY</span>
               </div>
             </div>
+
+            {/* Product Details — mobile only (on desktop shown in left col) */}
+            {item.details && item.details.length > 0 && (
+              <div className="prod-details-box mobile-only" style={{ display: undefined, marginTop: 12 }}>
+                <div className="prod-details-header">Product Details</div>
+                {item.details.map((d, i) => (
+                  <div key={i} className="prod-detail-row">
+                    <span className="prod-detail-label">{d.label}</span>
+                    <span className="prod-detail-val">{d.value}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
 

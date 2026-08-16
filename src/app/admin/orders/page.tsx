@@ -73,6 +73,7 @@ export default function AdminOrdersPage() {
   const [batchPartnerId, setBatchPartnerId] = useState("");
   const [preparingId, setPreparingId] = useState<string | null>(null);
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
+  const [visibleCount, setVisibleCount] = useState(30);
 
   const fetchUrl = statusFilter === "all" 
     ? "/api/orders?status=placed,preparing,out_for_delivery" 
@@ -81,9 +82,17 @@ export default function AdminOrdersPage() {
   const { data: orders = [], mutate: mutateOrders } = useSWR<Order[]>(fetchUrl, fetcher, { revalidateOnFocus: true });
   const { data: deliveryPersons = [] } = useSWR<DeliveryPerson[]>("/api/delivery-persons", fetcher, { refreshInterval: 30000 });
 
+  // Debounce SSE updates
   useSSEWithFallback(
     useCallback(() => mutateOrders(), [mutateOrders]),
-    { onMessage: useCallback((data: any) => { if (data.type === "order_change") mutateOrders(); }, [mutateOrders]), pollIntervalMs: 8000 }
+    { 
+      onMessage: useCallback((data: any) => { 
+        if (data.type === "order_change") {
+          mutateOrders();
+        } 
+      }, [mutateOrders]), 
+      pollIntervalMs: 15000 // Increased from 8s to 15s to reduce load
+    }
   );
 
   const handleStartPreparing = async (orderId: string) => {
@@ -180,6 +189,7 @@ export default function AdminOrdersPage() {
     return o.id?.toLowerCase().includes(term) || o.userName?.toLowerCase().includes(term) || o.userPhone?.includes(term);
   });
   
+  const visibleOrders = filtered.slice(0, visibleCount);
   const pendingOrders = orders.filter(o => o.status === "placed");
 
   return (
@@ -225,13 +235,13 @@ export default function AdminOrdersPage() {
           </div>
         </div>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-          {filtered.length === 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+          {visibleOrders.length === 0 ? (
             <div style={{ textAlign: "center", padding: "60px", color: "#94A3B8" }}>
               <div style={{ fontSize: "3rem", marginBottom: "12px" }}>📭</div>
               <div style={{ fontWeight: 600 }}>No orders found</div>
             </div>
-          ) : filtered.map(order => {
+          ) : visibleOrders.map(order => {
             const colors = STATUS_COLORS[order.status] || { bg: "#ffffff", border: "#E2E8F0" };
             const isExpanded = expandedOrders.has(order.id) || order.status === "placed";
 
@@ -343,6 +353,17 @@ export default function AdminOrdersPage() {
             );
           })}
         </div>
+
+        {visibleCount < filtered.length && (
+          <div style={{ textAlign: "center", marginTop: "24px" }}>
+            <button 
+              onClick={() => setVisibleCount(prev => prev + 30)}
+              style={{ background: "#F1F5F9", color: "#0F172A", border: "1px solid #E2E8F0", padding: "10px 24px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", fontSize: "0.9rem" }}
+            >
+              Load More Orders ({filtered.length - visibleCount} remaining)
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

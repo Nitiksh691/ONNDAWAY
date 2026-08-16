@@ -2,26 +2,64 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, SkipForward, X, Music } from "lucide-react";
+import { Play, Pause, SkipForward, ChevronUp, ChevronDown, Music2, X } from "lucide-react";
+import { useDraggableFab } from "@/hooks/useDraggableFab";
 
-const TRACKS = [
-  { id: 1, name: "Chill Vibes", url: "/music/track1.mp3" },
-  { id: 2, name: "Good Mood", url: "/music/track2.mp3" },
+interface Track {
+  id: number;
+  name: string;
+  artist: string;
+  url: string;
+}
+
+const TRACKS: Track[] = [
+  { id: 1, name: "Chill Vibes",    artist: "ONN DA WAY",   url: "/music/track1.mp3" },
+  { id: 2, name: "Good Mood",      artist: "ONN DA WAY",   url: "/music/track2.mp3" },
 ];
 
 export default function MusicPlayer() {
-  const [isClosed, setIsClosed] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(true);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTrackIndex, setCurrentTrackIndex] = useState(0);
+  const [isClosed,         setIsClosed]         = useState(false);
+  const [showList,         setShowList]          = useState(false);
+  const [isPlaying,        setIsPlaying]         = useState(false);
+  const [currentIdx,       setCurrentIdx]        = useState(0);
+  const [isMounted,        setIsMounted]         = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const [isMounted, setIsMounted] = useState(false);
 
+  // Draggable hook — keeps the pill within viewport
+  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(110, 20);
+
+  useEffect(() => { setIsMounted(true); }, []);
+
+  // Auto-play on first user interaction — browsers require a gesture
   useEffect(() => {
-    setIsMounted(true);
+    const tryAutoPlay = () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+      }
+      document.removeEventListener("click", tryAutoPlay);
+      document.removeEventListener("touchstart", tryAutoPlay);
+    };
+    document.addEventListener("click", tryAutoPlay, { once: true });
+    document.addEventListener("touchstart", tryAutoPlay, { once: true });
+    return () => {
+      document.removeEventListener("click", tryAutoPlay);
+      document.removeEventListener("touchstart", tryAutoPlay);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Stop music when closed completely
+  // Sync play/pause and track
+  useEffect(() => {
+    if (!audioRef.current) return;
+    audioRef.current.src = TRACKS[currentIdx].url;
+    if (isPlaying) {
+      audioRef.current.play().catch(() => setIsPlaying(false));
+    } else {
+      audioRef.current.pause();
+    }
+  }, [currentIdx, isPlaying]);
+
+  // Stop when closed
   useEffect(() => {
     if (isClosed && audioRef.current) {
       audioRef.current.pause();
@@ -29,138 +67,243 @@ export default function MusicPlayer() {
     }
   }, [isClosed]);
 
-  // Handle play/pause sync
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch((e) => {
-          console.log("Audio play failed:", e);
-          setIsPlaying(false);
-        });
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying, currentTrackIndex]);
-
-  const handleNextTrack = () => {
-    setCurrentTrackIndex((prev) => (prev + 1) % TRACKS.length);
+  const nextTrack = () => {
+    setCurrentIdx(p => (p + 1) % TRACKS.length);
     setIsPlaying(true);
   };
 
-  const handleEnded = () => {
-    handleNextTrack();
-  };
-
-  const togglePlay = () => {
-    setIsPlaying(!isPlaying);
+  const selectTrack = (idx: number) => {
+    setCurrentIdx(idx);
+    setIsPlaying(true);
+    setShowList(false);
   };
 
   if (!isMounted || isClosed) return null;
 
+  const track = TRACKS[currentIdx];
+
   return (
     <>
       <style>{`
-        @keyframes music-glow-ring {
-          0% { box-shadow: 0 0 0 0 rgba(1,53,251,0.6), 0 0 12px rgba(0,200,255,0.3); }
-          50% { box-shadow: 0 0 0 10px rgba(1,53,251,0), 0 0 20px rgba(0,200,255,0.5); }
-          100% { box-shadow: 0 0 0 0 rgba(1,53,251,0), 0 0 12px rgba(0,200,255,0.3); }
+        @keyframes mp-pulse {
+          0%,100% { box-shadow: 0 0 0 0 rgba(1,53,251,0.35); }
+          50%      { box-shadow: 0 0 0 7px rgba(1,53,251,0); }
         }
-        @keyframes music-spin-border {
-          0% { border-color: rgba(0,200,255,0.7); }
-          33% { border-color: rgba(1,53,251,0.7); }
-          66% { border-color: rgba(34,197,94,0.7); }
-          100% { border-color: rgba(0,200,255,0.7); }
+        @keyframes mp-spin {
+          from { transform: rotate(0deg); }
+          to   { transform: rotate(360deg); }
+        }
+        .mp-icon-spin { animation: mp-spin 3s linear infinite; }
+        .mp-pill {
+          position: fixed;
+          z-index: 99999;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          background: rgba(1,53,251,0.92);
+          backdrop-filter: blur(14px);
+          color: #fff;
+          border-radius: 99px;
+          padding: 6px 12px 6px 8px;
+          box-shadow: 0 4px 20px rgba(1,53,251,0.3);
+          cursor: grab;
+          touch-action: none;
+          user-select: none;
+          animation: ${isPlaying ? "mp-pulse 2s ease-in-out infinite" : "none"};
+          transition: border-radius 0.2s;
+          min-width: 160px;
+        }
+        .mp-icon-wrap {
+          width: 30px; height: 30px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.15);
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .mp-track-info {
+          flex: 1;
+          min-width: 0;
+          overflow: hidden;
+        }
+        .mp-track-name {
+          font-size: 0.72rem;
+          font-weight: 800;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          line-height: 1.2;
+        }
+        .mp-artist {
+          font-size: 0.62rem;
+          opacity: 0.65;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mp-btn {
+          background: none; border: none; color: #fff;
+          cursor: pointer; padding: 3px; display: flex;
+          align-items: center; justify-content: center;
+          opacity: 0.85; transition: opacity 0.15s;
+          flex-shrink: 0;
+        }
+        .mp-btn:hover { opacity: 1; }
+        .mp-list {
+          position: absolute;
+          bottom: calc(100% + 10px);
+          right: 0;
+          background: rgba(10,15,46,0.96);
+          backdrop-filter: blur(16px);
+          border-radius: 16px;
+          overflow: hidden;
+          min-width: 220px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+          border: 1px solid rgba(255,255,255,0.08);
+        }
+        .mp-list-header {
+          padding: 10px 14px 8px;
+          font-size: 0.65rem;
+          font-weight: 800;
+          letter-spacing: 1.5px;
+          text-transform: uppercase;
+          color: rgba(255,255,255,0.4);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+        }
+        .mp-list-item {
+          display: flex; align-items: center; gap: 10px;
+          padding: 10px 14px;
+          cursor: pointer;
+          transition: background 0.15s;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .mp-list-item:last-child { border-bottom: none; }
+        .mp-list-item:hover { background: rgba(1,53,251,0.25); }
+        .mp-list-item.active { background: rgba(1,53,251,0.4); }
+        .mp-list-num {
+          width: 18px; height: 18px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.1);
+          font-size: 0.6rem;
+          font-weight: 800;
+          display: flex; align-items: center; justify-content: center;
+          color: rgba(255,255,255,0.5);
+          flex-shrink: 0;
+        }
+        .mp-list-item.active .mp-list-num {
+          background: #0135FB;
+          color: #fff;
+        }
+        .mp-list-item-info { flex: 1; min-width: 0; }
+        .mp-list-item-name {
+          font-size: 0.78rem;
+          font-weight: 700;
+          color: #fff;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .mp-list-item-artist {
+          font-size: 0.65rem;
+          color: rgba(255,255,255,0.45);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
       `}</style>
-      <audio
-        ref={audioRef}
-        src={TRACKS[currentTrackIndex].url}
-        onEnded={handleEnded}
-      />
-      <motion.div
-        drag
-        dragMomentum={false}
-        initial={{ y: 50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        style={{
-          position: "fixed",
-          bottom: "100px",
-          left: "20px",
-          zIndex: 99999,
-          backgroundColor: isCollapsed ? "rgba(1, 53, 251, 0.9)" : "#0135FB",
-          backdropFilter: isCollapsed ? "blur(8px)" : "none",
-          color: "#ffffff",
-          borderRadius: isCollapsed ? "50%" : "14px",
-          cursor: "grab",
-          touchAction: "none",
-          border: isCollapsed ? "2px solid rgba(0,200,255,0.7)" : "1px solid rgba(255,255,255,0.1)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          overflow: "hidden",
-          width: isCollapsed ? "52px" : "auto",
-          height: isCollapsed ? "52px" : "auto",
-          animation: isCollapsed ? "music-glow-ring 2s ease-in-out infinite, music-spin-border 3s linear infinite" : "none",
+
+      <audio ref={audioRef} onEnded={nextTrack} />
+
+      <div
+        className="mp-pill"
+        style={{ ...dragStyle, left: "unset" }}
+        onPointerDown={(e) => onDragStart(e.clientX, e.clientY)}
+        onClickCapture={(e) => {
+          if (didDrag()) {
+            e.stopPropagation();
+            e.preventDefault();
+          }
         }}
-        whileTap={{ cursor: "grabbing" }}
       >
-        <AnimatePresence mode="wait">
-          {isCollapsed ? (
+        {/* Animated icon */}
+        <div className="mp-icon-wrap">
+          <Music2 size={15} className={isPlaying ? "mp-icon-spin" : ""} />
+        </div>
+
+        {/* Track info */}
+        <div className="mp-track-info">
+          <div className="mp-track-name">{track.name}</div>
+          <div className="mp-artist">{track.artist}</div>
+        </div>
+
+        {/* Play/Pause */}
+        <button
+          className="mp-btn"
+          onClick={e => { e.stopPropagation(); setIsPlaying(p => !p); }}
+          onPointerDown={e => e.stopPropagation()}
+        >
+          {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+        </button>
+
+        {/* Skip */}
+        <button
+          className="mp-btn"
+          onClick={e => { e.stopPropagation(); nextTrack(); }}
+          onPointerDown={e => e.stopPropagation()}
+        >
+          <SkipForward size={13} />
+        </button>
+
+        {/* Expand track list */}
+        <button
+          className="mp-btn"
+          onClick={e => { e.stopPropagation(); setShowList(p => !p); }}
+          onPointerDown={e => e.stopPropagation()}
+          style={{ opacity: showList ? 1 : 0.6 }}
+        >
+          {showList ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+        </button>
+
+        {/* Close */}
+        <button
+          className="mp-btn"
+          onClick={e => { e.stopPropagation(); setIsClosed(true); }}
+          onPointerDown={e => e.stopPropagation()}
+          style={{ opacity: 0.45 }}
+        >
+          <X size={12} />
+        </button>
+
+        {/* Track list popup */}
+        <AnimatePresence>
+          {showList && (
             <motion.div
-              key="collapsed"
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.2 }}
-              onClick={() => setIsCollapsed(false)}
-              style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+              className="mp-list"
+              initial={{ opacity: 0, y: 8, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.96 }}
+              transition={{ duration: 0.18 }}
+              onPointerDown={e => e.stopPropagation()}
             >
-              <Music size={24} color={isPlaying ? "#4ade80" : "white"} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key="expanded"
-              initial={{ opacity: 0, width: 0 }}
-              animate={{ opacity: 1, width: "auto" }}
-              exit={{ opacity: 0, width: 0 }}
-              transition={{ duration: 0.2 }}
-              style={{ display: "flex", alignItems: "center", gap: "16px", padding: "10px 18px", whiteSpace: "nowrap" }}
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  togglePlay();
-                }}
-                style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", padding: "4px", outline: "none" }}
-              >
-                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleNextTrack();
-                }}
-                style={{ background: "none", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", padding: "4px", outline: "none" }}
-              >
-                <SkipForward size={20} />
-              </button>
-              <span onClick={() => setIsCollapsed(true)} style={{ fontSize: "14px", fontWeight: 500, minWidth: "90px", userSelect: "none", cursor: "pointer" }}>
-                {TRACKS[currentTrackIndex].name}
-              </span>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setIsClosed(true);
-                }}
-                style={{ background: "none", border: "none", color: "#8e8e93", cursor: "pointer", display: "flex", alignItems: "center", padding: "4px", marginLeft: "8px", outline: "none" }}
-              >
-                <X size={18} />
-              </button>
+              <div className="mp-list-header">Now Playing</div>
+              {TRACKS.map((t, i) => (
+                <div
+                  key={t.id}
+                  className={`mp-list-item${i === currentIdx ? " active" : ""}`}
+                  onClick={() => selectTrack(i)}
+                >
+                  <div className="mp-list-num">
+                    {i === currentIdx && isPlaying ? <Music2 size={9} /> : i + 1}
+                  </div>
+                  <div className="mp-list-item-info">
+                    <div className="mp-list-item-name">{t.name}</div>
+                    <div className="mp-list-item-artist">{t.artist}</div>
+                  </div>
+                </div>
+              ))}
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
     </>
   );
 }

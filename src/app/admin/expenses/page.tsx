@@ -19,7 +19,6 @@ export default function ExpensesPage() {
 
   // Form State
   const [amount, setAmount] = useState("");
-  const [category, setCategory] = useState(CATEGORIES[0]);
   const [description, setDescription] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -50,7 +49,7 @@ export default function ExpensesPage() {
       const res = await fetch("/api/admin/expenses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ amount: Number(amount), category, description }),
+        body: JSON.stringify({ amount: Number(amount), category: "General", description }),
       });
       if (res.ok) {
         toast.success("Expense added successfully");
@@ -95,43 +94,34 @@ export default function ExpensesPage() {
       <p style={{ color: "var(--text-muted)", marginBottom: "32px" }}>Log and monitor your business operations costs.</p>
 
       {/* Summary Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px", marginBottom: "40px" }}>
-        {[
-          { label: "Today's Expenses", val: dailyTotal, color: "#EA580C" },
-          { label: "This Week", val: weeklyTotal, color: "#2563EB" },
-          { label: "This Month", val: monthlyTotal, color: "#7C3AED" },
-          { label: "This Year", val: yearlyTotal, color: "#059669" },
-        ].map((card, i) => (
-          <div key={i} style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "20px", display: "flex", flexDirection: "column", gap: "8px" }}>
-            <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>{card.label}</div>
-            <div style={{ fontSize: "1.8rem", fontWeight: 900, color: card.color }}>₹{card.val.toLocaleString()}</div>
-          </div>
-        ))}
+      <div style={{ display: "flex", gap: "20px", marginBottom: "32px", overflowX: "auto" }}>
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px 24px", minWidth: "150px" }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>Today</div>
+          <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#EA580C" }}>₹{dailyTotal.toLocaleString()}</div>
+        </div>
+        <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "16px 24px", minWidth: "150px" }}>
+          <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", fontWeight: 600 }}>This Month</div>
+          <div style={{ fontSize: "1.5rem", fontWeight: 900, color: "#7C3AED" }}>₹{monthlyTotal.toLocaleString()}</div>
+        </div>
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: "32px" }}>
         {/* Add Expense Form */}
         <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px", height: "fit-content" }}>
           <h3 style={{ fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", display: "flex", alignItems: "center", gap: "8px" }}>
-            <Plus size={20} color="var(--primary)"/> Log Expense
+            <Plus size={20} color="var(--primary)"/> Quick Add
           </h3>
-          <form onSubmit={handleAddExpense} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+          <form onSubmit={handleAddExpense} style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
             <div>
               <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Amount (₹) *</label>
-              <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. 500" value={amount} onChange={e=>setAmount(e.target.value)} required />
+              <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit" }} placeholder="e.g. 500" value={amount} onChange={e=>setAmount(e.target.value)} required />
             </div>
             <div>
-              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Category *</label>
-              <select className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={category} onChange={e=>setCategory(e.target.value)}>
-                {CATEGORIES.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>What was it for?</label>
+              <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit" }} placeholder="e.g. Bought milk" value={description} onChange={e=>setDescription(e.target.value)} required />
             </div>
-            <div>
-              <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Description (Optional)</label>
-              <textarea className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} rows={3} placeholder="e.g. Bought 5L milk" value={description} onChange={e=>setDescription(e.target.value)} />
-            </div>
-            <button type="submit" disabled={isSubmitting} style={{ background: "#0055ff", color: "#0f172a", border: "none", padding: "14px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", marginTop: "8px", fontFamily: "inherit" }}>
-              {isSubmitting ? "Saving..." : "Add Expense"}
+            <button type="submit" disabled={isSubmitting} style={{ background: "#0055ff", color: "#ffffff", border: "none", padding: "12px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", marginTop: "4px", fontFamily: "inherit" }}>
+              {isSubmitting ? "Saving..." : "Save"}
             </button>
           </form>
         </div>
@@ -150,11 +140,10 @@ export default function ExpensesPage() {
               {expenses.map((ex, i) => (
                 <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", border: "1px solid var(--border)", borderRadius: "12px" }}>
                   <div>
-                    <div style={{ fontWeight: 700, marginBottom: "4px" }}>{ex.category}</div>
-                    <div style={{ fontSize: "0.85rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
-                      <Calendar size={12}/> {new Date(ex.date).toLocaleString()}
+                    <div style={{ fontWeight: 700, marginBottom: "2px", color: "#0F172A" }}>{ex.description || "Expense"}</div>
+                    <div style={{ fontSize: "0.8rem", color: "var(--text-muted)", display: "flex", alignItems: "center", gap: "6px" }}>
+                      <Calendar size={12}/> {new Date(ex.date).toLocaleDateString()}
                     </div>
-                    {ex.description && <div style={{ fontSize: "0.85rem", marginTop: "6px" }}>{ex.description}</div>}
                   </div>
                   <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "#EA580C" }}>
                     -₹{ex.amount}
