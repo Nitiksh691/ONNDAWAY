@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --bottom-bar-height: 112px;
+  --bottom-bar-height: 58px;
   --nav-height: 68px;
   --sidebar-width: 260px;
 
@@ -767,6 +767,30 @@ body main:has([class*='contact-fade-up']) {
   background: var(--bg-cream);
 }
 
+/* Mobile full-bleed: image touches all 4 edges */
+.home-banner-section--mobile-fullbleed {
+  padding: 0;
+  background: #000;
+}
+
+/* Wrapper that acts as the container on mobile (full width) vs desktop (padded) */
+.home-banner-container-inner {
+  width: 100%;
+  padding: 0;
+}
+
+@media (min-width: 769px) {
+  .home-banner-section--mobile-fullbleed {
+    padding: 24px 0 16px;
+    background: var(--bg-cream);
+  }
+  .home-banner-container-inner {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+}
+
 .home-banner-slider {
   position: relative;
   width: 100%;
@@ -778,8 +802,16 @@ body main:has([class*='contact-fade-up']) {
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
 }
 
-@media (min-width: 768px) {
-  .home-banner-slider {
+/* On mobile: edge-to-edge, no border radius */
+.home-banner-slider--mobile-edge {
+  border-radius: 0;
+  height: 90svh;
+  max-height: none;
+}
+
+@media (min-width: 769px) {
+  .home-banner-slider--mobile-edge {
+    border-radius: 24px;
     aspect-ratio: 21 / 9;
     height: auto;
     min-height: 300px;
@@ -858,46 +890,25 @@ body main:has([class*='contact-fade-up']) {
   transform: scale(1.04);
 }
 
-@media (max-width: 768px) {
-  .home-banner-section {
-    padding: 12px 0 10px;
-  }
-
-  .home-banner-section .otw-container {
-    padding: 0 16px;
-  }
-
-  .home-banner-slider {
-    aspect-ratio: 16 / 9;
-    min-height: unset;
-    max-height: unset;
-    border-radius: 16px;
-  }
-}
-
 @media (max-width: 480px) {
-  .home-banner-slider {
-    aspect-ratio: 5 / 3;
-  }
-
   .home-banner-content {
-    padding: 14px 16px 18px;
+    padding: 20px 18px 28px;
     gap: 6px;
   }
 
   .home-banner-title {
-    font-size: clamp(1rem, 5.5vw, 1.35rem);
+    font-size: clamp(1.15rem, 6vw, 1.6rem);
     max-width: 92%;
   }
 
   .home-banner-sub {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     -webkit-line-clamp: 1;
   }
 
   .home-banner-cta {
-    padding: 9px 18px;
-    font-size: 0.78rem;
+    padding: 10px 20px;
+    font-size: 0.82rem;
   }
 }
 

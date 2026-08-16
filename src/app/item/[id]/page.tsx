@@ -502,7 +502,7 @@ export default function ItemPage() {
           <div>
             <div className="gallery-box">
               <div className="zoom-icon"><Search size={18} /></div>
-              <Image src={images[activeImageIndex]} alt={item.name} fill style={{ objectFit: "contain" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+              <Image src={images[activeImageIndex]} alt={item.name} fill sizes="(max-width: 768px) 100vw, 600px" style={{ objectFit: "contain" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
               {!item.available && !item.isLaunchingSoon && (
                 <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "16px", color: "#fff", fontSize: "1.5rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 10, backdropFilter: "blur(4px)" }}>
                   NOT AVAILABLE

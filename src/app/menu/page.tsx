@@ -33,7 +33,7 @@ function getTimeOfDay(): string {
   return "night";
 }
 
-/* Horizontal scroll row for a list of items */
+/* Horizontal scroll row that becomes a 2-col grid on mobile */
 function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, cart, onAdd, onUpdateQuantity, onViewAll }: {
   items: MenuItem[];
   label: string;
@@ -53,20 +53,18 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
   }
 
   return (
-    <section style={{ marginBottom: "40px" }}>
+    <section style={{ marginBottom: "32px" }}>
       {/* Section header */}
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "16px" }}>
-        <div>
-          <h2 style={{ fontSize: "1.15rem", fontWeight: 800, color: "var(--text-dark)", display: "flex", alignItems: "center", gap: "6px" }}>
-            {emoji} {label}
-          </h2>
-        </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "14px" }}>
+        <h2 style={{ fontSize: "1.1rem", fontWeight: 800, color: "var(--text-dark)", display: "flex", alignItems: "center", gap: "6px", margin: 0 }}>
+          {emoji} {label}
+        </h2>
         {viewAllCategory && (
           <button
             onClick={() => onViewAll(viewAllCategory)}
             style={{
               display: "flex", alignItems: "center", gap: "4px", border: "none", cursor: "pointer",
-              fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
+              fontSize: "0.78rem", fontWeight: 700, color: "var(--primary)",
               padding: "5px 10px", borderRadius: "8px", background: "var(--accent-2)",
               transition: "all 0.15s", whiteSpace: "nowrap", flexShrink: 0,
             }}
@@ -78,48 +76,19 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
         )}
       </div>
 
-      {/* Horizontal scroll container */}
-      <div style={{
-        display: "flex", gap: "14px", overflowX: "auto",
-        paddingBottom: "8px", WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none", msOverflowStyle: "none",
-      }}>
-        {items.map(item => (
-          <div key={item.id} style={{ minWidth: layout === "horizontal" ? "280px" : "185px", maxWidth: layout === "horizontal" ? "280px" : "185px", flexShrink: 0 }}>
+      {/* 2-column grid on mobile, horizontal scroll on desktop for "all" view */}
+      <div className="hsr-grid">
+        {items.slice(0, 6).map(item => (
+          <div key={item.id}>
             <FoodCard
               item={item}
-              layout={layout}
+              layout="vertical"
               cartItem={cart.find(c => c.item.id === item.id)}
               onAdd={onAdd}
               onUpdateQuantity={onUpdateQuantity}
             />
           </div>
         ))}
-
-        {/* "See all" end card */}
-        {viewAllCategory && (
-          <button
-            onClick={() => onViewAll(viewAllCategory)}
-            style={{
-              minWidth: "110px", maxWidth: "110px", flexShrink: 0, border: "2px dashed rgba(1,53,251,0.25)", cursor: "pointer",
-              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-              gap: "8px", borderRadius: "12px",
-              color: "var(--primary)", fontWeight: 700,
-              fontSize: "0.8rem", background: "rgba(1,53,251,0.03)",
-              transition: "background 0.2s", padding: "16px 8px", textAlign: "center",
-            }}
-            onMouseEnter={e => { e.currentTarget.style.background = "rgba(1,53,251,0.06)"; }}
-            onMouseLeave={e => { e.currentTarget.style.background = "rgba(1,53,251,0.03)"; }}
-          >
-            <div style={{
-              width: 36, height: 36, borderRadius: "50%", background: "var(--accent-2)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <ArrowRight size={16} />
-            </div>
-            See all {label}
-          </button>
-        )}
       </div>
     </section>
   );
@@ -127,7 +96,7 @@ function HScrollRow({ items, label, emoji, viewAllCategory, emptyText, layout, c
 
 export default function MenuPage() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
-  const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("horizontal");
+  const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("vertical");
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
   const { cart, addToCart, updateQuantity } = useApp();
@@ -154,8 +123,8 @@ export default function MenuPage() {
 
     const params = new URLSearchParams(window.location.search);
     const cat = params.get("category");
-    if (cat && CATEGORIES.includes(cat as any)) {
-      setActiveCategory(cat);
+    if (cat) {
+      setActiveCategory(cat.toLowerCase());
     }
   }, []);
 
@@ -164,6 +133,11 @@ export default function MenuPage() {
       .filter(item => item.available)
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }, [rawMenuItems]);
+
+  const dynamicCategories = useMemo(() => {
+    const cats = Array.from(new Set(menu.map(i => (i.category || "").toLowerCase()))).filter(Boolean);
+    return ["all", ...cats];
+  }, [menu]);
 
   const handleViewAll = useCallback((cat: string) => {
     setActiveCategory(cat);
@@ -175,22 +149,22 @@ export default function MenuPage() {
 
   const filtered = useMemo(() => {
     if (activeCategory === "all") return menu;
-    return menu.filter(i => i.category === activeCategory);
+    return menu.filter(i => (i.category || "").toLowerCase() === activeCategory);
   }, [activeCategory, menu]);
 
   // Group menu by category for the "All" sectioned view
   const byCategory = useMemo(() => {
     const PRIORITY: string[] = ["coffee", "snacks", "meals", "drinks", "desserts"];
-    const allCats: string[] = Array.from(new Set(menu.map(i => i.category as string)));
+    const allCats: string[] = dynamicCategories.filter(c => c !== "all");
     const ordered = [
       ...PRIORITY.filter(c => allCats.includes(c)),
       ...allCats.filter(c => !PRIORITY.includes(c)),
     ];
     return ordered.map(cat => ({
       cat,
-      items: menu.filter(i => i.category === cat),
+      items: menu.filter(i => (i.category || "").toLowerCase() === cat),
     })).filter(g => g.items.length > 0);
-  }, [menu]);
+  }, [menu, dynamicCategories]);
 
   const showSections = activeCategory === "all";
 
@@ -199,17 +173,41 @@ export default function MenuPage() {
       <style dangerouslySetInnerHTML={{
         __html: `
         .hscroll::-webkit-scrollbar { display: none; }
+        /* 2-col grid for horizontal scroll row sections on mobile */
+        .hsr-grid {
+          display: grid;
+          grid-template-columns: repeat(2, 1fr);
+          gap: 12px;
+        }
+        @media (min-width: 640px) {
+          .hsr-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 14px;
+          }
+          .hsr-grid > div {
+            flex: 0 0 185px;
+            max-width: 185px;
+          }
+        }
         @media (max-width: 768px) {
           .food-grid-filtered { grid-template-columns: repeat(2, 1fr) !important; gap: 12px !important; }
         }
-        @media (max-width: 400px) {
+        @media (max-width: 360px) {
+        @media (max-width: 360px) {
+          .hsr-grid { grid-template-columns: 1fr; }
           .food-grid-filtered { grid-template-columns: 1fr !important; }
+        }
+        @media (min-width: 769px) {
+          .mobile-only-banner { display: none !important; }
         }
       ` }} />
 
       {/* ─── BANNER SLIDER ─── */}
       {bannerEnabled && bannerSlides.length > 0 ? (
-        <BannerSlider slides={bannerSlides} variant="menu" />
+        <div className="mobile-only-banner">
+          <BannerSlider slides={bannerSlides} variant="menu" />
+        </div>
       ) : (
         <div className="otw-page-header">
           <div className="otw-container">
@@ -227,14 +225,14 @@ export default function MenuPage() {
       }}>
         <div className="otw-container" style={{ display: "flex", alignItems: "center", gap: 12, padding: "0 16px" }}>
           <div style={{ display: "flex", gap: 8, overflowX: "auto", flex: 1, padding: "10px 0", scrollbarWidth: "none" as any }}>
-            {CATEGORIES.map(cat => (
+            {dynamicCategories.map(cat => (
               <button
                 key={cat}
                 id={`filter-${cat}`}
                 onClick={() => setActiveCategory(cat)}
                 className={`cat-btn ${activeCategory === cat ? "active" : ""}`}
               >
-                {CAT_EMOJI[cat]} {CAT_LABEL[cat]}
+                {CAT_EMOJI[cat] || "✨"} {CAT_LABEL[cat] || (cat.charAt(0).toUpperCase() + cat.slice(1))}
               </button>
             ))}
           </div>
@@ -269,33 +267,6 @@ export default function MenuPage() {
             </div>
           ) : showSections ? (
             <>
-              {/* Popular — Horizontal scroll */}
-              {popular.length > 0 && (
-                <HScrollRow
-                  items={popular}
-                  label="Popular Right Now"
-                  emoji="🔥"
-                  layout={menuLayout}
-                  cart={cart}
-                  onAdd={addToCart}
-                  onUpdateQuantity={updateQuantity}
-                  onViewAll={handleViewAll}
-                />
-              )}
-
-              {/* Recommended — Horizontal scroll */}
-              {recommended.length > 0 && (
-                <HScrollRow
-                  items={recommended}
-                  label={`Perfect for ${timeOfDay.charAt(0).toUpperCase() + timeOfDay.slice(1)}`}
-                  emoji="🎯"
-                  layout={menuLayout}
-                  cart={cart}
-                  onAdd={addToCart}
-                  onUpdateQuantity={updateQuantity}
-                  onViewAll={handleViewAll}
-                />
-              )}
 
               {/* Divider */}
               <div style={{ borderTop: "2px solid rgba(1,53,251,0.08)", margin: "8px 0 32px", position: "relative" }}>

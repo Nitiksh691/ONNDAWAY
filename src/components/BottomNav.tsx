@@ -3,82 +3,50 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, User } from "lucide-react";
 import { useApp } from "@/lib/context";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 
 export default function BottomNav() {
   const pathname = usePathname();
   const { cartCount, profile } = useApp();
   const [mounted, setMounted] = useState(false);
-  const [isVisible, setIsVisible] = useState(true);
-  const lastScrollY = useRef(0);
 
-  useEffect(() => {
-    setMounted(true);
-    const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
-        setIsVisible(false);
-      } else {
-        setIsVisible(true);
-      }
-      lastScrollY.current = currentScrollY;
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+  useEffect(() => { setMounted(true); }, []);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (cartCount > 0) return null;
 
   const isActive = (href: string) => {
     if (href === "/") return pathname === "/";
     return pathname.startsWith(href);
   };
 
-  if (cartCount > 0) return null;
+  const tabs = [
+    { href: "/", label: "Home", Icon: Home },
+    { href: "/menu", label: "Menu", Icon: UtensilsCrossed },
+    { href: "/orders", label: "Orders", Icon: ClipboardList },
+    { href: "/profile", label: "Profile", Icon: User },
+  ];
 
   return (
     <>
       <style>{`
         @media (min-width: 768px) {
-          .bnav-container { display: none !important; }
+          .bnav-root { display: none !important; }
         }
 
-        .bnav-container {
+        .bnav-root {
           position: fixed;
           bottom: 0;
           left: 0;
           right: 0;
           z-index: 900;
-          pointer-events: none;
+          background: #fff;
+          border-top: 1px solid rgba(0,0,0,0.07);
           display: flex;
-          justify-content: center;
-          padding: 0 16px;
-          padding-bottom: max(14px, env(safe-area-inset-bottom));
-          transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .bnav-container.hidden {
-          transform: translateY(120%);
-        }
-
-        .bnav-pill {
-          width: 100%;
-          max-width: 400px;
-          height: 64px;
-          background: rgba(255, 255, 255, 0.85);
-          backdrop-filter: blur(24px);
-          -webkit-backdrop-filter: blur(24px);
-          border-radius: 28px;
-          border: 1px solid rgba(255, 255, 255, 0.4);
-          box-shadow:
-            0 -2px 0 rgba(0, 0, 0, 0.02),
-            0 8px 32px rgba(0, 0, 0, 0.08),
-            0 2px 8px rgba(0, 0, 0, 0.04);
-          display: flex;
-          align-items: center;
+          align-items: stretch;
           justify-content: space-around;
-          padding: 0 6px;
-          pointer-events: auto;
-          position: relative;
+          height: 58px;
+          padding-bottom: env(safe-area-inset-bottom);
         }
 
         .bnav-tab {
@@ -88,17 +56,12 @@ export default function BottomNav() {
           justify-content: center;
           gap: 3px;
           text-decoration: none;
-          color: #94A3B8;
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+          color: #9ca3af;
           flex: 1;
-          height: 100%;
-          border-radius: 22px;
-          position: relative;
+          padding: 6px 4px 4px;
           -webkit-tap-highlight-color: transparent;
-        }
-
-        .bnav-tab:hover {
-          color: #64748B;
+          transition: color 0.18s;
+          position: relative;
         }
 
         .bnav-tab.active {
@@ -109,166 +72,162 @@ export default function BottomNav() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 36px;
+          width: 28px;
           height: 28px;
-          border-radius: 12px;
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
           position: relative;
         }
 
-        .bnav-tab.active .bnav-tab-icon {
-          background: rgba(1, 53, 251, 0.1);
-          transform: translateY(-2px);
+        /* Active indicator — tiny dot */
+        .bnav-tab.active .bnav-dot {
+          display: block;
         }
-
-        .bnav-tab-label {
-          font-size: 0.58rem;
-          font-weight: 800;
-          letter-spacing: 0.04em;
-          text-transform: uppercase;
-          line-height: 1;
-        }
-
-        /* Active indicator dot */
-        .bnav-tab.active::after {
-          content: '';
+        .bnav-dot {
+          display: none;
           position: absolute;
-          bottom: 8px;
+          bottom: -3px;
+          left: 50%;
+          transform: translateX(-50%);
           width: 4px;
           height: 4px;
           border-radius: 50%;
           background: #0135FB;
         }
 
-        /* Cart center button */
+        .bnav-tab-label {
+          font-size: 0.6rem;
+          font-weight: 700;
+          letter-spacing: 0.02em;
+          text-transform: uppercase;
+          line-height: 1;
+        }
+
+        /* Center cart FAB */
+        .bnav-cart-wrap {
+          flex: 1;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          -webkit-tap-highlight-color: transparent;
+          text-decoration: none;
+        }
+
         .bnav-cart {
-          position: relative;
-          width: 52px;
-          height: 52px;
+          width: 46px;
+          height: 46px;
           border-radius: 50%;
-          background: linear-gradient(145deg, #0135FB, #2A55FF);
+          background: #0135FB;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
-          text-decoration: none;
-          box-shadow:
-            0 6px 20px rgba(1, 53, 251, 0.45),
-            inset 0 1px 0 rgba(255,255,255,0.25);
-          transition: all 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
-          flex-shrink: 0;
-          -webkit-tap-highlight-color: transparent;
+          position: relative;
+          box-shadow: 0 4px 16px rgba(1,53,251,0.35);
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
         }
 
         .bnav-cart:active {
-          transform: scale(0.92);
-        }
-
-        .bnav-cart:hover {
-          transform: scale(1.08) translateY(-2px);
-          box-shadow: 0 10px 28px rgba(1, 53, 251, 0.55), inset 0 1px 0 rgba(255,255,255,0.25);
+          transform: scale(0.9);
+          box-shadow: 0 2px 8px rgba(1,53,251,0.25);
         }
 
         .bnav-badge {
           position: absolute;
-          top: -3px;
-          right: -3px;
-          min-width: 19px;
-          height: 19px;
+          top: -2px;
+          right: -2px;
+          min-width: 17px;
+          height: 17px;
           background: #ef4444;
           color: white;
-          font-size: 0.6rem;
+          font-size: 0.58rem;
           font-weight: 900;
           border-radius: 10px;
           display: flex;
           align-items: center;
           justify-content: center;
           border: 2px solid white;
-          padding: 0 3px;
-          box-shadow: 0 2px 6px rgba(239, 68, 68, 0.4);
+          padding: 0 2px;
         }
 
         .bnav-avatar {
-          width: 28px;
-          height: 28px;
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
           object-fit: cover;
           display: block;
         }
 
-        .bnav-avatar-initial {
-          width: 28px;
-          height: 28px;
+        .bnav-avatar-init {
+          width: 24px;
+          height: 24px;
           border-radius: 50%;
-          background: linear-gradient(135deg, #0135FB, #2A55FF);
+          background: #0135FB;
           color: white;
           display: flex;
           align-items: center;
           justify-content: center;
           font-weight: 900;
-          font-size: 0.72rem;
+          font-size: 0.68rem;
         }
 
         .bnav-tab.active .bnav-avatar,
-        .bnav-tab.active .bnav-avatar-initial {
-          box-shadow: 0 0 0 2.5px #0135FB;
-          transform: translateY(-2px);
+        .bnav-tab.active .bnav-avatar-init {
+          box-shadow: 0 0 0 2px #0135FB;
         }
       `}</style>
 
-      <div className={`bnav-container ${!isVisible ? "hidden" : ""}`}>
-        <div className="bnav-pill">
+      <nav className="bnav-root" role="navigation" aria-label="Main navigation">
+        {/* Home */}
+        <Link href="/" className={`bnav-tab ${isActive("/") ? "active" : ""}`}>
+          <div className="bnav-tab-icon">
+            <Home size={21} strokeWidth={isActive("/") ? 2.5 : 1.8} />
+            <span className="bnav-dot" />
+          </div>
+          <span className="bnav-tab-label">Home</span>
+        </Link>
 
-          {/* Home */}
-          <Link href="/" className={`bnav-tab ${isActive("/") ? "active" : ""}`}>
-            <div className="bnav-tab-icon">
-              <Home size={20} strokeWidth={isActive("/") ? 2.5 : 1.8} />
-            </div>
-            <span className="bnav-tab-label">Home</span>
-          </Link>
+        {/* Menu */}
+        <Link href="/menu" className={`bnav-tab ${isActive("/menu") ? "active" : ""}`}>
+          <div className="bnav-tab-icon">
+            <UtensilsCrossed size={21} strokeWidth={isActive("/menu") ? 2.5 : 1.8} />
+            <span className="bnav-dot" />
+          </div>
+          <span className="bnav-tab-label">Menu</span>
+        </Link>
 
-          {/* Menu */}
-          <Link href="/menu" className={`bnav-tab ${isActive("/menu") ? "active" : ""}`}>
-            <div className="bnav-tab-icon">
-              <UtensilsCrossed size={20} strokeWidth={isActive("/menu") ? 2.5 : 1.8} />
-            </div>
-            <span className="bnav-tab-label">Menu</span>
-          </Link>
-
-          {/* Cart — Center Bubble */}
-          <Link href="/cart" className="bnav-cart">
-            <ShoppingBag size={22} strokeWidth={2.5} />
+        {/* Cart — center bubble */}
+        <Link href="/cart" className="bnav-cart-wrap" aria-label="Cart">
+          <div className="bnav-cart">
+            <ShoppingBag size={20} strokeWidth={2.5} />
             {cartCount > 0 && (
               <div className="bnav-badge">{cartCount > 9 ? "9+" : cartCount}</div>
             )}
-          </Link>
+          </div>
+        </Link>
 
-          {/* Orders */}
-          <Link href="/orders" className={`bnav-tab ${isActive("/orders") ? "active" : ""}`}>
-            <div className="bnav-tab-icon">
-              <ClipboardList size={20} strokeWidth={isActive("/orders") ? 2.5 : 1.8} />
-            </div>
-            <span className="bnav-tab-label">Orders</span>
-          </Link>
+        {/* Orders */}
+        <Link href="/orders" className={`bnav-tab ${isActive("/orders") ? "active" : ""}`}>
+          <div className="bnav-tab-icon">
+            <ClipboardList size={21} strokeWidth={isActive("/orders") ? 2.5 : 1.8} />
+            <span className="bnav-dot" />
+          </div>
+          <span className="bnav-tab-label">Orders</span>
+        </Link>
 
-          {/* Profile — with avatar */}
-          <Link href="/profile" className={`bnav-tab ${isActive("/profile") ? "active" : ""}`}>
-            <div className="bnav-tab-icon" style={{ background: isActive("/profile") ? "rgba(1,53,251,0.1)" : "transparent", transform: isActive("/profile") ? "translateY(-2px)" : "none" }}>
-              {mounted && profile?.image ? (
-                <img src={profile.image} alt="Profile" className="bnav-avatar" />
-              ) : mounted && profile?.name ? (
-                <div className="bnav-avatar-initial">
-                  {profile.name[0].toUpperCase()}
-                </div>
-              ) : (
-                <User size={20} strokeWidth={isActive("/profile") ? 2.5 : 1.8} />
-              )}
-            </div>
-            <span className="bnav-tab-label">Profile</span>
-          </Link>
-
-        </div>
-      </div>
+        {/* Profile */}
+        <Link href="/profile" className={`bnav-tab ${isActive("/profile") ? "active" : ""}`}>
+          <div className="bnav-tab-icon">
+            {mounted && profile?.image ? (
+              <img src={profile.image} alt="Profile" className="bnav-avatar" />
+            ) : mounted && profile?.name ? (
+              <div className="bnav-avatar-init">{profile.name[0].toUpperCase()}</div>
+            ) : (
+              <User size={21} strokeWidth={isActive("/profile") ? 2.5 : 1.8} />
+            )}
+            <span className="bnav-dot" />
+          </div>
+          <span className="bnav-tab-label">Profile</span>
+        </Link>
+      </nav>
     </>
   );
 }

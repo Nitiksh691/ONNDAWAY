@@ -13,16 +13,16 @@ interface Track {
 }
 
 const TRACKS: Track[] = [
-  { id: 1, name: "Chill Vibes",    artist: "ONN DA WAY",   url: "/music/track1.mp3" },
-  { id: 2, name: "Good Mood",      artist: "ONN DA WAY",   url: "/music/track2.mp3" },
+  { id: 1, name: "Chill Vibes", artist: "ONN DA WAY", url: "/music/track1.mp3" },
+  { id: 2, name: "Good Mood", artist: "ONN DA WAY", url: "/music/track2.mp3" },
 ];
 
 export default function MusicPlayer() {
-  const [isClosed,         setIsClosed]         = useState(false);
-  const [showList,         setShowList]          = useState(false);
-  const [isPlaying,        setIsPlaying]         = useState(false);
-  const [currentIdx,       setCurrentIdx]        = useState(0);
-  const [isMounted,        setIsMounted]         = useState(false);
+  const [isClosed, setIsClosed] = useState(false);
+  const [showList, setShowList] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentIdx, setCurrentIdx] = useState(0);
+  const [isMounted, setIsMounted] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
   // Draggable hook — keeps the pill within viewport
@@ -34,7 +34,7 @@ export default function MusicPlayer() {
   useEffect(() => {
     const tryAutoPlay = () => {
       if (audioRef.current && !isPlaying) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
       }
       document.removeEventListener("click", tryAutoPlay);
       document.removeEventListener("touchstart", tryAutoPlay);
@@ -45,7 +45,7 @@ export default function MusicPlayer() {
       document.removeEventListener("click", tryAutoPlay);
       document.removeEventListener("touchstart", tryAutoPlay);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sync play/pause and track
