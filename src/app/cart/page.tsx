@@ -598,114 +598,114 @@ export default function CartPage() {
                 <div style={{ marginTop: "10px" }}>
                   {/* ── SECONDARY: Cash on Delivery (online payment off) ── */}
                   {(codEnabled || !onlinePaymentEnabled) && (
-                      <>
+                    <>
+                      <div
+                        style={{
+                          display: "flex",
+                          alignItems: "center",
+                          gap: "10px",
+                          margin: "18px 0 0",
+                        }}
+                      >
                         <div
                           style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: "10px",
-                            margin: "18px 0 0",
+                            flex: 1,
+                            height: "1px",
+                            background: "#e5e7eb",
                           }}
-                        >
-                          <div
-                            style={{
-                              flex: 1,
-                              height: "1px",
-                              background: "#e5e7eb",
-                            }}
-                          />
+                        />
 
-                          <span
-                            style={{
-                              fontSize: "0.7rem",
-                              fontWeight: 700,
-                              color: "#9ca3af",
-                              textTransform: "uppercase",
-                              letterSpacing: "0.8px",
-                              whiteSpace: "nowrap",
-                            }}
-                          >
-                            or pay on delivery
-                          </span>
-
-                          <div
-                            style={{
-                              flex: 1,
-                              height: "1px",
-                              background: "#e5e7eb",
-                            }}
-                          />
-                        </div>
-
-                        <button
-                          id="place-order-btn"
-                          onClick={handlePlaceCOD}
-                          disabled={!canPlace || placing}
+                        <span
                           style={{
-                            width: "100%",
-                            marginTop: "10px",
-                            padding: "14px",
-                            fontSize: "0.88rem",
+                            fontSize: "0.7rem",
                             fontWeight: 700,
-                            background:
-                              !onlinePaymentEnabled && canPlace
-                                ? "#0135FB"
-                                : "transparent",
-                            color:
-                              !onlinePaymentEnabled && canPlace
-                                ? "#ffffff"
-                                : canPlace
-                                  ? "#0A0F2E"
-                                  : "#9ca3af",
-                            border:
-                              !onlinePaymentEnabled && canPlace
-                                ? "1.5px solid #0028D4"
-                                : canPlace
-                                  ? "1.5px solid #d1d5db"
-                                  : "1.5px solid #e5e7eb",
-                            borderRadius: "10px",
-                            cursor: canPlace ? "pointer" : "not-allowed",
-                            display: "flex",
-                            alignItems: "center",
-                            justifyContent: "center",
-                            gap: "10px",
+                            color: "#9ca3af",
                             textTransform: "uppercase",
-                            letterSpacing: "0.5px",
-                            transition: "all 0.15s",
-                            fontFamily: "inherit",
-                          }}
-                          onMouseOver={(e) => {
-                            if (canPlace) {
-                              if (!onlinePaymentEnabled) {
-                                e.currentTarget.style.background = "#0028D4";
-                              } else {
-                                e.currentTarget.style.background = "#F5F7FF";
-                                e.currentTarget.style.borderColor = "#0135FB";
-                                e.currentTarget.style.color = "#0135FB";
-                              }
-                            }
-                          }}
-                          onMouseOut={(e) => {
-                            if (canPlace) {
-                              if (!onlinePaymentEnabled) {
-                                e.currentTarget.style.background = "#0135FB";
-                              } else {
-                                e.currentTarget.style.background = "transparent";
-                                e.currentTarget.style.borderColor = "#d1d5db";
-                                e.currentTarget.style.color = "#0A0F2E";
-                              }
-                            }
+                            letterSpacing: "0.8px",
+                            whiteSpace: "nowrap",
                           }}
                         >
-                          {placing ? (
-                            "Processing..."
-                          ) : (
-                            <>
-                              Cash on Delivery <ArrowRight size={16} />
-                            </>
-                          )}
-                        </button>
-                      </>
+                          or pay on delivery
+                        </span>
+
+                        <div
+                          style={{
+                            flex: 1,
+                            height: "1px",
+                            background: "#e5e7eb",
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        id="place-order-btn"
+                        onClick={handlePlaceCOD}
+                        disabled={!canPlace || placing}
+                        style={{
+                          width: "100%",
+                          marginTop: "10px",
+                          padding: "14px",
+                          fontSize: "0.88rem",
+                          fontWeight: 700,
+                          background:
+                            !onlinePaymentEnabled && canPlace
+                              ? "#0135FB"
+                              : "transparent",
+                          color:
+                            !onlinePaymentEnabled && canPlace
+                              ? "#ffffff"
+                              : canPlace
+                                ? "#0A0F2E"
+                                : "#9ca3af",
+                          border:
+                            !onlinePaymentEnabled && canPlace
+                              ? "1.5px solid #0028D4"
+                              : canPlace
+                                ? "1.5px solid #d1d5db"
+                                : "1.5px solid #e5e7eb",
+                          borderRadius: "10px",
+                          cursor: canPlace ? "pointer" : "not-allowed",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "10px",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.5px",
+                          transition: "all 0.15s",
+                          fontFamily: "inherit",
+                        }}
+                        onMouseOver={(e) => {
+                          if (canPlace) {
+                            if (!onlinePaymentEnabled) {
+                              e.currentTarget.style.background = "#0028D4";
+                            } else {
+                              e.currentTarget.style.background = "#F5F7FF";
+                              e.currentTarget.style.borderColor = "#0135FB";
+                              e.currentTarget.style.color = "#0135FB";
+                            }
+                          }
+                        }}
+                        onMouseOut={(e) => {
+                          if (canPlace) {
+                            if (!onlinePaymentEnabled) {
+                              e.currentTarget.style.background = "#0135FB";
+                            } else {
+                              e.currentTarget.style.background = "transparent";
+                              e.currentTarget.style.borderColor = "#d1d5db";
+                              e.currentTarget.style.color = "#0A0F2E";
+                            }
+                          }
+                        }}
+                      >
+                        {placing ? (
+                          "Processing..."
+                        ) : (
+                          <>
+                            Cash on Delivery <ArrowRight size={16} />
+                          </>
+                        )}
+                      </button>
+                    </>
                   )}
 
                   {!location && (
@@ -793,7 +793,6 @@ export default function CartPage() {
               )}
             </div>
           )}
-
         </div>
       );
 }
