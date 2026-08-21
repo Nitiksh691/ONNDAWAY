@@ -36,6 +36,7 @@ const SettingsSchema = new Schema({
   launchingSoonMode: { type: Boolean, default: false },
   // Online Payment Enable/Disable
   onlinePaymentEnabled: { type: Boolean, default: true },
+  codEnabled: { type: Boolean, default: false },
   updatedAt: { type: Date, default: Date.now },
 });
 

@@ -299,7 +299,7 @@ export default function HomePage() {
 
       {/* ─── BANNER SLIDER ─── */}
       {hasBanner && bannerMode === "single" && (
-        <BannerSlider slides={combinedBannerSlides} variant="home" />
+        <BannerSlider slides={combinedBannerSlides} variant="menu" />
       )}
       {hasBanner && bannerMode === "bento" && (
         <BannerSlider bentoSlides={bentoSlides} variant="bento" />

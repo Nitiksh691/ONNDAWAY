@@ -2,10 +2,11 @@
 import Link from "next/link";
 import { Camera, MessageCircle, Mail, MapPin, Phone } from "lucide-react";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, SUPPORT_EMAIL } from "@/lib/company";
+import { OTWGradientGlow } from "@/components/OTWGradientGlow";
 
 export default function Footer() {
   return (
-    <footer style={{ background: "var(--primary)", color: "white" }}>
+    <footer style={{ background: "var(--primary)", color: "white", paddingBottom: "55vh", position: "relative" }}>
       <style>{`
         .footer-main {
           display: grid;
@@ -151,6 +152,9 @@ export default function Footer() {
           </div>
         </div>
       </div>
+
+      {/* Rainbow glow that rises from the bottom of the page as you scroll */}
+      <OTWGradientGlow />
     </footer>
   );
 }

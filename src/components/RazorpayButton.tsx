@@ -75,6 +75,8 @@ interface RazorpayButtonProps {
   createOrder: () => Promise<{ order_id: string; amount: number; currency: string; internalOrderId: string }>;
   /** Called after successful payment + signature verification */
   onSuccess?: (paymentId: string, orderId: string, internalOrderId: string) => void;
+  /** Called when a payment attempt fails */
+  onFailure?: () => void;
   /** Called when the modal is dismissed without payment */
   onDismiss?: () => void;
   /** Hide the trust badge and inline dividers for a cleaner look */
@@ -91,6 +93,7 @@ export default function RazorpayButton({
   disabled = false,
   createOrder,
   onSuccess,
+  onFailure,
   onDismiss,
   compact = false,
 }: RazorpayButtonProps) {
@@ -183,6 +186,7 @@ export default function RazorpayButton({
     rzp.on("payment.failed", (response: RazorpayPaymentResponse) => {
       toast.error(`Payment failed. Please try again. (${(response as unknown as { error?: { description?: string } })?.error?.description ?? ""})`);
       setLoading(false);
+      onFailure?.();
     });
 
     rzp.open();

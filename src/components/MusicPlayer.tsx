@@ -19,6 +19,7 @@ const TRACKS: Track[] = [
 
 export default function MusicPlayer() {
   const [isClosed, setIsClosed] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [showList, setShowList] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -110,7 +111,18 @@ export default function MusicPlayer() {
           touch-action: none;
           user-select: none;
           animation: ${isPlaying ? "mp-pulse 2s ease-in-out infinite" : "none"};
-          transition: border-radius 0.2s;
+          transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+          overflow: hidden;
+        }
+        .mp-pill.collapsed {
+          width: 50px;
+          height: 50px;
+          padding: 0;
+          min-width: 0;
+          border-radius: 50%;
+          justify-content: center;
+        }
+        .mp-pill.expanded {
           min-width: 160px;
         }
         .mp-icon-wrap {
@@ -214,64 +226,85 @@ export default function MusicPlayer() {
       <audio ref={audioRef} onEnded={nextTrack} />
 
       <div
-        className="mp-pill"
+        className={`mp-pill ${isExpanded ? "expanded" : "collapsed"}`}
         style={{ ...dragStyle, left: "unset" }}
         onPointerDown={(e) => onDragStart(e.clientX, e.clientY)}
         onClickCapture={(e) => {
           if (didDrag()) {
             e.stopPropagation();
             e.preventDefault();
+            return;
+          }
+          if (!isExpanded) {
+            e.stopPropagation();
+            setIsExpanded(true);
           }
         }}
       >
-        {/* Animated icon */}
-        <div className="mp-icon-wrap">
-          <Music2 size={15} className={isPlaying ? "mp-icon-spin" : ""} />
+        {/* Animated icon (always visible) */}
+        <div className="mp-icon-wrap" style={{ 
+          width: isExpanded ? 30 : 42, 
+          height: isExpanded ? 30 : 42, 
+          background: isExpanded ? "rgba(255,255,255,0.15)" : "transparent",
+          margin: isExpanded ? 0 : "auto"
+        }}>
+          <Music2 size={isExpanded ? 15 : 20} className={isPlaying ? "mp-icon-spin" : ""} />
         </div>
-
-        {/* Track info */}
-        <div className="mp-track-info">
-          <div className="mp-track-name">{track.name}</div>
-          <div className="mp-artist">{track.artist}</div>
-        </div>
-
-        {/* Play/Pause */}
-        <button
-          className="mp-btn"
-          onClick={e => { e.stopPropagation(); setIsPlaying(p => !p); }}
-          onPointerDown={e => e.stopPropagation()}
-        >
-          {isPlaying ? <Pause size={14} /> : <Play size={14} />}
-        </button>
-
-        {/* Skip */}
-        <button
-          className="mp-btn"
-          onClick={e => { e.stopPropagation(); nextTrack(); }}
-          onPointerDown={e => e.stopPropagation()}
-        >
-          <SkipForward size={13} />
-        </button>
-
-        {/* Expand track list */}
-        <button
-          className="mp-btn"
-          onClick={e => { e.stopPropagation(); setShowList(p => !p); }}
-          onPointerDown={e => e.stopPropagation()}
-          style={{ opacity: showList ? 1 : 0.6 }}
-        >
-          {showList ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
-        </button>
-
-        {/* Close */}
-        <button
-          className="mp-btn"
-          onClick={e => { e.stopPropagation(); setIsClosed(true); }}
-          onPointerDown={e => e.stopPropagation()}
-          style={{ opacity: 0.45 }}
-        >
-          <X size={12} />
-        </button>
+ 
+        {/* Content (only visible when expanded) */}
+        {isExpanded && (
+          <>
+            <div className="mp-track-info">
+              <div className="mp-track-name">{track.name}</div>
+              <div className="mp-artist">{track.artist}</div>
+            </div>
+ 
+            <button
+              className="mp-btn"
+              onClick={e => { e.stopPropagation(); setIsPlaying(p => !p); }}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+            </button>
+ 
+            <button
+              className="mp-btn"
+              onClick={e => { e.stopPropagation(); nextTrack(); }}
+              onPointerDown={e => e.stopPropagation()}
+            >
+              <SkipForward size={13} />
+            </button>
+ 
+            <button
+              className="mp-btn"
+              onClick={e => { e.stopPropagation(); setShowList(p => !p); }}
+              onPointerDown={e => e.stopPropagation()}
+              style={{ opacity: showList ? 1 : 0.6 }}
+            >
+              {showList ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            </button>
+ 
+            <button
+              className="mp-btn"
+              onClick={e => { e.stopPropagation(); setIsExpanded(false); setShowList(false); }}
+              onPointerDown={e => e.stopPropagation()}
+              style={{ opacity: 0.6, marginLeft: "4px" }}
+              title="Collapse"
+            >
+              <ChevronDown size={14} style={{ transform: "rotate(90deg)" }} />
+            </button>
+ 
+            <button
+              className="mp-btn"
+              onClick={e => { e.stopPropagation(); setIsClosed(true); }}
+              onPointerDown={e => e.stopPropagation()}
+              style={{ opacity: 0.45 }}
+              title="Close"
+            >
+              <X size={12} />
+            </button>
+          </>
+        )}
 
         {/* Track list popup */}
         <AnimatePresence>

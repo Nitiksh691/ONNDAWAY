@@ -18,7 +18,7 @@ export default function CartPage() {
   const [phone, setPhone] = useState("");
   const [couponCode, setCouponCode] = useState("");
   const [appliedCoupon, setAppliedCoupon] = useState<any | null>(null);
-  
+
   // Meme Coupon State
   const [memePopup, setMemePopup] = useState<{ image: string; sound: string; visible: boolean } | null>(null);
   const [name, setName] = useState("");
@@ -26,6 +26,9 @@ export default function CartPage() {
   const [placing, setPlacing] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(20);
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
+  const [codEnabled, setCodEnabled] = useState(false);
+  const [paymentFailures, setPaymentFailures] = useState(0);
+  const [showCodModal, setShowCodModal] = useState(false);
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
@@ -69,6 +72,7 @@ export default function CartPage() {
         if (data) {
           if (data.deliveryFee !== undefined) setDeliveryFee(data.deliveryFee);
           if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
+          if (data.codEnabled !== undefined) setCodEnabled(data.codEnabled);
         }
       })
       .catch(err => console.error("Failed to load settings:", err));
@@ -107,7 +111,7 @@ export default function CartPage() {
         const coupon = await res.json();
         setAppliedCoupon(coupon);
         toast.success("Coupon applied!");
-        
+
         // Meme logic
         if (coupon.memeImage || coupon.memeSound) {
           setMemePopup({ image: coupon.memeImage, sound: coupon.memeSound, visible: true });
@@ -173,10 +177,11 @@ export default function CartPage() {
         if (res.status === 409) throw new Error("One or more items are currently unavailable. Please refresh your cart.");
         throw new Error("Failed to place order");
       }
-      
+
       const orderResult = await res.json();
       setIdempotencyKey(crypto.randomUUID());
       await finalizeOrderClientSide(orderResult.id, payload.userId, payload.location);
+      setShowCodModal(false);
     } catch (e: any) {
       toast.error(e.message || "Failed to place order");
     } finally { setPlacing(false); }
@@ -194,7 +199,7 @@ export default function CartPage() {
       const err = await res.json();
       throw new Error(err.error || "Failed to initiate payment");
     }
-    
+
     setIdempotencyKey(crypto.randomUUID());
     return res.json();
   };
@@ -211,7 +216,7 @@ export default function CartPage() {
           }
           @keyframes slide-up-post { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         `}</style>
-        
+
         <div style={{ textAlign: "center", animation: "slide-up-post 0.5s ease", background: "#fff", borderRadius: "24px", padding: "48px 36px", maxWidth: "440px", width: "100%", boxShadow: "0 8px 0 rgba(1,53,251,0.9), 0 20px 40px rgba(1,53,251,0.12)" }}>
           <div style={{ fontSize: "4rem", marginBottom: "12px" }}>🎉</div>
           <div style={{ width: 80, height: 80, borderRadius: "50%", background: "rgba(34,197,94,0.1)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", animation: "pulse-ring-green 1.5s ease-in-out infinite" }}>
@@ -226,25 +231,33 @@ export default function CartPage() {
 
         {/* ── Fixed Bottom Track Order Bar ── */}
         <div style={{
-          position: "fixed", bottom: 0, left: 0, right: 0,
-          background: "#0135FB", padding: "14px 20px",
-          display: "flex", alignItems: "center", justifyContent: "space-between",
-          boxShadow: "0 -4px 20px rgba(1, 53, 251, 0.3)", zIndex: 999
+          position: "fixed", bottom: 24, left: "50%", transform: "translateX(-50%)",
+          background: "rgba(255, 255, 255, 0.9)", backdropFilter: "blur(20px)",
+          padding: "12px 16px 12px 20px", borderRadius: "999px",
+          display: "flex", alignItems: "center", gap: "20px",
+          boxShadow: "0 10px 40px rgba(1, 53, 251, 0.15), 0 0 0 1px rgba(1, 53, 251, 0.1)", zIndex: 999,
+          width: "90%", maxWidth: "420px"
         }}>
-          <div style={{ color: "white", fontSize: "0.9rem", fontWeight: 700, display: "flex", alignItems: "center", gap: "8px" }}>
-            <span style={{ fontSize: "1.3rem" }}>🛵</span> Order is active!
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flex: 1 }}>
+            <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#EEF1FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+              🛵
+            </div>
+            <div>
+              <div style={{ color: "#0A0F2E", fontSize: "0.95rem", fontWeight: 800, lineHeight: 1.2 }}>Order Active</div>
+              <div style={{ color: "#6B7280", fontSize: "0.75rem", fontWeight: 500 }}>Track your delivery</div>
+            </div>
           </div>
           <Link
             href={`/track/${placedOrderId}`}
             style={{
-              background: "#ffffff", color: "#0135FB",
-              padding: "10px 24px", borderRadius: "10px",
-              fontWeight: 900, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px",
-              display: "flex", alignItems: "center", gap: "8px", fontSize: "0.9rem",
-              boxShadow: "0 2px 10px rgba(0,0,0,0.1)"
+              background: "#0135FB", color: "#ffffff",
+              padding: "12px 24px", borderRadius: "999px",
+              fontWeight: 800, textDecoration: "none", textTransform: "uppercase", letterSpacing: "0.5px",
+              display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem",
+              boxShadow: "0 4px 14px rgba(1,53,251,0.4)", flexShrink: 0, transition: "transform 0.2s"
             }}
           >
-            Track My Order <ArrowRight size={18} />
+            Track <ArrowRight size={16} />
           </Link>
         </div>
       </div>
@@ -293,10 +306,12 @@ export default function CartPage() {
         .otw-del-btn:hover { background: #FEE2E2 !important; border-color: #fca5a5 !important; }
         .otw-apply-btn:hover { background: #0028D4 !important; }
         .otw-back-btn:hover { background: #EEF1FF !important; }
+        .cart-grid { display: grid; gap: 24px; align-items: start; grid-template-columns: 1fr 370px; }
+        @media (max-width: 900px) { .cart-grid { grid-template-columns: 1fr !important; } }
       `}</style>
 
       {/* ── Main Grid ── */}
-      <div className="cart-grid" style={{ maxWidth: "1160px", margin: "0 auto", padding: "0 16px", display: "grid", gridTemplateColumns: "1fr 370px", gap: "24px", alignItems: "start" }}>
+      <div className="cart-grid" style={{ maxWidth: "1160px", margin: "0 auto", padding: "0 16px" }}>
 
         {/* ── Left Column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -568,102 +583,217 @@ export default function CartPage() {
                   customerPhone={phoneDigits || (profile as any)?.phone}
                   disabled={!canPlace || placing}
                   createOrder={createRazorpayOrder}
+                  onFailure={() => {
+                    const newFailures = paymentFailures + 1;
+                    setPaymentFailures(newFailures);
+                    if (newFailures >= 2 && !codEnabled) {
+                      setShowCodModal(true);
+                    }
+                  }}
                   onSuccess={async (paymentId, orderId, internalOrderId) => {
                     await finalizeOrderClientSide(internalOrderId, phoneDigits, location.trim());
                   }}
                 />
               ) : (
-                <div style={{ padding: "14px", background: "rgba(1, 53, 251, 0.08)", border: "1.5px solid rgba(1, 53, 251, 0.2)", borderRadius: "10px", textAlign: "center" }}>
-                  <p style={{ color: "#0135FB", fontSize: "0.88rem", fontWeight: 700, margin: 0 }}>
-                    We will resume online delivery in few days.
-                  </p>
+                <div style={{ marginTop: "10px" }}>
+                  {/* ── SECONDARY: Cash on Delivery (online payment off) ── */}
+                  {(codEnabled || !onlinePaymentEnabled) && (
+                      <>
+                        <div
+                          style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "10px",
+                            margin: "18px 0 0",
+                          }}
+                        >
+                          <div
+                            style={{
+                              flex: 1,
+                              height: "1px",
+                              background: "#e5e7eb",
+                            }}
+                          />
+
+                          <span
+                            style={{
+                              fontSize: "0.7rem",
+                              fontWeight: 700,
+                              color: "#9ca3af",
+                              textTransform: "uppercase",
+                              letterSpacing: "0.8px",
+                              whiteSpace: "nowrap",
+                            }}
+                          >
+                            or pay on delivery
+                          </span>
+
+                          <div
+                            style={{
+                              flex: 1,
+                              height: "1px",
+                              background: "#e5e7eb",
+                            }}
+                          />
+                        </div>
+
+                        <button
+                          id="place-order-btn"
+                          onClick={handlePlaceCOD}
+                          disabled={!canPlace || placing}
+                          style={{
+                            width: "100%",
+                            marginTop: "10px",
+                            padding: "14px",
+                            fontSize: "0.88rem",
+                            fontWeight: 700,
+                            background:
+                              !onlinePaymentEnabled && canPlace
+                                ? "#0135FB"
+                                : "transparent",
+                            color:
+                              !onlinePaymentEnabled && canPlace
+                                ? "#ffffff"
+                                : canPlace
+                                  ? "#0A0F2E"
+                                  : "#9ca3af",
+                            border:
+                              !onlinePaymentEnabled && canPlace
+                                ? "1.5px solid #0028D4"
+                                : canPlace
+                                  ? "1.5px solid #d1d5db"
+                                  : "1.5px solid #e5e7eb",
+                            borderRadius: "10px",
+                            cursor: canPlace ? "pointer" : "not-allowed",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "10px",
+                            textTransform: "uppercase",
+                            letterSpacing: "0.5px",
+                            transition: "all 0.15s",
+                            fontFamily: "inherit",
+                          }}
+                          onMouseOver={(e) => {
+                            if (canPlace) {
+                              if (!onlinePaymentEnabled) {
+                                e.currentTarget.style.background = "#0028D4";
+                              } else {
+                                e.currentTarget.style.background = "#F5F7FF";
+                                e.currentTarget.style.borderColor = "#0135FB";
+                                e.currentTarget.style.color = "#0135FB";
+                              }
+                            }
+                          }}
+                          onMouseOut={(e) => {
+                            if (canPlace) {
+                              if (!onlinePaymentEnabled) {
+                                e.currentTarget.style.background = "#0135FB";
+                              } else {
+                                e.currentTarget.style.background = "transparent";
+                                e.currentTarget.style.borderColor = "#d1d5db";
+                                e.currentTarget.style.color = "#0A0F2E";
+                              }
+                            }
+                          }}
+                        >
+                          {placing ? (
+                            "Processing..."
+                          ) : (
+                            <>
+                              Cash on Delivery <ArrowRight size={16} />
+                            </>
+                          )}
+                        </button>
+                      </>
+                  )}
+
+                  {!location && (
+                    <p style={{ textAlign: "center", fontSize: "0.77rem", color: "#EF4444", marginTop: "10px", fontWeight: 600 }}>
+                      Please select a delivery location
+                    </p>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* ── SECONDARY: Cash on Delivery ── */}
-            <div style={{ display: "flex", alignItems: "center", gap: "10px", margin: "18px 0 0" }}>
-              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-              <span style={{ fontSize: "0.7rem", fontWeight: 700, color: "#9ca3af", textTransform: "uppercase", letterSpacing: "0.8px", whiteSpace: "nowrap" }}>
-                or pay on delivery
-              </span>
-              <div style={{ flex: 1, height: "1px", background: "#e5e7eb" }} />
-            </div>
-
-            <button
-              id="place-order-btn"
-              onClick={handlePlaceCOD}
-              disabled={!canPlace || placing}
-              style={{
-                width: "100%", marginTop: "10px", padding: "14px", fontSize: "0.88rem", fontWeight: 700,
-                background: !onlinePaymentEnabled && canPlace ? "#0135FB" : "transparent",
-                color: !onlinePaymentEnabled && canPlace ? "#ffffff" : (canPlace ? "#0A0F2E" : "#9ca3af"),
-                border: !onlinePaymentEnabled && canPlace ? "1.5px solid #0028D4" : (canPlace ? "1.5px solid #d1d5db" : "1.5px solid #e5e7eb"),
-                borderRadius: "10px",
-                cursor: canPlace ? "pointer" : "not-allowed",
-                display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                textTransform: "uppercase", letterSpacing: "0.5px",
-                transition: "all 0.15s",
-                fontFamily: "inherit",
-              }}
-              onMouseOver={(e) => { 
-                if (canPlace) { 
-                  if (!onlinePaymentEnabled) {
-                    e.currentTarget.style.background = "#0028D4";
-                  } else {
-                    e.currentTarget.style.background = "#F5F7FF"; e.currentTarget.style.borderColor = "#0135FB"; e.currentTarget.style.color = "#0135FB"; 
-                  }
-                } 
-              }}
-              onMouseOut={(e) => { 
-                if (canPlace) { 
-                  if (!onlinePaymentEnabled) {
-                    e.currentTarget.style.background = "#0135FB";
-                  } else {
-                    e.currentTarget.style.background = "transparent"; e.currentTarget.style.borderColor = "#d1d5db"; e.currentTarget.style.color = "#0A0F2E"; 
-                  }
-                } 
-              }}
-            >
-              {placing ? "Processing..." : <>Cash on Delivery <ArrowRight size={16} /></>}
-            </button>
-
-            {!location && (
-              <p style={{ textAlign: "center", fontSize: "0.77rem", color: "#EF4444", marginTop: "10px", fontWeight: 600 }}>
-                Please select a delivery location
-              </p>
-            )}
           </div>
-        </div>
-
-      </div>
-      {/* ── Meme / Surprise Coupon Popup ── */}
-      {memePopup && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 99999,
-          pointerEvents: memePopup.visible ? "auto" : "none",
-          display: "flex", alignItems: "center", justifyContent: "center",
-          opacity: memePopup.visible ? 1 : 0, transition: "opacity 0.3s ease",
-          background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)"
-        }}>
-          {memePopup.sound && (
-            <audio src={memePopup.sound} autoPlay />
+          {/* ── COD Fallback Modal ── */}
+          {showCodModal && (
+            <div style={{
+              position: "fixed", inset: 0, zIndex: 99998,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              background: "rgba(10, 15, 46, 0.6)", backdropFilter: "blur(6px)"
+            }}>
+              <div style={{
+                background: "#fff", padding: "32px 24px", borderRadius: "24px",
+                maxWidth: "360px", width: "90%", textAlign: "center",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slide-up 0.3s ease-out"
+              }}>
+                <div style={{ fontSize: "3rem", marginBottom: "16px" }}>😅</div>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 900, color: "#0A0F2E", marginBottom: "12px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+                  Trouble paying online?
+                </h3>
+                <p style={{ color: "#6B7280", fontSize: "0.9rem", lineHeight: 1.5, marginBottom: "24px", fontWeight: 500 }}>
+                  It seems you're having trouble with the online payment. Don't worry, you can place your order via <strong style={{ color: "#0A0F2E" }}>Cash on Delivery</strong> instead!
+                </p>
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  <button
+                    onClick={handlePlaceCOD}
+                    disabled={placing}
+                    style={{
+                      width: "100%", padding: "14px", background: "#0135FB", color: "#fff",
+                      border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "0.95rem",
+                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                      boxShadow: "0 4px 0 #0028D4", textTransform: "uppercase", letterSpacing: "0.5px", transition: "transform 0.15s"
+                    }}
+                    onMouseDown={e => e.currentTarget.style.transform = "translateY(4px)"}
+                    onMouseUp={e => e.currentTarget.style.transform = "translateY(0)"}
+                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+                  >
+                    {placing ? "Processing..." : <>Pay on Delivery <ArrowRight size={18} /></>}
+                  </button>
+                  <button
+                    onClick={() => setShowCodModal(false)}
+                    style={{
+                      width: "100%", padding: "12px", background: "transparent", color: "#6B7280",
+                      border: "none", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer"
+                    }}
+                  >
+                    Try Online Again
+                  </button>
+                </div>
+              </div>
+            </div>
           )}
-          {memePopup.image && (
-            <img 
-              src={memePopup.image} 
-              alt="Surprise!" 
-              style={{
-                maxWidth: "90%", maxHeight: "80vh", borderRadius: "16px",
-                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                transform: memePopup.visible ? "scale(1) rotate(0deg)" : "scale(0.8) rotate(-10deg)",
-                transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-              }} 
-            />
-          )}
-        </div>
-      )}
 
-    </div>
-  );
+          {/* ── Meme / Surprise Coupon Popup ── */}
+          {memePopup && (
+            <div style={{
+              position: "fixed", inset: 0, zIndex: 99999,
+              pointerEvents: memePopup.visible ? "auto" : "none",
+              display: "flex", alignItems: "center", justifyContent: "center",
+              opacity: memePopup.visible ? 1 : 0, transition: "opacity 0.3s ease",
+              background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)"
+            }}>
+              {memePopup.sound && (
+                <audio src={memePopup.sound} autoPlay />
+              )}
+              {memePopup.image && (
+                <img
+                  src={memePopup.image}
+                  alt="Surprise!"
+                  style={{
+                    maxWidth: "90%", maxHeight: "80vh", borderRadius: "16px",
+                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                    transform: memePopup.visible ? "scale(1) rotate(0deg)" : "scale(0.8) rotate(-10deg)",
+                    transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+                  }}
+                />
+              )}
+            </div>
+          )}
+
+        </div>
+      );
 }
