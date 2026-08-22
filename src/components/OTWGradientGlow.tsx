@@ -1,9 +1,8 @@
 "use client";
 
 // ONN DA WAY Gradient Footer
-// Adapted from Ruixen Gradient Footer design — a rainbow glow that rises from the
-// bottom of the viewport as you scroll to the end of the page.
-// Styled to match ONN DA WAY's brand: deep blue (#0135FB) → indigo → white → gold.
+// A smooth blue glow that rises from the bottom of the viewport as you scroll
+// to the end of the page — pure brand blue (#0135FB) palette, no rainbow.
 
 import {
   useEffect,
@@ -18,17 +17,16 @@ type Stop = { offset: number; color: string };
 const VBW = 1271;
 const VBH = 599;
 
-// ONN DA WAY brand palette — floor (0) → top (1):
-// deep navy → brand blue → indigo → near-white → warm gold → coral → transparent
+// ONN DA WAY brand palette — pure blue theme, floor (0) → top (1):
+// deep navy → rich brand blue → mid blue → sky blue → pale blue → transparent
 const OTW_STOPS: Stop[] = [
-  { offset: 0,      color: "#0A0F2E" },
-  { offset: 0.18,   color: "#0135FB" },
-  { offset: 0.32,   color: "#2A55FF" },
-  { offset: 0.50,   color: "#EEF1FF" },
-  { offset: 0.65,   color: "#FFD400" },
-  { offset: 0.78,   color: "#FF6B35" },
-  { offset: 0.90,   color: "#FF35A0" },
-  { offset: 1,      color: "#FF35A000" },
+  { offset: 0,      color: "#060C2E" },
+  { offset: 0.15,   color: "#0135FB" },
+  { offset: 0.35,   color: "#1D4BFF" },
+  { offset: 0.55,   color: "#4169FF" },
+  { offset: 0.72,   color: "#7EA3FF" },
+  { offset: 0.87,   color: "#C2D3FF" },
+  { offset: 1,      color: "#EEF1FF00" },
 ];
 
 function bellHeights(n: number, peak: number, valley: number): number[] {
@@ -56,11 +54,11 @@ interface OTWGradientGlowProps {
 
 export function OTWGradientGlow({
   gradientHeight = "55vh",
-  minReveal = 0.04,
+  minReveal = 0.01,
   bars = 9,
-  blur = 14,
-  peak = 0.96,
-  valley = 0.52,
+  blur = 16,
+  peak = 0.88,
+  valley = 0.45,
   stops = OTW_STOPS,
 }: OTWGradientGlowProps) {
   const uid = useId().replace(/:/g, "");
@@ -104,6 +102,7 @@ export function OTWGradientGlow({
         transformOrigin: "bottom",
         transform: `scaleY(${progress})`,
         willChange: "transform",
+        transition: "transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)",
         zIndex: 0,
       }}
     >

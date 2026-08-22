@@ -141,16 +141,6 @@ export default function Footer() {
             </div>
           </div>
         </div>
-
-        {/* Bottom bar */}
-        <div className="footer-bottom">
-          <p style={{ fontSize: "0.75rem", opacity: 0.5 }}>
-            © {new Date().getFullYear()} ONN DA WAY. All rights reserved.
-          </p>
-          <div style={{ fontSize: "0.72rem", opacity: 0.45, color: "white" }}>
-            Built with ❤️ for students
-          </div>
-        </div>
       </div>
 
       {/* Rainbow glow that rises from the bottom of the page as you scroll */}

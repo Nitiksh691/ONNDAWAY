@@ -24,10 +24,24 @@ export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
+  const [hasBottomNav, setHasBottomNav] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
-  // Draggable hook — keeps the pill within viewport
-  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(110, 20);
+  // Detect whether the bottom nav is visible so we clamp accordingly
+  useEffect(() => {
+    const check = () => {
+      // BottomNav shows on mobile (<768px) and only when cart is empty
+      const isMobile = window.innerWidth < 768;
+      const hasNav = document.querySelector(".bnav-root") !== null;
+      setHasBottomNav(isMobile && hasNav);
+    };
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+
+  // Draggable hook — keeps the pill within viewport, respects bottom nav
+  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(hasBottomNav ? 74 : 20, 20);
 
   useEffect(() => { setIsMounted(true); }, []);
 

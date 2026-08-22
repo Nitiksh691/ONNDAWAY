@@ -13,20 +13,20 @@ export default function TermsPage() {
       lastUpdated="August 13, 2026"
       sections={[
         {
-          heading: "1. About ONN DA WAY",
-          content: `ONN DA WAY is a food delivery service for the Rohini, Delhi area. By placing an order, you agree to these terms.`,
+          heading: "1. About Us",
+          content: `ONN DA WAY provides food delivery services in Rohini, Delhi. Using our service constitutes acceptance of these terms.`,
         },
         {
           heading: "2. Orders & Availability",
-          content: `All orders are subject to product availability. We reserve the right to cancel orders due to unavailability, pricing errors, or delivery constraints.`,
+          content: `All orders are subject to availability. We reserve the right to modify or cancel orders due to stock, pricing errors, or operational constraints.`,
         },
         {
           heading: "3. Payments",
-          content: `Prices are in INR. Payments are securely processed via Razorpay. We do not store your payment credentials.`,
+          content: `All prices are in INR. Payments are securely processed via Razorpay. We do not store your financial data.`,
         },
         {
-          heading: "4. Misuse & Liability",
-          content: `Fraudulent activity will result in account suspension. We are not liable for indirect losses or delivery delays caused by external factors.`,
+          heading: "4. Liability",
+          content: `Fraudulent use will lead to immediate account termination. We are not liable for delays or indirect losses caused by circumstances beyond our control.`,
         }
       ]}
     />

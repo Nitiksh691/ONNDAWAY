@@ -179,7 +179,7 @@ export default function PolicyLayout({ title, lastUpdated, sections }: PolicyLay
           </aside>
 
           {/* Main content */}
-          <main>
+          <main style={{ minWidth: 0 }}>
             {/* Mobile quick-nav pills */}
             <div style={{ display: "flex", gap: 8, overflowX: "auto", paddingBottom: "4px", marginBottom: "24px", scrollbarWidth: "none" }}>
               {POLICY_NAV.map(nav => (
@@ -201,22 +201,6 @@ export default function PolicyLayout({ title, lastUpdated, sections }: PolicyLay
               ))}
             </div>
 
-            {/* Legal disclaimer banner */}
-            <div style={{
-              background: "#FEF3C7",
-              border: "1.5px solid #FDE68A",
-              borderRadius: "12px",
-              padding: "14px 16px",
-              marginBottom: "24px",
-              display: "flex",
-              gap: "12px",
-              alignItems: "flex-start",
-            }}>
-              <span style={{ fontSize: "1rem", flexShrink: 0 }}>⚠️</span>
-              <p style={{ fontSize: "0.82rem", color: "#92400E", lineHeight: 1.6, margin: 0 }}>
-                This is a website-ready draft for ONN DA WAY. For legal matters, consult a qualified Indian lawyer before publishing.
-              </p>
-            </div>
 
             {/* Sections */}
             <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>

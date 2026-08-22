@@ -13,20 +13,20 @@ export default function PrivacyPolicyPage() {
       lastUpdated="August 13, 2026"
       sections={[
         {
-          heading: "1. Data Collection",
-          content: `We collect your name, phone number, location, and order details to provide delivery services.`,
+          heading: "1. Information Collection",
+          content: `We collect essential information (name, contact, location) to fulfill your delivery requests.`,
         },
         {
           heading: "2. Data Usage",
-          content: `Your data is used to process orders, contact you for delivery, and improve our services.`,
+          content: `Your data is strictly used for order processing, delivery logistics, and service improvements.`,
         },
         {
-          heading: "3. Third Parties",
-          content: `We share necessary data with payment processors (e.g., Razorpay) and delivery partners. We do not sell your data.`,
+          heading: "3. Data Sharing",
+          content: `We only share necessary information with trusted payment and delivery partners. We never sell your personal data.`,
         },
         {
           heading: "4. Security",
-          content: `We use standard security measures to protect your data, but no system is 100% secure.`,
+          content: `We employ industry-standard protocols to safeguard your information against unauthorized access.`,
         }
       ]}
     />

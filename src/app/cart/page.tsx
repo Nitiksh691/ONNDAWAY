@@ -32,8 +32,55 @@ export default function CartPage() {
   const [scheduledTime, setScheduledTime] = useState("ASAP");
   const [customTime, setCustomTime] = useState("");
   const [locationNotes, setLocationNotes] = useState("");
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
+  const [showLocationSuggestions, setShowLocationSuggestions] = useState(false);
   const [idempotencyKey, setIdempotencyKey] = useState("");
   const [isGpsLoading, setIsGpsLoading] = useState(false);
+
+  const CAMPUS_LOCATIONS = [
+    "Civil Engineering Department",
+    "Computer Science Department",
+    "Electronics & Communication Department",
+    "Mechanical Engineering Department",
+    "Electrical Engineering Department",
+    "Architecture Department",
+    "Admin Block",
+    "Main Gate",
+    "Library",
+    "Boys Hostel Block A",
+    "Boys Hostel Block B",
+    "Girls Hostel",
+    "Sports Ground / Gym",
+    "Main Canteen",
+    "MBA Block",
+    "Workshop / Lab Block",
+    "Parking Area",
+    "College Garden / Lawn",
+    "Auditorium",
+    "Medical Centre",
+  ];
+
+  const handleLocationChange = (val: string) => {
+    setLocation(val);
+    if (val.trim().length === 0) {
+      // show all when empty
+      setLocationSuggestions(CAMPUS_LOCATIONS);
+      setShowLocationSuggestions(true);
+    } else {
+      const q = val.toLowerCase();
+      const matches = CAMPUS_LOCATIONS.filter(l => l.toLowerCase().includes(q));
+      setLocationSuggestions(matches);
+      setShowLocationSuggestions(matches.length > 0);
+    }
+  };
+
+  const TIME_SLOTS = [
+    { label: "ASAP", sub: "~15 mins", icon: "⚡" },
+    { label: "In 25 mins", sub: "Quick delivery", icon: "🕐" },
+    { label: "In 45 mins", sub: "Standard", icon: "🕑" },
+    { label: "In 1 hr 15 mins", sub: "Scheduled", icon: "🕒" },
+    { label: "Custom Time", sub: "Pick a time", icon: "🗓️" },
+  ];
 
   useEffect(() => {
     setIdempotencyKey(crypto.randomUUID());
@@ -301,6 +348,7 @@ export default function CartPage() {
     <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", padding: "28px 0 100px", fontFamily: "inherit", position: "relative" }}>
       <style>{`
         @keyframes slide-up { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes spin-wait { to { transform: rotate(360deg); } }
         .otw-cart-input:focus { border-color: #0135FB !important; box-shadow: 0 0 0 3px rgba(1,53,251,0.1) !important; }
         .otw-qty-btn:hover { background: #EEF1FF !important; }
         .otw-del-btn:hover { background: #FEE2E2 !important; border-color: #fca5a5 !important; }
@@ -308,6 +356,39 @@ export default function CartPage() {
         .otw-back-btn:hover { background: #EEF1FF !important; }
         .cart-grid { display: grid; gap: 24px; align-items: start; grid-template-columns: 1fr 370px; }
         @media (max-width: 900px) { .cart-grid { grid-template-columns: 1fr !important; } }
+        .time-slot-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(90px, 1fr)); gap: 8px; }
+        .time-slot-btn {
+          display: flex; flex-direction: column; align-items: center;
+          justify-content: center; gap: 1px;
+          padding: 10px 8px; border-radius: 12px;
+          border: 1.5px solid #e5e7eb; background: #fff;
+          cursor: pointer; transition: all 0.18s; text-align: center;
+          font-family: inherit;
+        }
+        .time-slot-btn:hover { border-color: #0135FB; background: #EEF1FF; }
+        .time-slot-btn.active { border-color: #0135FB; background: #0135FB; }
+        .time-slot-btn.active .ts-label { color: #fff; }
+        .time-slot-btn.active .ts-sub { color: rgba(255,255,255,0.7); }
+        .ts-label { font-size: 0.8rem; font-weight: 800; color: #0A0F2E; line-height: 1.2; }
+        .ts-sub { font-size: 0.65rem; color: #9ca3af; font-weight: 500; margin-top: 1px; }
+        .loc-wrap { position: relative; }
+        .loc-suggestions {
+          position: absolute; top: calc(100% + 6px); left: 0; right: 0;
+          background: #fff; border: 1.5px solid #0135FB;
+          border-radius: 10px; overflow: hidden;
+          box-shadow: 0 8px 24px rgba(1,53,251,0.12);
+          z-index: 200; max-height: 220px; overflow-y: auto;
+          animation: slide-up 0.15s ease;
+        }
+        .loc-suggestion-item {
+          padding: 10px 14px; font-size: 0.87rem; cursor: pointer;
+          color: #0A0F2E; font-weight: 500;
+          transition: background 0.12s;
+          border-bottom: 1px solid #f3f4f6;
+        }
+        .loc-suggestion-item:last-child { border-bottom: none; }
+        .loc-suggestion-item:hover { background: #EEF1FF; color: #0135FB; font-weight: 700; }
+        .loc-suggestion-match { color: #0135FB; font-weight: 800; }
       `}</style>
 
       {/* ── Main Grid ── */}
@@ -457,6 +538,7 @@ export default function CartPage() {
                             if (!addrStr) addrStr = data?.display_name?.split(",")[0] || `GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
 
                             setLocation(addrStr);
+                            setShowLocationSuggestions(false);
                             toast.success("Location found!", { id: "gps" });
                           } catch {
                             setLocation(`GPS: ${pos.coords.latitude.toFixed(4)}, ${pos.coords.longitude.toFixed(4)}`);
@@ -480,7 +562,49 @@ export default function CartPage() {
                     {isGpsLoading ? "Locating..." : "Use GPS"}
                   </button>
                 </div>
-                <input type="text" style={inputStyle} className="otw-cart-input" placeholder="e.g. Civil Dept, 2nd Floor, Room 204" value={location} onChange={e => setLocation(e.target.value)} />
+                <div className="loc-wrap">
+                  <input
+                    type="text"
+                    style={inputStyle}
+                    className="otw-cart-input"
+                    placeholder="e.g. Civil Dept, Admin Block, Boys Hostel..."
+                    value={location}
+                    onChange={e => handleLocationChange(e.target.value)}
+                    onFocus={() => {
+                      // Show all options on focus, even when empty
+                      setLocationSuggestions(location.trim() ? locationSuggestions : CAMPUS_LOCATIONS);
+                      setShowLocationSuggestions(true);
+                    }}
+                    onBlur={() => setTimeout(() => setShowLocationSuggestions(false), 180)}
+                    autoComplete="off"
+                  />
+                  {showLocationSuggestions && (
+                    <div className="loc-suggestions">
+                      {locationSuggestions.map(sugg => {
+                        const q = location.toLowerCase();
+                        const idx = sugg.toLowerCase().indexOf(q);
+                        return (
+                          <div
+                            key={sugg}
+                            className="loc-suggestion-item"
+                            onMouseDown={() => {
+                              setLocation(sugg);
+                              setShowLocationSuggestions(false);
+                            }}
+                          >
+                            {idx >= 0 ? (
+                              <>
+                                {sugg.slice(0, idx)}
+                                <span className="loc-suggestion-match">{sugg.slice(idx, idx + location.length)}</span>
+                                {sugg.slice(idx + location.length)}
+                              </>
+                            ) : sugg}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div style={{ gridColumn: "1 / -1" }}>
@@ -490,13 +614,19 @@ export default function CartPage() {
 
               <div>
                 <label style={labelStyle}>Scheduled Time</label>
-                <select style={inputStyle} className="otw-cart-input" value={scheduledTime} onChange={e => { setScheduledTime(e.target.value); setCustomTime(""); }}>
-                  <option value="ASAP">ASAP (~15 mins)</option>
-                  <option value="In 25 mins">In 25 mins</option>
-                  <option value="In 45 mins">In 45 mins</option>
-                  <option value="In 1 hr 15 mins">In 1 hr 15 mins</option>
-                  <option value="Custom Time">Custom Time</option>
-                </select>
+                <div className="time-slot-grid">
+                  {TIME_SLOTS.map(slot => (
+                    <button
+                      key={slot.label}
+                      type="button"
+                      className={`time-slot-btn${scheduledTime === slot.label ? " active" : ""}`}
+                      onClick={() => { setScheduledTime(slot.label); setCustomTime(""); }}
+                    >
+                      <span className="ts-label">{slot.label}</span>
+                      <span className="ts-sub">{slot.sub}</span>
+                    </button>
+                  ))}
+                </div>
                 {scheduledTime === "Custom Time" && (
                   <div style={{ marginTop: "10px" }}>
                     <input type="time" style={inputStyle} className="otw-cart-input" value={customTime} onChange={e => setCustomTime(e.target.value)} />
@@ -518,6 +648,7 @@ export default function CartPage() {
             )}
           </div>
         </div>
+        {/* end Left Column */}
 
         {/* ── Right Column ── */}
         <div style={{ display: "flex", flexDirection: "column", gap: "18px" }}>
@@ -716,83 +847,88 @@ export default function CartPage() {
                 </div>
               )}
             </div>
-
           </div>
-          {/* ── COD Fallback Modal ── */}
-          {showCodModal && (
-            <div style={{
-              position: "fixed", inset: 0, zIndex: 99998,
-              display: "flex", alignItems: "center", justifyContent: "center",
-              background: "rgba(10, 15, 46, 0.6)", backdropFilter: "blur(6px)"
-            }}>
-              <div style={{
-                background: "#fff", padding: "32px 24px", borderRadius: "24px",
-                maxWidth: "360px", width: "90%", textAlign: "center",
-                boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slide-up 0.3s ease-out"
-              }}>
-                <div style={{ fontSize: "3rem", marginBottom: "16px" }}>😅</div>
-                <h3 style={{ fontSize: "1.25rem", fontWeight: 900, color: "#0A0F2E", marginBottom: "12px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                  Trouble paying online?
-                </h3>
-                <p style={{ color: "#6B7280", fontSize: "0.9rem", lineHeight: 1.5, marginBottom: "24px", fontWeight: 500 }}>
-                  It seems you're having trouble with the online payment. Don't worry, you can place your order via <strong style={{ color: "#0A0F2E" }}>Cash on Delivery</strong> instead!
-                </p>
-                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                  <button
-                    onClick={handlePlaceCOD}
-                    disabled={placing}
-                    style={{
-                      width: "100%", padding: "14px", background: "#0135FB", color: "#fff",
-                      border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "0.95rem",
-                      cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
-                      boxShadow: "0 4px 0 #0028D4", textTransform: "uppercase", letterSpacing: "0.5px", transition: "transform 0.15s"
-                    }}
-                    onMouseDown={e => e.currentTarget.style.transform = "translateY(4px)"}
-                    onMouseUp={e => e.currentTarget.style.transform = "translateY(0)"}
-                    onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
-                  >
-                    {placing ? "Processing..." : <>Pay on Delivery <ArrowRight size={18} /></>}
-                  </button>
-                  <button
-                    onClick={() => setShowCodModal(false)}
-                    style={{
-                      width: "100%", padding: "12px", background: "transparent", color: "#6B7280",
-                      border: "none", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer"
-                    }}
-                  >
-                    Try Online Again
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        </div>
+        {/* end Right Column */}
 
-          {/* ── Meme / Surprise Coupon Popup ── */}
-          {memePopup && (
-            <div style={{
-              position: "fixed", inset: 0, zIndex: 99999,
-              pointerEvents: memePopup.visible ? "auto" : "none",
-              display: "flex", alignItems: "center", justifyContent: "center",
-              opacity: memePopup.visible ? 1 : 0, transition: "opacity 0.3s ease",
-              background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)"
-            }}>
-              {memePopup.sound && (
-                <audio src={memePopup.sound} autoPlay />
-              )}
-              {memePopup.image && (
-                <img
-                  src={memePopup.image}
-                  alt="Surprise!"
-                  style={{
-                    maxWidth: "90%", maxHeight: "80vh", borderRadius: "16px",
-                    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
-                    transform: memePopup.visible ? "scale(1) rotate(0deg)" : "scale(0.8) rotate(-10deg)",
-                    transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
-                  }}
-                />
-              )}
+      </div>
+      {/* end .cart-grid */}
+
+      {/* ── Cash-on-Delivery Fallback Modal (shown after repeated online-payment failures) ── */}
+      {showCodModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 9999,
+          display: "flex", alignItems: "center", justifyContent: "center",
+          background: "rgba(10,15,46,0.55)", backdropFilter: "blur(6px)", padding: "20px"
+        }}>
+          <div style={{
+            background: "#fff", padding: "32px 24px", borderRadius: "24px",
+            maxWidth: "360px", width: "90%", textAlign: "center",
+            boxShadow: "0 20px 40px rgba(0,0,0,0.2)", animation: "slide-up 0.3s ease-out"
+          }}>
+            <div style={{ fontSize: "3rem", marginBottom: "16px" }}>😅</div>
+            <h3 style={{ fontSize: "1.25rem", fontWeight: 900, color: "#0A0F2E", marginBottom: "12px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
+              Trouble paying online?
+            </h3>
+            <p style={{ color: "#6B7280", fontSize: "0.9rem", lineHeight: 1.5, marginBottom: "24px", fontWeight: 500 }}>
+              It seems you're having trouble with the online payment. Don't worry, you can place your order via <strong style={{ color: "#0A0F2E" }}>Cash on Delivery</strong> instead!
+            </p>
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+              <button
+                onClick={handlePlaceCOD}
+                disabled={placing}
+                style={{
+                  width: "100%", padding: "14px", background: "#0135FB", color: "#fff",
+                  border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "0.95rem",
+                  cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px",
+                  boxShadow: "0 4px 0 #0028D4", textTransform: "uppercase", letterSpacing: "0.5px", transition: "transform 0.15s"
+                }}
+                onMouseDown={e => e.currentTarget.style.transform = "translateY(4px)"}
+                onMouseUp={e => e.currentTarget.style.transform = "translateY(0)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "translateY(0)"}
+              >
+                {placing ? "Processing..." : <>Pay on Delivery <ArrowRight size={18} /></>}
+              </button>
+              <button
+                onClick={() => setShowCodModal(false)}
+                style={{
+                  width: "100%", padding: "12px", background: "transparent", color: "#6B7280",
+                  border: "none", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer"
+                }}
+              >
+                Try Online Again
+              </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Meme / Surprise Coupon Popup ── */}
+      {memePopup && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          pointerEvents: memePopup.visible ? "auto" : "none",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          opacity: memePopup.visible ? 1 : 0, transition: "opacity 0.3s ease",
+          background: "rgba(0,0,0,0.8)", backdropFilter: "blur(10px)"
+        }}>
+          {memePopup.sound && (
+            <audio src={memePopup.sound} autoPlay />
+          )}
+          {memePopup.image && (
+            <img
+              src={memePopup.image}
+              alt="Surprise!"
+              style={{
+                maxWidth: "90%", maxHeight: "80vh", borderRadius: "16px",
+                boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.5)",
+                transform: memePopup.visible ? "scale(1) rotate(0deg)" : "scale(0.8) rotate(-10deg)",
+                transition: "transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)"
+              }}
+            />
           )}
         </div>
-      );
+      )}
+    </div>
+  );
 }

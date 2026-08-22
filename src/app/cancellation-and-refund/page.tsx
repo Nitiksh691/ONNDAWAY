@@ -14,15 +14,15 @@ export default function CancellationRefundPage() {
       sections={[
         {
           heading: "1. Cancellations",
-          content: `You can cancel your order before preparation begins. Once preparation starts, cancellations are not permitted.`,
+          content: `Orders may only be cancelled before preparation begins. Once accepted by the kitchen, cancellations are not permitted.`,
         },
         {
           heading: "2. Refunds",
-          content: `Refunds are issued for missing items, damaged orders, or ONN DA WAY cancellations. Refunds may take 5-7 days to reflect in your account.`,
+          content: `Eligible refunds (for missing items or merchant cancellations) will be processed to the original payment method within 5-7 business days.`,
         },
         {
-          heading: "3. Contact",
-          content: `For refund queries, email nitikshpal@gmail.com with your Order ID.`,
+          heading: "3. Support",
+          content: `Direct all refund inquiries to nitikshpal@gmail.com with your corresponding Order ID.`,
         }
       ]}
     />
