@@ -42,17 +42,34 @@ export default function ItemPage() {
     return menu.filter(m => m.category === item.category && m.id !== item.id).slice(0, 6);
   }, [menu, item]);
 
+  // const handleAddToCart = () => {
+  //   if (!item) return;
+  //   const currentPrice = selectedSize ? selectedSize.price : item.price;
+  //   const customizations: { category: string; option: string; price?: number }[] = [
+  //     ...(selectedSize ? [{ category: "Size", option: selectedSize.name, price: selectedSize.price }] : []),
+  //     ...(item.category === "coffee" ? [
+  //       { category: "Milk", option: selectedMilk },
+  //       { category: "Sugar", option: selectedSugar },
+  //       { category: "Strength", option: selectedStrength },
+  //     ] : []),
+  //   ];
+  //   addToCart(item, "", customizations, currentPrice);
+  //   toast.success("Added to cart");
+  // };
+
   const handleAddToCart = () => {
     if (!item) return;
     const currentPrice = selectedSize ? selectedSize.price : item.price;
-    const customizations: { category: string; option: string; price?: number }[] = [
+
+    const customizations = [
       ...(selectedSize ? [{ category: "Size", option: selectedSize.name, price: selectedSize.price }] : []),
       ...(item.category === "coffee" ? [
-        { category: "Milk", option: selectedMilk },
-        { category: "Sugar", option: selectedSugar },
-        { category: "Strength", option: selectedStrength },
+        { category: "Milk", option: selectedMilk, price: 0 },
+        { category: "Sugar", option: selectedSugar, price: 0 },
+        { category: "Strength", option: selectedStrength, price: 0 },
       ] : []),
     ];
+
     addToCart(item, "", customizations, currentPrice);
     toast.success("Added to cart");
   };
