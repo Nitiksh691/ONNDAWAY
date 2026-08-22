@@ -41,7 +41,7 @@ export default function MusicPlayer() {
   }, []);
 
   // Draggable hook — keeps the pill within viewport, respects bottom nav
-  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(hasBottomNav ? 74 : 20, 20);
+  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(hasBottomNav ? 74 : 20, 20, "otw_music_player", 99999);
 
   useEffect(() => { setIsMounted(true); }, []);
 

@@ -7,6 +7,7 @@ export function useDraggableFab(
   defaultBottom = 20,
   defaultRight = 16,
   storageKey = "otw_fab_position",
+  zIndex = 900
 ) {
   const [offset, setOffset] = useState<FabPosition>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -83,7 +84,7 @@ export function useDraggableFab(
     bottom: `max(${defaultBottom}px, env(safe-area-inset-bottom))`,
     right: `max(${defaultRight}px, env(safe-area-inset-right))`,
     transform: `translate(${offset.x}px, ${offset.y}px)`,
-    zIndex: 900,
+    zIndex,
     touchAction: "none",
     cursor: isDragging ? "grabbing" : "grab",
   };
