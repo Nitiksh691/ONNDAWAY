@@ -5,6 +5,7 @@ import MenuItem from "@/models/MenuItem";
 import Settings from "@/models/Settings";
 import { withLogger } from "@/lib/withLogger";
 import { normalizeCartLines } from "@/lib/orderLine";
+import { requireAdmin } from "@/lib/adminAuth";
 import type { CartItem, OrderStatus } from "@/lib/types";
 
 const _GET = async (req: NextRequest) => {
@@ -12,6 +13,12 @@ const _GET = async (req: NextRequest) => {
   const userId = req.nextUrl.searchParams.get("userId");
   const status = req.nextUrl.searchParams.get("status");
   const deliveryPersonId = req.nextUrl.searchParams.get("deliveryPersonId");
+
+  // 🔒 SECURITY: Prevent dumping the entire database
+  const isAdmin = !requireAdmin(req);
+  if (!isAdmin && !userId && !deliveryPersonId) {
+    return NextResponse.json({ error: "Unauthorized. Must provide userId or deliveryPersonId." }, { status: 403 });
+  }
 
   const filter: {
     userId?: string;
@@ -64,6 +71,9 @@ const _POST = async (req: NextRequest) => {
   const settings = await Settings.findOne();
   if (settings?.kitchenClosed) {
     return NextResponse.json({ error: `Kitchen is closed. We'll be open from ${settings.kitchenOpenTime || "soon"}.` }, { status: 403 });
+  }
+  if (settings?.ordersPaused) {
+    return NextResponse.json({ error: "Due to heavy traffic, orders are stopped for a few minutes. Service will resume shortly." }, { status: 403 });
   }
 
   const normalizedItems = normalizeCartLines(items as CartItem[]);

@@ -41,7 +41,14 @@ export default function MusicPlayer() {
   }, []);
 
   // Draggable hook — keeps the pill within viewport, respects bottom nav
-  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(hasBottomNav ? 74 : 20, 20, "otw_music_player", 99999);
+  const { style: dragStyle, onDragStart, didDrag } = useDraggableFab(
+    hasBottomNav ? 74 : 20, 
+    20, 
+    "otw_music_player", 
+    99999,
+    isExpanded ? 200 : 50,
+    50
+  );
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -126,7 +133,6 @@ export default function MusicPlayer() {
           user-select: none;
           animation: ${isPlaying ? "mp-pulse 2s ease-in-out infinite" : "none"};
           transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-          overflow: hidden;
         }
         .mp-pill.collapsed {
           width: 50px;

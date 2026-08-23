@@ -14,7 +14,7 @@ export async function GET() {
     }
 
     const settings = await Settings.findOne()
-      .select("maintenanceMode maintenancePhone maintenanceMessage kitchenClosed kitchenOpenTime waitlistMode launchingSoonMode")
+      .select("maintenanceMode maintenancePhone maintenanceMessage kitchenClosed kitchenOpenTime waitlistMode launchingSoonMode ordersPaused")
       .lean();
 
     const data = settings ? {
@@ -25,6 +25,7 @@ export async function GET() {
       kitchenOpenTime: (settings as any).kitchenOpenTime ?? "7:00 AM",
       waitlistMode: (settings as any).waitlistMode ?? false,
       launchingSoonMode: (settings as any).launchingSoonMode ?? false,
+      ordersPaused: (settings as any).ordersPaused ?? false,
     } : {
       maintenanceMode: false,
       maintenancePhone: "",
@@ -33,6 +34,7 @@ export async function GET() {
       kitchenOpenTime: "7:00 AM",
       waitlistMode: false,
       launchingSoonMode: false,
+      ordersPaused: false,
     };
 
     appCache.set("settings_status", data, 15000); // 15 seconds TTL

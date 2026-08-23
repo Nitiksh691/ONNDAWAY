@@ -25,6 +25,7 @@ export default function DeliveryDashboard() {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
+  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
@@ -140,34 +141,30 @@ export default function DeliveryDashboard() {
       `}</style>
 
       {/* Header */}
-      <div style={{ background: "var(--primary)", color: "white", padding: "16px 20px", position: "sticky", top: 0, zIndex: 10 }}>
-        <div className="otw-container" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-            <div style={{ width: 36, height: 36, background: "rgba(255,255,255,0.15)", borderRadius: "10px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Truck size={18} />
+      <div style={{ background: "var(--primary)", color: "white", padding: "20px 20px 24px", position: "sticky", top: 0, zIndex: 10, borderBottomLeftRadius: "24px", borderBottomRightRadius: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <div onClick={() => setProfileMenuOpen(!profileMenuOpen)} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", position: "relative" }}>
+            <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Truck size={24} />
             </div>
             <div>
-              <div style={{ fontWeight: 800, fontSize: "1rem" }}>Partner Dashboard</div>
-              <div style={{ fontSize: "0.75rem", opacity: 0.8 }}>{profile?.name || "Demo Partner"}</div>
+              <div style={{ fontWeight: 900, fontSize: "1.4rem", letterSpacing: "-0.5px", textTransform: "uppercase" }}>Delivery<br/>Dashboard</div>
+              <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px", fontWeight: 600 }}>{profile?.name || "Demo Partner"} ▼</div>
             </div>
           </div>
-          <button onClick={handleLogout} style={{ background: "transparent", border: "none", color: "white", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", fontWeight: 600 }}>
-            <LogOut size={14} /> <span className="hide-mobile">Logout</span>
-          </button>
         </div>
+
+        {/* Profile Menu Dropdown */}
+        {profileMenuOpen && (
+          <div style={{ marginTop: "20px", padding: "16px", background: "rgba(255,255,255,0.1)", borderRadius: "16px", animation: "fade-in 0.2s" }}>
+            <button onClick={() => router.push('/')} style={{ width: "100%", padding: "14px", background: "#fff", color: "var(--primary)", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "0.95rem" }}>
+              <MapPin size={18} /> Explore Main Site
+            </button>
+          </div>
+        )}
       </div>
 
-      <div className="otw-container" style={{ padding: "20px" }}>
-
-        {/* Quick Actions */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "20px", flexWrap: "wrap" }}>
-          <button onClick={() => router.push('/')} style={{ flex: 1, minWidth: "140px", padding: "12px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.2)", fontSize: "0.85rem" }}>
-            <MapPin size={16} /> Explore Site
-          </button>
-          <button onClick={() => router.push('/delivery/walkin')} style={{ flex: 1, minWidth: "140px", padding: "12px", background: "#f59e0b", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(245,158,11,0.2)", fontSize: "0.85rem" }}>
-            <User size={16} /> Walk-in
-          </button>
-        </div>
+      <div className="otw-container" style={{ padding: "24px 20px" }}>
 
         {/* Stats */}
         <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>

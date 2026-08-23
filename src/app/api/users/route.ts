@@ -15,13 +15,16 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   await dbConnect();
   const body = await req.json();
-  const { userId, name, year, accommodation, location, phone, role } = body;
+  // 🔒 SECURITY: Never accept `role` from client-side requests.
+  // Role can only be changed via a dedicated admin endpoint.
+  const { userId, name, year, accommodation, location, phone } = body;
 
   if (!userId || !name) return NextResponse.json({ error: "userId and name required" }, { status: 400 });
 
   const user = await User.findOneAndUpdate(
     { userId },
-    { userId, name, year, accommodation, location, phone, role: role || "user" },
+    { userId, name, year, accommodation, location, phone },
+    // Only set role to "user" on INSERT (upsert), never overwrite existing role
     { upsert: true, new: true, setDefaultsOnInsert: true }
   ).lean();
 

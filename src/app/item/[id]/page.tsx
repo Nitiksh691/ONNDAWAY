@@ -217,7 +217,7 @@ export default function ItemPage() {
         }
         .product-title {
           font-family: 'Outfit', sans-serif;
-          font-size: 1.8rem; font-weight: 900; color: #111827;
+          font-size: 1.8rem; font-weight: 900; color: #1f4bfdff;
           margin: 0 0 16px 0; line-height: 1.2; letter-spacing: -0.02em;
         }
 
@@ -226,7 +226,7 @@ export default function ItemPage() {
           display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
         }
         .green-price {
-          background: #22C55E; color: #fff; padding: 6px 16px; border-radius: 10px;
+          background: #22C55E; color: #fff; padding: 0px 6px; border-radius: 10px;
           font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px;
         }
         .mrp-block { font-size: 0.9rem; color: #6B7280; line-height: 1.5; }
@@ -290,7 +290,7 @@ export default function ItemPage() {
           .main-image-box { aspect-ratio: 1/1; height: auto; }
           
           .card-box { padding: 20px; border-radius: 16px; margin-bottom: 16px; }
-          .product-title { font-size: 1.5rem; }
+          .product-title { font-size: 1.5rem; colo }
           .green-price { font-size: 1.5rem; }
           
           .mobile-sticky-bar {

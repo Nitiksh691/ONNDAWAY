@@ -1,6 +1,7 @@
 import { type NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Waitlist from "@/models/Waitlist";
+import { requireAdmin } from "@/lib/adminAuth";
 
 // ── Indian phone regex (same one used across the app) ──
 const PHONE_REGEX = /^[6-9]\d{9}$/;
@@ -88,6 +89,9 @@ export async function POST(request: NextRequest) {
  * Supports: ?search=, ?branch=, ?year=, ?format=csv
  */
 export async function GET(request: NextRequest) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     await dbConnect();
 
@@ -145,6 +149,9 @@ export async function GET(request: NextRequest) {
  * Remove a single waitlist entry.
  */
 export async function DELETE(request: NextRequest) {
+  const authError = requireAdmin(request);
+  if (authError) return authError;
+
   try {
     await dbConnect();
 

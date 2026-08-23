@@ -101,10 +101,17 @@ function AdminPasscodeModal({ onSuccess }: { onSuccess: () => void }) {
       });
 
       if (res.ok) {
+        const data = await res.json();
+        // Store both the flag and the signed token
         localStorage.setItem(STORAGE_KEYS.adminAuthorized, "true");
+        // Token stored in sessionStorage (cleared when tab closes)
+        if (data.token) {
+          sessionStorage.setItem("otw_admin_token", data.token);
+        }
         onSuccess();
       } else {
-        setError("Incorrect passcode. Access denied.");
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "Incorrect passcode. Access denied.");
         setPasscode("");
         inputRef.current?.focus();
       }
@@ -522,7 +529,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               ADMIN PORTAL
             </div>
           </div>
-          {sidebarCollapsed && <div style={{ fontWeight: 900, fontSize: "1.4rem", color: "#0055ff" }}>O</div>}
+          {sidebarCollapsed && <div style={{ color: "#0055ff", display: "flex", justifyContent: "center" }}><Store size={24} /></div>}
           <button className="show-mobile" onClick={() => setSidebarOpen(false)} style={{ background: "none", border: "none", display: "none", cursor: "pointer" }}>
             <X size={20} color="#0f172a" />
           </button>

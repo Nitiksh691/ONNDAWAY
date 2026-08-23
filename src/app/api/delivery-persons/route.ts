@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import DeliveryPerson from "@/models/DeliveryPerson";
-
 import User from "@/models/User";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function GET(req: NextRequest) {
+  // 🔒 Admin-only: list all delivery persons
+  const authError = requireAdmin(req);
+  if (authError) return authError;
+
   await dbConnect();
   const dps = await DeliveryPerson.find().lean();
   const usersAsDps = await User.find({ role: "delivery" }).lean();
@@ -47,6 +51,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Otherwise, create a new delivery person
+    // 🔒 Admin-only: create new delivery persons
+    const authError = requireAdmin(req);
+    if (authError) return authError;
+
     const { name, phone, email: newEmail, password: newPassword } = body;
     if (!name || !phone || !newEmail || !newPassword) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });

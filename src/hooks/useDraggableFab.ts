@@ -7,7 +7,9 @@ export function useDraggableFab(
   defaultBottom = 20,
   defaultRight = 16,
   storageKey = "otw_fab_position",
-  zIndex = 900
+  zIndex = 900,
+  fabWidth = 56,
+  fabHeight = 56
 ) {
   const [offset, setOffset] = useState<FabPosition>({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
@@ -16,14 +18,19 @@ export function useDraggableFab(
   const clampOffset = useCallback((pos: FabPosition): FabPosition => {
     if (typeof window === "undefined") return pos;
     const margin = 12;
-    const fabSize = 56;
-    const maxLeft = window.innerWidth - fabSize - defaultRight - margin;
-    const maxUp = window.innerHeight - fabSize - defaultBottom - margin;
+    const maxLeft = window.innerWidth - fabWidth - defaultRight - margin;
+    const maxUp = window.innerHeight - fabHeight - defaultBottom - margin;
     return {
       x: Math.max(-maxLeft, Math.min(margin, pos.x)),
       y: Math.max(-maxUp, Math.min(margin, pos.y)),
     };
-  }, [defaultBottom, defaultRight]);
+  }, [defaultBottom, defaultRight, fabWidth, fabHeight]);
+
+  useEffect(() => {
+    if (!isDragging) {
+      setOffset(prev => clampOffset(prev));
+    }
+  }, [clampOffset, isDragging]);
 
   useEffect(() => {
     try {

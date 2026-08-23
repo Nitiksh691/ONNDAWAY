@@ -1515,4 +1515,7 @@ section[style*="marginBottom"] h2 {
   font-size: 1.05rem;
   letter-spacing: -0.02em;
   text-transform: uppercase;
-}
+}
+/* Avoid pure black text globally */
+.text-black, [class*='text-black'], [style*='color: black'], [style*='color:#000'] { color: var(--text-dark) !important; }
+

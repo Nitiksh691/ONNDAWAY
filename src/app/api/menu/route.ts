@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import MenuItem from "@/models/MenuItem";
 import { appCache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 import { withLogger } from "@/lib/withLogger";
+import { requireAdmin } from "@/lib/adminAuth";
 
 const _GET = async () => {
   await dbConnect();
@@ -30,6 +31,10 @@ const _GET = async () => {
 };
 
 const _POST = async (req: NextRequest) => {
+  // 🔒 Admin-only: add new menu items
+  const authError = requireAdmin(req);
+  if (authError) return authError;
+
   await dbConnect();
   try {
     const body = await req.json();

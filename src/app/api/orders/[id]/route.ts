@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function PATCH(req: NextRequest, props: { params: Promise<{ id: string }> }) {
   await dbConnect();
@@ -8,10 +9,22 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
   try {
     const params = await props.params;
     const body = await req.json();
-    const { status, deliveryPersonId, deliveryPersonName, otp, rating, review, feedback } = body;
+    const { status, deliveryPersonId, deliveryPersonName, otp, rating, review, feedback, userId } = body;
 
     const currentOrder = await Order.findById(params.id).lean();
     if (!currentOrder) return NextResponse.json({ error: "Order not found" }, { status: 404 });
+
+    // 🔒 SECURITY: Verify permissions
+    const isAdmin = !requireAdmin(req);
+    const isOwner = userId && currentOrder.userId === userId;
+    const isDelivery = deliveryPersonId && currentOrder.deliveryPersonId === deliveryPersonId;
+    
+    // Allow assignment (deliveryPersonId update) only if admin, or if it's currently unassigned
+    const isSelfAssigning = deliveryPersonId && !currentOrder.deliveryPersonId;
+
+    if (!isAdmin && !isOwner && !isDelivery && !isSelfAssigning) {
+      return NextResponse.json({ error: "Unauthorized to modify this order" }, { status: 403 });
+    }
 
     if (status === "delivered") {
       if (currentOrder.deliveryOtp && currentOrder.deliveryOtp !== otp) {
