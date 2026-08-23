@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/lib/context";
-import { Clock } from "lucide-react";
+import { Clock, AlertTriangle } from "lucide-react";
 
 export default function KitchenClosedBanner() {
   const { profile, settings } = useApp();
