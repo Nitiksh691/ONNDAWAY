@@ -275,7 +275,7 @@ export default function AdminMenuPage() {
                 </div>
                 {/* ── Category ── */}
                 <div style={{ background: "#f8fafc", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "16px", marginBottom: "4px" }}>
-                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 800, color: "#334155", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "0.85rem", fontWeight: 800, color: "#334155", marginBottom: "10px" }}>
                     <Tag size={14} color="#0055ff" /> Category Name
                   </label>
                   <div style={{ position: "relative" }}>
