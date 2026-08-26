@@ -12,7 +12,9 @@ export default function AdminCouponsPage() {
 
   const fetchCoupons = async () => {
     try {
-      const res = await fetch("/api/coupons");
+      const res = await fetch("/api/coupons", {
+        headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+      });
       if (res.ok) setCoupons(await res.json());
     } catch (e) {}
   };
@@ -23,7 +25,12 @@ export default function AdminCouponsPage() {
     e.preventDefault();
     try {
       const res = await fetch("/api/coupons", {
-        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(form)
+        method: "POST", 
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        }, 
+        body: JSON.stringify(form)
       });
       if (res.ok) {
         toast.success("Coupon created successfully");
@@ -41,7 +48,10 @@ export default function AdminCouponsPage() {
   const handleDelete = async (id: string) => {
     if(confirm("Delete this coupon?")) {
       try {
-        const res = await fetch(`/api/coupons/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/coupons/${id}`, { 
+          method: "DELETE",
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) {
           toast.success("Coupon deleted");
           fetchCoupons();

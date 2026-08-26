@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Settings from "@/models/Settings";
+import { requireAdmin } from "@/lib/adminAuth";
 
 export async function GET() {
   try {
@@ -21,7 +22,10 @@ export async function GET() {
   }
 }
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const authError = requireAdmin(req);
+  if (authError) return authError;
+
   try {
     await dbConnect();
     const { bannerEnabled, bannerMode, bannerSlides, bentoSlides } = await req.json();

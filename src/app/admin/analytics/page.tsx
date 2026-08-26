@@ -22,7 +22,9 @@ export default function AnalyticsPage() {
   const [error, setError]   = useState<string | null>(null);
 
   useEffect(() => {
-    fetch("/api/admin/analytics")
+    fetch("/api/admin/analytics", {
+      headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+    })
       .then((r) => r.ok ? r.json() : Promise.reject("Failed"))
       .then((d) => setData(d))
       .catch(() => setError("Failed to load analytics"))

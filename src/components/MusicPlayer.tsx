@@ -108,8 +108,8 @@ export default function MusicPlayer() {
     <>
       <style>{`
         @keyframes mp-pulse {
-          0%,100% { box-shadow: 0 0 0 0 rgba(1,53,251,0.35); }
-          50%      { box-shadow: 0 0 0 7px rgba(1,53,251,0); }
+          0%,100% { box-shadow: 0 0 0 0 rgba(15,23,42,0.35); }
+          50%      { box-shadow: 0 0 0 7px rgba(15,23,42,0); }
         }
         @keyframes mp-spin {
           from { transform: rotate(0deg); }
@@ -122,12 +122,12 @@ export default function MusicPlayer() {
           display: flex;
           align-items: center;
           gap: 8px;
-          background: rgba(1,53,251,0.92);
+          background: rgba(15,23,42,0.92);
           backdrop-filter: blur(14px);
           color: #fff;
           border-radius: 99px;
           padding: 6px 12px 6px 8px;
-          box-shadow: 0 4px 20px rgba(1,53,251,0.3);
+          box-shadow: 0 4px 20px rgba(15,23,42,0.3);
           cursor: grab;
           touch-action: none;
           user-select: none;
@@ -209,8 +209,8 @@ export default function MusicPlayer() {
           border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         .mp-list-item:last-child { border-bottom: none; }
-        .mp-list-item:hover { background: rgba(1,53,251,0.25); }
-        .mp-list-item.active { background: rgba(1,53,251,0.4); }
+        .mp-list-item:hover { background: rgba(255,255,255,0.1); }
+        .mp-list-item.active { background: rgba(255,255,255,0.15); }
         .mp-list-num {
           width: 18px; height: 18px;
           border-radius: 50%;
@@ -222,8 +222,8 @@ export default function MusicPlayer() {
           flex-shrink: 0;
         }
         .mp-list-item.active .mp-list-num {
-          background: #0135FB;
-          color: #fff;
+          background: #fff;
+          color: #0F172A;
         }
         .mp-list-item-info { flex: 1; min-width: 0; }
         .mp-list-item-name {

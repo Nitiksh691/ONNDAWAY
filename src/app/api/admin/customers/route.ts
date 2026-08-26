@@ -2,8 +2,12 @@ import { NextResponse } from "next/server";
 import dbConnect from "@/lib/mongodb";
 import Order from "@/models/Order";
 import { withLogger } from "@/lib/withLogger";
+import { requireAdmin } from "@/lib/adminAuth";
 
-const _GET = async () => {
+const _GET = async (req: Request) => {
+  const authError = requireAdmin(req as any);
+  if (authError) return authError;
+
   await dbConnect();
   try {
     // Single aggregation — DB groups, counts, and sums. No in-Node loops.

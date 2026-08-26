@@ -54,7 +54,9 @@ export default function AdminDashboard() {
   useEffect(() => {
     const fetchBanner = async () => {
       try {
-        const res = await fetch("/api/settings/banner");
+        const res = await fetch("/api/settings/banner", {
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) {
           const bannerData = await res.json();
           setBannerEnabled(bannerData.bannerEnabled ?? true);
@@ -77,7 +79,9 @@ export default function AdminDashboard() {
 
     const fetchStats = async () => {
       try {
-        const res = await fetch("/api/admin/analytics");
+        const res = await fetch("/api/admin/analytics", {
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) setData(await res.json());
       } catch (err) {
         console.error(err);
@@ -90,7 +94,9 @@ export default function AdminDashboard() {
 
   // SSE with automatic polling fallback when MongoDB is unavailable
   const stableFetchStats = useCallback(() => {
-    fetch("/api/admin/analytics")
+    fetch("/api/admin/analytics", {
+      headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+    })
       .then(res => res.ok ? res.json() : null)
       .then(data => { if (data) setData(data); })
       .catch(() => {});
@@ -115,7 +121,10 @@ export default function AdminDashboard() {
       reader.onloadend = async () => {
         const res = await fetch("/api/upload", {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: { 
+            "Content-Type": "application/json",
+            "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+          },
           body: JSON.stringify({ image: reader.result }),
         });
         const uploadData = await res.json();
@@ -142,7 +151,10 @@ export default function AdminDashboard() {
     try {
       const res = await fetch("/api/settings/banner", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        },
         body: JSON.stringify({ bannerEnabled, bannerMode, bannerSlides: slides, bentoSlides })
       });
       if (res.ok) {

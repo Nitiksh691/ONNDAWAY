@@ -25,17 +25,34 @@ async function dbConnect(): Promise<typeof mongoose> {
 
   if (!cached.promise) {
     cached.promise = mongoose.connect(MONGODB_URI, {
-      maxPoolSize: 10,              // max concurrent DB connections
-      serverSelectionTimeoutMS: 5_000,  // fail fast if DB is unreachable
-      socketTimeoutMS: 45_000,     // don't hang forever on slow queries
-      bufferCommands: false,        // fail immediately if not connected (no silent queuing)
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10_000, // increased from 5s for reliability
+      socketTimeoutMS: 45_000,
+      connectTimeoutMS: 10_000,
+      bufferCommands: true,             // allow queuing so idle reconnects work
     }).then((m) => {
       if (process.env.NODE_ENV === "development") {
         mongoose.connection.on("connected", () => console.log("[db] connected"));
-        mongoose.connection.on("error", (e) => console.error("[db] error", e));
-        mongoose.connection.on("disconnected", () => console.warn("[db] disconnected"));
+        mongoose.connection.on("error", (e) => {
+          console.error("[db] error", e);
+          // Reset cache so next request triggers a fresh connect
+          cached.conn = null;
+          cached.promise = null;
+        });
+        mongoose.connection.on("disconnected", () => {
+          console.warn("[db] disconnected — will reconnect on next request");
+          cached.conn = null;
+          cached.promise = null;
+        });
+      } else {
+        mongoose.connection.on("error", () => { cached.conn = null; cached.promise = null; });
+        mongoose.connection.on("disconnected", () => { cached.conn = null; cached.promise = null; });
       }
       return m;
+    }).catch((err) => {
+      // Reset so next call retries
+      cached.promise = null;
+      throw err;
     });
   }
 

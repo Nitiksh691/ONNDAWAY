@@ -19,7 +19,9 @@ export default function AdminInternsPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/intern")
+    fetch("/api/intern", {
+      headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+    })
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setInterns(data);

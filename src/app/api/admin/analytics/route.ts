@@ -4,6 +4,7 @@ import Order from "@/models/Order";
 import MenuItem from "@/models/MenuItem";
 import { appCache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 import { withLogger } from "@/lib/withLogger";
+import { requireAdmin } from "@/lib/adminAuth";
 
 /**
  * GET /api/admin/analytics
@@ -21,7 +22,10 @@ import { withLogger } from "@/lib/withLogger";
  *   ordersByHour: [{ hour: "8:00", orders: 15 }]
  * }
  */
-const _GET = async () => {
+const _GET = async (req: Request) => {
+  const authError = requireAdmin(req as any);
+  if (authError) return authError;
+
   await dbConnect();
   try {
     // Try cache first

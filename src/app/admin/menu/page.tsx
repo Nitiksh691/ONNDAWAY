@@ -1,9 +1,9 @@
 "use client";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useEffect } from "react";
 import { MenuItem } from "@/lib/types";
-import { Plus, Edit2, Trash2, Search, Image as ImageIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Image as ImageIcon, ChevronDown, ChevronUp, Tag } from "lucide-react";
 import toast from "react-hot-toast";
 
 
@@ -14,6 +14,7 @@ export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -65,7 +66,10 @@ export default function AdminMenuPage() {
         try {
           const res = await fetch("/api/upload", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers: { 
+              "Content-Type": "application/json",
+              "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+            },
             body: JSON.stringify({ image: reader.result }),
           });
           const data = await res.json();
@@ -95,7 +99,10 @@ export default function AdminMenuPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        },
         body: JSON.stringify(form),
       });
 
@@ -115,7 +122,10 @@ export default function AdminMenuPage() {
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this item?")) {
       try {
-        const res = await fetch(`/api/menu/${id}`, { method: "DELETE" });
+        const res = await fetch(`/api/menu/${id}`, { 
+          method: "DELETE",
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) {
           toast.success("Item deleted");
           fetchMenu();
@@ -262,33 +272,90 @@ export default function AdminMenuPage() {
                     <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Original Price (₹) - Optional</label>
                     <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="For discounts" value={form.originalPrice || ""} onChange={e => setForm({ ...form, originalPrice: e.target.value ? Number(e.target.value) : undefined })} min="0" />
                   </div>
-                  <div>
-                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Category</label>
-                    <select className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.category} onChange={e => setForm({ ...form, category: e.target.value as any })} required>
-                      <option value="Coffee">Coffee</option>
-                      {/* <option value="snacks">Snacks</option>
-                      <option value="meals">Meals</option> */}
-                      <option value="Drinks">Drinks</option>
-                      {/* <option value="desserts">Desserts</option> */}
-                      <option value="Mactha">Matcha</option>
-                    </select>
-                  </div>
                 </div>
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
-                  <div>
-                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Homepage Custom Section (Optional)</label>
-                    <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({ ...form, section: e.target.value })} />
-                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Items with the same section name will be grouped together.</p>
+                {/* ── Category ── */}
+                <div style={{ background: "#f8fafc", border: "2px solid #e2e8f0", borderRadius: "12px", padding: "16px", marginBottom: "4px" }}>
+                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 800, color: "#334155", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" }}>
+                    <Tag size={14} color="#0055ff" /> Category Name
+                  </label>
+                  <div style={{ position: "relative" }}>
+                    <input
+                      list="category-suggestions"
+                      type="text"
+                      style={{ background: "#ffffff", border: "2px solid #0055ff", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", fontSize: "1rem", fontWeight: 700 }}
+                      placeholder="e.g. Coffee, Snacks, Meals…"
+                      value={form.category || ""}
+                      onChange={e => setForm({ ...form, category: e.target.value })}
+                      required
+                    />
+                    <datalist id="category-suggestions">
+                      {Array.from(new Set(items.map(i => i.category).filter(Boolean))).map(cat => (
+                        <option key={cat} value={cat} />
+                      ))}
+                    </datalist>
                   </div>
-                  <div>
-                    <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Display Order (Position)</label>
-                    <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. 1" value={form.sortOrder ?? 0} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })} min="0" />
-                    <p style={{ fontSize: "0.75rem", color: "var(--text-muted)", marginTop: "4px" }}>Lower numbers appear first in sliders.</p>
-                  </div>
+                  {/* Live preview of how this category appears as a filter */}
+                  {form.category && (
+                    <div style={{ marginTop: "10px", display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 700, color: "#64748b", textTransform: "uppercase", letterSpacing: "0.06em" }}>Menu filter preview →</span>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", padding: "6px 14px", background: "#0055ff", color: "white", borderRadius: "999px", fontSize: "0.82rem", fontWeight: 800, boxShadow: "0 2px 8px rgba(0,85,255,0.3)" }}>
+                        ✨ {form.category.charAt(0).toUpperCase() + form.category.slice(1)}
+                      </span>
+                    </div>
+                  )}
+                  {/* Existing category chips */}
+                  {Array.from(new Set(items.map(i => i.category).filter(Boolean))).length > 0 && (
+                    <div style={{ marginTop: "10px" }}>
+                      <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#94a3b8", marginBottom: "6px", textTransform: "uppercase", letterSpacing: "0.06em" }}>Existing categories (click to reuse):</div>
+                      <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                        {Array.from(new Set(items.map(i => i.category).filter(Boolean))).map(cat => (
+                          <button
+                            key={cat}
+                            type="button"
+                            onClick={() => setForm({ ...form, category: cat })}
+                            style={{
+                              padding: "4px 12px", borderRadius: "999px", fontSize: "0.78rem", fontWeight: 700, cursor: "pointer", transition: "all 0.15s",
+                              background: form.category === cat ? "rgba(0,85,255,0.1)" : "#e2e8f0",
+                              color: form.category === cat ? "#0055ff" : "#475569",
+                              border: form.category === cat ? "1px solid rgba(0,85,255,0.3)" : "1px solid transparent",
+                            }}
+                          >
+                            {cat}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <p style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "8px" }}>This name becomes a filter tab on the menu page for all customers.</p>
+                </div>
+                {/* ── Advanced Settings (collapsible) ── */}
+                <div style={{ border: "1px solid #e2e8f0", borderRadius: "10px", overflow: "hidden" }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowAdvanced(v => !v)}
+                    style={{ width: "100%", padding: "12px 16px", background: showAdvanced ? "#f1f5f9" : "#f8fafc", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: "inherit", fontWeight: 700, fontSize: "0.85rem", color: "#475569" }}
+                  >
+                    <span>⚙️ Advanced Settings (Section Label, Display Order)</span>
+                    {showAdvanced ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                  </button>
+                  {showAdvanced && (
+                    <div style={{ padding: "16px", display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Homepage Section Label (Optional)</label>
+                        <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Today's Specials" value={form.section || ""} onChange={e => setForm({ ...form, section: e.target.value })} />
+                        <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "4px" }}>Items sharing the same label are grouped on the homepage.</p>
+                      </div>
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Display Order</label>
+                        <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="0" value={form.sortOrder ?? 0} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })} min="0" />
+                        <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "4px" }}>Lower = appears first.</p>
+                      </div>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Description</label>
-                  <textarea className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: "80px", resize: "vertical" }} value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} required />
+                  <textarea className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box", minHeight: "80px", resize: "vertical" }} value={form.description || ""} onChange={e => setForm({ ...form, description: e.target.value })} required />
                 </div>
                 <div>
                   <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Item Image</label>

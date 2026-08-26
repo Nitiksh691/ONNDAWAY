@@ -24,7 +24,9 @@ export default function ExpensesPage() {
 
   const fetchExpenses = async () => {
     try {
-      const res = await fetch("/api/admin/expenses");
+      const res = await fetch("/api/admin/expenses", {
+        headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+      });
       if (res.ok) {
         const data = await res.json();
         setExpenses(data);
@@ -48,7 +50,10 @@ export default function ExpensesPage() {
     try {
       const res = await fetch("/api/admin/expenses", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        },
         body: JSON.stringify({ amount: Number(amount), category: "General", description }),
       });
       if (res.ok) {

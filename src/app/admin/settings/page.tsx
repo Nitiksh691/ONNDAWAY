@@ -24,7 +24,9 @@ export default function AdminSettingsPage() {
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
 
   useEffect(() => {
-    fetch("/api/settings")
+    fetch("/api/settings", {
+      headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+    })
       .then(res => res.json())
       .then(data => {
         if (data) {
@@ -75,7 +77,10 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        },
         body: JSON.stringify(data),
       });
       if (res.ok) {

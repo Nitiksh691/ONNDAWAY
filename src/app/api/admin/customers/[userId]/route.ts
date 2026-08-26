@@ -3,11 +3,15 @@ import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import Order from "@/models/Order";
 import { withLogger } from "@/lib/withLogger";
+import { requireAdmin } from "@/lib/adminAuth";
 
 const _GET = async (
-  _req: Request,
+  req: Request,
   props: { params: Promise<{ userId: string }> }
 ) => {
+  const authError = requireAdmin(req as any);
+  if (authError) return authError;
+
   await dbConnect();
   try {
     const { userId } = await props.params;

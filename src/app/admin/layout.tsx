@@ -360,9 +360,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const prevPendingRef = useRef(0);
 
   useEffect(() => {
+    const token = typeof window !== "undefined" ? sessionStorage.getItem("otw_admin_token") : null;
     const isAdmin =
       typeof window !== "undefined" &&
-      localStorage.getItem(STORAGE_KEYS.adminAuthorized) === "true";
+      localStorage.getItem(STORAGE_KEYS.adminAuthorized) === "true" &&
+      !!token;
 
     if (isAdmin) {
       setAuthorized(true);
@@ -375,8 +377,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     if (!authorized) return;
 
     // Fetch stats for the sidebar
-    fetch("/api/admin/analytics")
-      .then(res => res.ok ? res.json() : null)
+    fetch("/api/admin/analytics", {
+      headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+    })
+      .then(res => {
+        if (res.status === 401) {
+          localStorage.removeItem(STORAGE_KEYS.adminAuthorized);
+          sessionStorage.removeItem("otw_admin_token");
+          setAuthorized(false);
+          setShowPasscodeModal(true);
+          return null;
+        }
+        return res.ok ? res.json() : null;
+      })
       .then(data => {
         if (data && data.summary) {
            setAdminStats({
@@ -390,7 +403,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
     const fetchPendingCount = async () => {
       try {
-        const res = await fetch("/api/orders?status=placed");
+        const res = await fetch("/api/orders?status=placed", {
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed").length;
@@ -409,7 +424,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     useCallback(async () => {
       if (!authorized) return;
       try {
-        const res = await fetch("/api/orders?status=placed");
+        const res = await fetch("/api/orders?status=placed", {
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed").length;

@@ -40,8 +40,8 @@ const _POST = async (req: NextRequest) => {
     const body = await req.json();
     const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner, customizationCategories } = body;
 
-    if (!name || !price || !image || !category) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+    if (!name || !price || !category) {
+      return NextResponse.json({ error: "Missing required fields (name, price, category)" }, { status: 400 });
     }
 
     const item = await MenuItem.create({
@@ -63,6 +63,7 @@ const _POST = async (req: NextRequest) => {
 
     return NextResponse.json({ ...item.toObject(), id: item._id.toString() }, { status: 201 });
   } catch (error) {
+    console.error("POST /api/menu error:", error);
     return NextResponse.json({ error: "Failed to create menu item" }, { status: 500 });
   }
 };

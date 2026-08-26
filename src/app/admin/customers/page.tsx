@@ -90,7 +90,9 @@ export default function CustomersPage() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch("/api/admin/customers");
+        const res = await fetch("/api/admin/customers", {
+          headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+        });
         if (res.ok) setCustomers(await res.json());
       } catch (err) {
         console.error(err);
@@ -106,7 +108,9 @@ export default function CustomersPage() {
     setDetail(null);
     setDetailLoading(true);
     try {
-      const res = await fetch(`/api/admin/customers/${encodeURIComponent(userId)}`);
+      const res = await fetch(`/api/admin/customers/${encodeURIComponent(userId)}`, {
+        headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
+      });
       if (res.ok) setDetail(await res.json());
     } catch (err) {
       console.error(err);
