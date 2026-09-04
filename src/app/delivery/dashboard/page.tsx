@@ -4,8 +4,13 @@ import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
-import { Truck, MapPin, Phone, User, Check, Package, LogOut, ArrowRight, MessageCircle, Lock, Navigation, Clock, Tag, X, ChevronRight } from "lucide-react";
-import { getOrderMapsUrl, getOrderMapsEmbedUrl } from "@/lib/maps";
+import {
+  Truck, MapPin, Phone, User, Check, Package,
+  LogOut, ArrowRight, MessageCircle, Lock,
+  Navigation, Clock, ChevronRight, X,
+  AlertCircle, Banknote, CreditCard, RefreshCw
+} from "lucide-react";
+import { getOrderMapsUrl } from "@/lib/maps";
 import toast from "react-hot-toast";
 
 const RIDER_QUICK_MESSAGES = [
@@ -16,17 +21,22 @@ const RIDER_QUICK_MESSAGES = [
   "Please come to the gate 🚪",
 ];
 
+function timeAgo(dateStr: string) {
+  const diff = Math.floor((Date.now() - new Date(dateStr).getTime()) / 1000);
+  if (diff < 60) return `${diff}s ago`;
+  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+  return `${Math.floor(diff / 3600)}h ago`;
+}
+
 export default function DeliveryDashboard() {
   const { user, profile, loading } = useApp();
   const router = useRouter();
   const [orders, setOrders] = useState<Order[]>([]);
-  
-  // Modal State
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [otpInput, setOtpInput] = useState("");
   const [sendingMsg, setSendingMsg] = useState(false);
-  const [profileMenuOpen, setProfileMenuOpen] = useState(false);
-  
+  const [refreshing, setRefreshing] = useState(false);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -35,25 +45,28 @@ export default function DeliveryDashboard() {
     }
   }, [user, profile, loading, router]);
 
-  const DELIVERY_ID = typeof window !== "undefined"
-    ? (localStorage.getItem("otw_delivery_id") || (profile?.role === "delivery" ? profile.uid : "dp1"))
-    : "dp1";
+  const DELIVERY_ID =
+    typeof window !== "undefined"
+      ? localStorage.getItem("otw_delivery_id") || (profile?.role === "delivery" ? profile.uid : "dp1")
+      : "dp1";
 
-  const fetchOrders = async () => {
+  const fetchOrders = async (quiet = false) => {
+    if (!quiet) setRefreshing(true);
     try {
       const res = await fetch(`/api/orders?deliveryPersonId=${DELIVERY_ID}&status=preparing,out_for_delivery`);
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
       }
-    } catch (e) {
-      console.error(e);
+    } catch {
+      // silent fail
+    } finally {
+      setRefreshing(false);
     }
   };
 
   useEffect(() => {
     fetchOrders();
-
     let eventSource: EventSource;
     let timeoutId: NodeJS.Timeout;
     const setupSSE = () => {
@@ -61,8 +74,8 @@ export default function DeliveryDashboard() {
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === "order_change") fetchOrders();
-        } catch (e) {}
+          if (data.type === "order_change") fetchOrders(true);
+        } catch { /* ignore */ }
       };
       eventSource.onerror = () => {
         eventSource.close();
@@ -70,16 +83,15 @@ export default function DeliveryDashboard() {
       };
     };
     setupSSE();
-
     return () => {
       if (eventSource) eventSource.close();
       if (timeoutId) clearTimeout(timeoutId);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const selectedOrder = orders.find(o => o.id === selectedOrderId);
+  const selectedOrder = orders.find((o) => o.id === selectedOrderId);
 
-  // Auto-scroll chat
   useEffect(() => {
     if (selectedOrder && messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
@@ -94,18 +106,16 @@ export default function DeliveryDashboard() {
         body: JSON.stringify({ status: newStatus, otp: otpInput }),
       });
       if (res.ok) {
-        await fetchOrders();
-        toast.success(`Order marked as ${newStatus.replace(/_/g, " ")}`);
-        if (newStatus === "delivered") {
-          setSelectedOrderId(null);
-        }
+        await fetchOrders(true);
+        toast.success(newStatus === "delivered" ? "✅ Delivery complete!" : "📦 Pickup confirmed!");
+        if (newStatus === "delivered") setSelectedOrderId(null);
         setOtpInput("");
       } else {
         const err = await res.json();
         toast.error(err.error || "Failed to update status");
       }
     } catch {
-      toast.error("Failed to update status");
+      toast.error("Network error. Try again.");
     }
   };
 
@@ -118,7 +128,7 @@ export default function DeliveryDashboard() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ sender: "delivery", text }),
       });
-      await fetchOrders();
+      await fetchOrders(true);
     } catch {
       toast.error("Could not send message");
     } finally {
@@ -131,233 +141,330 @@ export default function DeliveryDashboard() {
     router.push("/delivery/login");
   };
 
+  const preparing = orders.filter((o) => o.status === "preparing");
+  const inTransit = orders.filter((o) => o.status === "out_for_delivery");
+
   return (
-    <div style={{ background: "#F1F5F9", minHeight: "100vh" }}>
+    <div style={{ background: "#F1F5F9", minHeight: "100vh", maxWidth: 480, margin: "0 auto" }}>
       <style>{`
-        @keyframes chat-pop { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes slide-up { from { opacity: 0; transform: translateY(100%); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes fade-in { from { opacity: 0; } to { opacity: 1; } }
-        .queue-row:hover { background: #f8fafc; }
+        @keyframes slide-up { from { opacity:0; transform:translateY(100%); } to { opacity:1; transform:translateY(0); } }
+        @keyframes fade-in  { from { opacity:0; } to { opacity:1; } }
+        @keyframes spin { from { transform:rotate(0deg); } to { transform:rotate(360deg); } }
+        .queue-row { transition: background 0.15s; cursor: pointer; }
+        .queue-row:active { background: #f0f4ff; }
+        .otp-box:focus { border-color: #0135FB !important; box-shadow: 0 0 0 3px rgba(1,53,251,0.15); }
+        .msg-btn { transition: all 0.15s; }
+        .msg-btn:active { transform: scale(0.96); }
+        .refresh-spin { animation: spin 0.8s linear infinite; }
       `}</style>
 
-      {/* Header */}
-      <div style={{ background: "var(--primary)", color: "white", padding: "20px 20px 24px", position: "sticky", top: 0, zIndex: 10, borderBottomLeftRadius: "24px", borderBottomRightRadius: "24px", boxShadow: "0 4px 20px rgba(0,0,0,0.15)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <div onClick={() => setProfileMenuOpen(!profileMenuOpen)} style={{ display: "flex", alignItems: "center", gap: "12px", cursor: "pointer", position: "relative" }}>
-            <div style={{ width: 48, height: 48, background: "rgba(255,255,255,0.2)", borderRadius: "14px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Truck size={24} />
+      {/* ── Header ── */}
+      <div style={{
+        background: "linear-gradient(135deg, #0135FB 0%, #0051FF 100%)",
+        color: "white", padding: "20px 20px 24px",
+        position: "sticky", top: 0, zIndex: 10,
+        borderBottomLeftRadius: 24, borderBottomRightRadius: 24,
+        boxShadow: "0 4px 24px rgba(1,53,251,0.3)"
+      }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 44, height: 44, background: "rgba(255,255,255,0.2)", borderRadius: 14, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Truck size={22} />
             </div>
             <div>
-              <div style={{ fontWeight: 900, fontSize: "1.4rem", letterSpacing: "-0.5px", textTransform: "uppercase" }}>Delivery<br/>Dashboard</div>
-              <div style={{ fontSize: "0.85rem", opacity: 0.9, marginTop: "2px", fontWeight: 600 }}>{profile?.name || "Demo Partner"} ▼</div>
+              <div style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: -0.3 }}>Delivery Dashboard</div>
+              <div style={{ fontSize: "0.8rem", opacity: 0.85, fontWeight: 600 }}>{profile?.name || "Demo Partner"}</div>
             </div>
+          </div>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button
+              onClick={() => fetchOrders()}
+              style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+              title="Refresh"
+            >
+              <RefreshCw size={16} className={refreshing ? "refresh-spin" : ""} />
+            </button>
+            <button
+              onClick={handleLogout}
+              style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+              title="Logout"
+            >
+              <LogOut size={16} />
+            </button>
           </div>
         </div>
 
-        {/* Profile Menu Dropdown */}
-        {profileMenuOpen && (
-          <div style={{ marginTop: "20px", padding: "16px", background: "rgba(255,255,255,0.1)", borderRadius: "16px", animation: "fade-in 0.2s" }}>
-            <button onClick={() => router.push('/')} style={{ width: "100%", padding: "14px", background: "#fff", color: "var(--primary)", border: "none", borderRadius: "12px", fontWeight: 800, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", fontSize: "0.95rem" }}>
-              <MapPin size={18} /> Explore Main Site
-            </button>
+        {/* Stats row */}
+        <div style={{ display: "flex", gap: 10, marginTop: 18 }}>
+          <div style={{ flex: 1, background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <Package size={18} />
+            <div>
+              <div style={{ fontSize: "0.65rem", opacity: 0.8, fontWeight: 700, textTransform: "uppercase" }}>To Pickup</div>
+              <div style={{ fontSize: "1.4rem", fontWeight: 900, lineHeight: 1 }}>{preparing.length}</div>
+            </div>
           </div>
+          <div style={{ flex: 1, background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <Truck size={18} />
+            <div>
+              <div style={{ fontSize: "0.65rem", opacity: 0.8, fontWeight: 700, textTransform: "uppercase" }}>In Transit</div>
+              <div style={{ fontSize: "1.4rem", fontWeight: 900, lineHeight: 1 }}>{inTransit.length}</div>
+            </div>
+          </div>
+          <div style={{ flex: 1, background: "rgba(255,255,255,0.15)", borderRadius: 12, padding: "12px 14px", display: "flex", alignItems: "center", gap: 10 }}>
+            <Banknote size={18} />
+            <div>
+              <div style={{ fontSize: "0.65rem", opacity: 0.8, fontWeight: 700, textTransform: "uppercase" }}>Cash Due</div>
+              <div style={{ fontSize: "1rem", fontWeight: 900, lineHeight: 1 }}>
+                ₹{inTransit.filter(o => o.paymentMethod === "COD").reduce((s, o) => s + o.total, 0)}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Order Queue ── */}
+      <div style={{ padding: "20px 16px" }}>
+
+        {orders.length === 0 ? (
+          <div style={{ background: "#fff", borderRadius: 16, padding: "48px 24px", textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
+            <div style={{ fontSize: "3rem", marginBottom: 12 }}>☕</div>
+            <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#1e293b", marginBottom: 6 }}>Queue is empty</div>
+            <div style={{ color: "#94a3b8", fontSize: "0.85rem" }}>Waiting for new orders...</div>
+          </div>
+        ) : (
+          <>
+            {/* Preparing section */}
+            {preparing.length > 0 && (
+              <>
+                <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#92400e", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Package size={12} /> Ready to Pickup ({preparing.length})
+                </div>
+                <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)", marginBottom: 16 }}>
+                  {preparing.map((order, idx) => (
+                    <OrderRow key={order.id} order={order} isLast={idx === preparing.length - 1} onClick={() => { setSelectedOrderId(order.id); setOtpInput(""); }} />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* In transit section */}
+            {inTransit.length > 0 && (
+              <>
+                <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#1e40af", textTransform: "uppercase", letterSpacing: 1, marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+                  <Truck size={12} /> In Transit ({inTransit.length})
+                </div>
+                <div style={{ background: "#fff", borderRadius: 16, overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+                  {inTransit.map((order, idx) => (
+                    <OrderRow key={order.id} order={order} isLast={idx === inTransit.length - 1} onClick={() => { setSelectedOrderId(order.id); setOtpInput(""); }} />
+                  ))}
+                </div>
+              </>
+            )}
+          </>
         )}
       </div>
 
-      <div className="otw-container" style={{ padding: "24px 20px" }}>
+      {/* ── Order Detail Bottom Sheet ── */}
+      {selectedOrder && (
+        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end", background: "rgba(15,23,42,0.65)", backdropFilter: "blur(4px)", animation: "fade-in 0.2s ease" }}>
+          <div style={{ position: "absolute", inset: 0 }} onClick={() => setSelectedOrderId(null)} />
 
-        {/* Stats */}
-        <div style={{ display: "flex", gap: "12px", marginBottom: "24px" }}>
-          <div style={{ flex: 1, background: "#fff", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <div style={{ width: 40, height: 40, borderRadius: "10px", background: "#FEF3C7", color: "#92400E", display: "flex", alignItems: "center", justifyContent: "center" }}><Package size={20} /></div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>To Pickup</div>
-              <div style={{ fontSize: "1.3rem", fontWeight: 900 }}>{orders.filter(o => o.status === "preparing").length}</div>
-            </div>
-          </div>
-          <div style={{ flex: 1, background: "#fff", borderRadius: "12px", padding: "16px", display: "flex", alignItems: "center", gap: "12px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-            <div style={{ width: 40, height: 40, borderRadius: "10px", background: "#E0F2FE", color: "#0369A1", display: "flex", alignItems: "center", justifyContent: "center" }}><Truck size={20} /></div>
-            <div>
-              <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase" }}>In Transit</div>
-              <div style={{ fontSize: "1.3rem", fontWeight: 900 }}>{orders.filter(o => o.status === "out_for_delivery").length}</div>
-            </div>
-          </div>
-        </div>
+          <div style={{
+            background: "#f8fafc", width: "100%", maxWidth: 480, margin: "0 auto",
+            maxHeight: "93vh", borderTopLeftRadius: 24, borderTopRightRadius: 24,
+            position: "relative", zIndex: 101, display: "flex", flexDirection: "column",
+            animation: "slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)"
+          }}>
+            {/* Sheet handle */}
+            <div style={{ width: 40, height: 4, background: "#cbd5e1", borderRadius: 9999, margin: "12px auto 0" }} />
 
-        {/* Queue View */}
-        <div style={{ background: "#fff", borderRadius: "16px", overflow: "hidden", boxShadow: "0 2px 8px rgba(0,0,0,0.04)" }}>
-          <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", background: "#f8fafc", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <h2 style={{ fontSize: "1rem", fontWeight: 800, margin: 0, color: "#1e293b" }}>Order Queue</h2>
-            <span style={{ fontSize: "0.8rem", color: "#64748b", fontWeight: 600 }}>{orders.length} Active</span>
-          </div>
-
-          {orders.length === 0 ? (
-            <div style={{ padding: "40px 20px", textAlign: "center" }}>
-              <div style={{ fontSize: "2.5rem", marginBottom: "12px" }}>☕</div>
-              <h3 style={{ fontSize: "1.1rem", fontWeight: 700, marginBottom: "4px", color: "#334155" }}>Queue is empty</h3>
-              <p style={{ color: "#94a3b8", fontSize: "0.85rem", margin: 0 }}>Waiting for new orders to arrive.</p>
+            {/* Sheet Header */}
+            <div style={{
+              padding: "14px 20px 14px",
+              background: "#fff",
+              borderBottom: "1px solid #f1f5f9",
+              display: "flex", justifyContent: "space-between", alignItems: "center"
+            }}>
+              <div>
+                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#0135FB", textTransform: "uppercase", letterSpacing: 1 }}>
+                  {selectedOrder.status === "preparing" ? "📦 Pickup Task" : "🚗 Delivery Task"}
+                </div>
+                <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a" }}>
+                  #{selectedOrder.id.slice(-6).toUpperCase()}
+                </div>
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <span style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 600 }}>
+                  <Clock size={11} style={{ display: "inline", marginRight: 3 }} />
+                  {timeAgo(selectedOrder.createdAt)}
+                </span>
+                <button onClick={() => setSelectedOrderId(null)} style={{ width: 34, height: 34, borderRadius: "50%", background: "#f1f5f9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
+                  <X size={16} />
+                </button>
+              </div>
             </div>
-          ) : (
-            <div style={{ display: "flex", flexDirection: "column" }}>
-              {orders.map((order, idx) => {
-                const isTransit = order.status === "out_for_delivery";
-                return (
-                  <div
-                    key={order.id}
-                    className="queue-row"
-                    onClick={() => { setSelectedOrderId(order.id); setOtpInput(""); }}
+
+            {/* Scrollable body */}
+            <div style={{ flex: 1, overflowY: "auto", padding: "16px 16px" }}>
+
+              {/* ── PAYMENT BADGE ── */}
+              <div style={{
+                padding: "10px 16px",
+                borderRadius: 12,
+                marginBottom: 12,
+                background: selectedOrder.paymentMethod === "COD" ? "#fef3c7" : "#f0fdf4",
+                border: `1.5px solid ${selectedOrder.paymentMethod === "COD" ? "#fcd34d" : "#86efac"}`,
+                display: "flex", alignItems: "center", justifyContent: "space-between"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  {selectedOrder.paymentMethod === "COD"
+                    ? <Banknote size={18} color="#92400e" />
+                    : <CreditCard size={18} color="#166534" />}
+                  <div>
+                    <div style={{ fontWeight: 800, fontSize: "0.85rem", color: selectedOrder.paymentMethod === "COD" ? "#92400e" : "#166534" }}>
+                      {selectedOrder.paymentMethod === "COD" ? "💵 COLLECT CASH" : "✅ ALREADY PAID"}
+                    </div>
+                    <div style={{ fontSize: "0.72rem", color: selectedOrder.paymentMethod === "COD" ? "#b45309" : "#15803d", fontWeight: 600 }}>
+                      {selectedOrder.paymentMethod === "COD" ? "Collect payment on delivery" : "Online payment received"}
+                    </div>
+                  </div>
+                </div>
+                <div style={{ fontWeight: 900, fontSize: "1.3rem", color: selectedOrder.paymentMethod === "COD" ? "#92400e" : "#166534" }}>
+                  ₹{selectedOrder.total}
+                </div>
+              </div>
+
+              {/* ── ADDRESS CARD ── */}
+              <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>📍 Delivery Address</div>
+                <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a", lineHeight: 1.35, marginBottom: selectedOrder.locationNotes ? 10 : 14 }}>
+                  {selectedOrder.location}
+                </div>
+                {selectedOrder.locationNotes && (
+                  <div style={{ background: "#fef9c3", borderRadius: 10, padding: "10px 12px", fontSize: "0.85rem", color: "#854d0e", fontWeight: 700, marginBottom: 12, display: "flex", gap: 8, alignItems: "flex-start" }}>
+                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
+                    <span>{selectedOrder.locationNotes}</span>
+                  </div>
+                )}
+                <a
+                  href={getOrderMapsUrl(selectedOrder)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    width: "100%", padding: "13px 0",
+                    background: "#0135FB", color: "#fff",
+                    borderRadius: 12, fontWeight: 800, fontSize: "0.95rem",
+                    textDecoration: "none", boxShadow: "0 4px 12px rgba(1,53,251,0.3)"
+                  }}
+                >
+                  <Navigation size={16} /> Open in Google Maps
+                </a>
+              </div>
+
+              {/* ── CUSTOMER CARD ── */}
+              <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>👤 Customer</div>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                    <div style={{ width: 42, height: 42, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                      <User size={20} color="#475569" />
+                    </div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: "1rem", color: "#0f172a" }}>{selectedOrder.userName}</div>
+                      <div style={{ fontSize: "0.82rem", color: "#64748b", fontWeight: 600 }}>+91 {selectedOrder.userPhone}</div>
+                    </div>
+                  </div>
+                  <a
+                    href={`tel:+91${selectedOrder.userPhone}`}
                     style={{
-                      padding: "16px 20px", display: "flex", alignItems: "center", justifyContent: "space-between",
-                      borderBottom: idx < orders.length - 1 ? "1px solid #f1f5f9" : "none",
-                      cursor: "pointer", transition: "background 0.2s"
+                      display: "flex", alignItems: "center", gap: 6,
+                      background: "#dcfce7", color: "#15803d",
+                      padding: "10px 16px", borderRadius: 10,
+                      fontWeight: 800, fontSize: "0.85rem", textDecoration: "none",
+                      border: "1.5px solid #86efac"
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0, paddingRight: 16 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
-                        <span style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0f172a" }}>#{order.id.slice(-6).toUpperCase()}</span>
-                        <span style={{
-                          fontSize: "0.65rem", fontWeight: 800, textTransform: "uppercase", padding: "2px 6px", borderRadius: "4px",
-                          background: isTransit ? "#dbeafe" : "#fef3c7",
-                          color: isTransit ? "#1e40af" : "#b45309"
-                        }}>
-                          {isTransit ? "Transit" : "Preparing"}
-                        </span>
-                      </div>
-                      <div style={{ fontWeight: 600, fontSize: "0.85rem", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {order.userName} • {order.location}
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
-                      <div style={{ textAlign: "right" }}>
-                        <div style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.95rem" }}>₹{order.total}</div>
-                        <div style={{ fontSize: "0.7rem", color: "#64748b", fontWeight: 600 }}>{order.items.length} items</div>
-                      </div>
-                      <ChevronRight size={18} color="#94a3b8" />
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* ── Order Detail Modal ── */}
-      {selectedOrder && (
-        <div style={{ position: "fixed", inset: 0, zIndex: 100, display: "flex", flexDirection: "column", justifyContent: "flex-end", background: "rgba(15,23,42,0.6)", backdropFilter: "blur(4px)", animation: "fade-in 0.2s ease" }}>
-          
-          {/* Backdrop click to close */}
-          <div style={{ position: "absolute", inset: 0 }} onClick={() => setSelectedOrderId(null)} />
-          
-          {/* Modal Content */}
-          <div style={{ background: "#f8fafc", width: "100%", maxHeight: "90vh", borderTopLeftRadius: "24px", borderTopRightRadius: "24px", position: "relative", zIndex: 101, display: "flex", flexDirection: "column", animation: "slide-up 0.3s cubic-bezier(0.16, 1, 0.3, 1)" }}>
-            
-            {/* Modal Header */}
-            <div style={{ padding: "20px 24px", borderBottom: "1px solid #e2e8f0", background: "#fff", borderTopLeftRadius: "24px", borderTopRightRadius: "24px", display: "flex", justifyContent: "space-between", alignItems: "center", position: "sticky", top: 0, zIndex: 10 }}>
-              <div>
-                <div style={{ fontSize: "0.75rem", fontWeight: 800, color: "var(--primary)", textTransform: "uppercase", letterSpacing: "1px", marginBottom: "2px" }}>
-                  {selectedOrder.status === "preparing" ? "Pickup Task" : "Delivery Task"}
-                </div>
-                <div style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0f172a" }}>#{selectedOrder.id.slice(-6).toUpperCase()}</div>
-              </div>
-              <button onClick={() => setSelectedOrderId(null)} style={{ width: 36, height: 36, borderRadius: "50%", background: "#f1f5f9", border: "none", display: "flex", alignItems: "center", justifyContent: "center", color: "#64748b", cursor: "pointer" }}>
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Scrollable Body */}
-            <div style={{ flex: 1, overflowY: "auto", padding: "20px 24px" }}>
-              
-              {/* Customer Contact Card */}
-              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div style={{ width: 40, height: 40, borderRadius: "50%", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", color: "#475569" }}><User size={20} /></div>
-                    <div>
-                      <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a" }}>{selectedOrder.userName}</div>
-                      <div style={{ fontSize: "0.85rem", color: "#64748b", fontWeight: 600 }}>+91 {selectedOrder.userPhone}</div>
-                    </div>
-                  </div>
-                  <a href={`tel:+91${selectedOrder.userPhone}`} style={{ width: 40, height: 40, borderRadius: "50%", background: "#ecfdf5", color: "#10b981", display: "flex", alignItems: "center", justifyContent: "center", textDecoration: "none" }}>
-                    <Phone size={18} />
+                    <Phone size={15} /> Call
                   </a>
                 </div>
               </div>
 
-              {/* Location Card */}
-              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                <div style={{ display: "flex", alignItems: "flex-start", gap: "12px", marginBottom: "12px" }}>
-                  <MapPin size={20} color="var(--primary)" style={{ flexShrink: 0, marginTop: "2px" }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "4px" }}>Delivery Address</div>
-                    <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0f172a", lineHeight: 1.4 }}>{selectedOrder.location}</div>
-                    {selectedOrder.locationNotes && (
-                      <div style={{ marginTop: "8px", padding: "8px 12px", background: "#fef3c7", borderRadius: "8px", fontSize: "0.85rem", color: "#92400e", fontWeight: 600 }}>
-                        Note: {selectedOrder.locationNotes}
-                      </div>
-                    )}
-                  </div>
-                  <a href={getOrderMapsUrl(selectedOrder)} target="_blank" rel="noopener noreferrer" style={{ padding: "8px 12px", background: "#eff6ff", borderRadius: "8px", color: "#3b82f6", textDecoration: "none", fontWeight: 700, fontSize: "0.8rem", display: "flex", alignItems: "center", gap: "4px" }}>
-                    <Navigation size={14} /> Maps
-                  </a>
+              {/* ── ITEMS CARD ── */}
+              <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 12 }}>
+                  🧾 Order Items ({selectedOrder.items.length})
                 </div>
-                {getOrderMapsEmbedUrl(selectedOrder) && (
-                  <iframe title={`Map ${selectedOrder.id}`} src={getOrderMapsEmbedUrl(selectedOrder)!} width="100%" height="140" style={{ border: 0, borderRadius: "10px", display: "block" }} loading="lazy" />
-                )}
-              </div>
-
-              {/* Items Card */}
-              <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", marginBottom: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "12px" }}>Order Items ({selectedOrder.items.length})</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {selectedOrder.items.map((item, idx) => {
                     const details = item.lineDetails || buildLineDetails(item.selectedCustomizations, item.specialInstructions);
                     const unit = item.unitPrice ?? item.item.price ?? 0;
                     return (
-                      <div key={idx} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "12px", borderBottom: idx < selectedOrder.items.length - 1 ? "1px solid #f1f5f9" : "none", paddingBottom: idx < selectedOrder.items.length - 1 ? "12px" : "0" }}>
-                        <div>
-                          <span style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>{item.quantity}× {item.item.name}</span>
-                          {details && <div style={{ fontSize: "0.8rem", color: "#64748b", marginTop: "2px" }}>{details}</div>}
+                      <div key={idx} style={{
+                        borderBottom: idx < selectedOrder.items.length - 1 ? "1px solid #f1f5f9" : "none",
+                        paddingBottom: idx < selectedOrder.items.length - 1 ? 10 : 0
+                      }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                          <div style={{ fontWeight: 800, color: "#0f172a", fontSize: "0.95rem" }}>
+                            {item.quantity}× {item.item.name}
+                          </div>
+                          <div style={{ fontWeight: 800, color: "#0135FB", fontSize: "0.95rem", flexShrink: 0, marginLeft: 8 }}>
+                            ₹{unit * item.quantity}
+                          </div>
                         </div>
-                        <span style={{ fontWeight: 800, color: "var(--primary)", fontSize: "0.95rem" }}>₹{unit * item.quantity}</span>
+                        {details && (
+                          <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: 3, lineHeight: 1.4 }}>{details}</div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
-                <div style={{ borderTop: "1px dashed #cbd5e1", marginTop: "12px", paddingTop: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#64748b" }}>To Collect (Cash)</span>
-                  <span style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a" }}>₹{selectedOrder.total}</span>
+                <div style={{ borderTop: "1.5px dashed #cbd5e1", marginTop: 12, paddingTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <span style={{ fontWeight: 700, fontSize: "0.9rem", color: "#64748b" }}>
+                    {selectedOrder.paymentMethod === "COD" ? "💰 Collect" : "Total"}
+                  </span>
+                  <span style={{ fontWeight: 900, fontSize: "1.3rem", color: "#0f172a" }}>₹{selectedOrder.total}</span>
                 </div>
               </div>
 
-              {/* Chat Card (In Transit) */}
+              {/* ── CHAT (In Transit) ── */}
               {selectedOrder.status === "out_for_delivery" && (
-                <div style={{ background: "#fff", borderRadius: "16px", padding: "16px", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
-                  <div style={{ fontSize: "0.75rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", marginBottom: "12px", display: "flex", alignItems: "center", gap: "6px" }}>
-                    <MessageCircle size={14} /> Chat with Customer
+                <div style={{ background: "#fff", borderRadius: 16, padding: 16, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
+                  <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10, display: "flex", alignItems: "center", gap: 6 }}>
+                    <MessageCircle size={12} /> Message Customer
                   </div>
-                  <div style={{ background: "#f8fafc", borderRadius: "12px", padding: "12px", maxHeight: "150px", overflowY: "auto", display: "flex", flexDirection: "column", gap: "8px", marginBottom: "12px", border: "1px solid #e2e8f0" }}>
-                    {(!selectedOrder.messages || selectedOrder.messages.length === 0) ? (
-                      <div style={{ color: "#94a3b8", fontSize: "0.8rem", textAlign: "center" }}>Send a quick update to the customer</div>
-                    ) : (
-                      selectedOrder.messages.map((msg, i) => (
+                  {/* Chat history */}
+                  {selectedOrder.messages && selectedOrder.messages.length > 0 && (
+                    <div style={{ background: "#f8fafc", borderRadius: 10, padding: 10, maxHeight: 120, overflowY: "auto", display: "flex", flexDirection: "column", gap: 6, marginBottom: 10, border: "1px solid #e2e8f0" }}>
+                      {selectedOrder.messages.map((msg, i) => (
                         <div key={i} style={{
                           alignSelf: msg.sender === "delivery" ? "flex-end" : "flex-start",
-                          background: msg.sender === "delivery" ? "var(--primary)" : "#fff",
+                          background: msg.sender === "delivery" ? "#0135FB" : "#fff",
                           color: msg.sender === "delivery" ? "#fff" : "#1e293b",
-                          padding: "6px 12px", borderRadius: msg.sender === "delivery" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
-                          fontSize: "0.85rem", fontWeight: 600, maxWidth: "85%",
-                          boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
+                          padding: "6px 11px", borderRadius: msg.sender === "delivery" ? "10px 10px 2px 10px" : "10px 10px 10px 2px",
+                          fontSize: "0.82rem", fontWeight: 600, maxWidth: "85%",
+                          boxShadow: "0 1px 2px rgba(0,0,0,0.06)"
                         }}>
                           {msg.text}
                         </div>
-                      ))
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
-                    {RIDER_QUICK_MESSAGES.slice(0, 4).map(msg => (
-                      <button key={msg} onClick={() => sendRiderMessage(selectedOrder.id, msg)} disabled={sendingMsg} style={{ background: "#f1f5f9", border: "none", color: "#475569", padding: "6px 10px", borderRadius: "999px", fontSize: "0.75rem", fontWeight: 600, cursor: "pointer" }}>
+                      ))}
+                      <div ref={messagesEndRef} />
+                    </div>
+                  )}
+                  {/* Quick message buttons */}
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                    {RIDER_QUICK_MESSAGES.map(msg => (
+                      <button
+                        key={msg}
+                        className="msg-btn"
+                        onClick={() => sendRiderMessage(selectedOrder.id, msg)}
+                        disabled={sendingMsg}
+                        style={{
+                          background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#475569",
+                          padding: "7px 11px", borderRadius: 999, fontSize: "0.75rem", fontWeight: 600,
+                          cursor: "pointer", opacity: sendingMsg ? 0.6 : 1
+                        }}
+                      >
                         {msg}
                       </button>
                     ))}
@@ -366,58 +473,135 @@ export default function DeliveryDashboard() {
               )}
             </div>
 
-            {/* Modal Sticky Footer Action */}
-            <div style={{ padding: "16px 24px 32px", background: "#fff", borderTop: "1px solid #e2e8f0", borderBottomLeftRadius: "24px", borderBottomRightRadius: "24px" }}>
+            {/* ── Sticky Action Footer ── */}
+            <div style={{ padding: "14px 16px 28px", background: "#fff", borderTop: "1px solid #f1f5f9" }}>
               {selectedOrder.status === "preparing" ? (
                 <button
                   onClick={() => handleUpdateStatus(selectedOrder.id, "out_for_delivery")}
-                  style={{ width: "100%", padding: "16px", background: "var(--primary)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "1rem", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", boxShadow: "0 4px 14px rgba(0,85,255,0.3)" }}
+                  style={{
+                    width: "100%", padding: "17px 0",
+                    background: "linear-gradient(135deg, #0135FB, #0051FF)",
+                    color: "#fff", border: "none", borderRadius: 14,
+                    fontWeight: 900, fontSize: "1.05rem", cursor: "pointer",
+                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                    boxShadow: "0 6px 20px rgba(1,53,251,0.35)"
+                  }}
                 >
-                  Confirm Pickup <ArrowRight size={18} />
+                  ✅ Picked Up — Start Delivery <ArrowRight size={18} />
                 </button>
               ) : (
-                <div style={{ background: "#f0fdf4", border: "2px solid #86efac", borderRadius: "16px", padding: "20px", textAlign: "center" }}>
-                  <div style={{ fontSize: "0.9rem", color: "#166534", fontWeight: 800, marginBottom: "12px", display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                    <Lock size={16} /> Enter 4-Digit Delivery OTP
-                  </div>
-                  <div style={{ display: "flex", gap: "10px", justifyContent: "center", marginBottom: "16px" }}>
-                    {[0, 1, 2, 3].map(i => (
-                      <input
-                        key={i}
-                        type="tel"
-                        maxLength={1}
-                        value={otpInput[i] || ""}
-                        onChange={e => {
-                          const val = e.target.value.replace(/\D/g, "");
-                          const newOtp = otpInput.split("");
-                          newOtp[i] = val;
-                          setOtpInput(newOtp.join("").slice(0, 4));
-                          if (val && i < 3) {
-                            document.getElementById(`modal-otp-${i + 1}`)?.focus();
-                          }
-                        }}
-                        id={`modal-otp-${i}`}
-                        style={{ width: 56, height: 64, textAlign: "center", fontSize: "1.8rem", fontWeight: 900, border: "2px solid #4ade80", borderRadius: "12px", background: "#fff", color: "#166534", outline: "none" }}
-                        onFocus={e => e.currentTarget.style.borderColor = "#16a34a"}
-                        onBlur={e => e.currentTarget.style.borderColor = "#4ade80"}
-                      />
-                    ))}
+                <div>
+                  {/* OTP section */}
+                  <div style={{ background: "#f0fdf4", border: "2px solid #86efac", borderRadius: 16, padding: "18px 16px", marginBottom: 12 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14, justifyContent: "center" }}>
+                      <Lock size={14} color="#166534" />
+                      <span style={{ fontWeight: 800, fontSize: "0.9rem", color: "#166534" }}>Enter 4-Digit OTP from Customer</span>
+                    </div>
+                    <div style={{ display: "flex", gap: 10, justifyContent: "center", marginBottom: 4 }}>
+                      {[0, 1, 2, 3].map(i => (
+                        <input
+                          key={i}
+                          ref={el => { otpRefs.current[i] = el; }}
+                          type="tel"
+                          inputMode="numeric"
+                          maxLength={1}
+                          value={otpInput[i] || ""}
+                          className="otp-box"
+                          onChange={e => {
+                            const val = e.target.value.replace(/\D/g, "").slice(-1);
+                            const chars = otpInput.split("");
+                            chars[i] = val;
+                            const newOtp = chars.join("").slice(0, 4);
+                            setOtpInput(newOtp);
+                            if (val && i < 3) otpRefs.current[i + 1]?.focus();
+                          }}
+                          onKeyDown={e => {
+                            if (e.key === "Backspace" && !otpInput[i] && i > 0) {
+                              otpRefs.current[i - 1]?.focus();
+                            }
+                          }}
+                          style={{
+                            width: 58, height: 66, textAlign: "center",
+                            fontSize: "2rem", fontWeight: 900,
+                            border: "2px solid #4ade80", borderRadius: 14,
+                            background: "#fff", color: "#166534", outline: "none",
+                            transition: "border-color 0.15s, box-shadow 0.15s"
+                          }}
+                        />
+                      ))}
+                    </div>
                   </div>
                   <button
                     onClick={() => { if (otpInput.length === 4) handleUpdateStatus(selectedOrder.id, "delivered"); }}
                     disabled={otpInput.length !== 4}
-                    style={{ width: "100%", padding: "16px", background: otpInput.length === 4 ? "#16a34a" : "#94a3b8", color: "white", border: "none", borderRadius: "12px", fontWeight: 800, fontSize: "1rem", cursor: otpInput.length === 4 ? "pointer" : "not-allowed", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", transition: "background 0.2s" }}
+                    style={{
+                      width: "100%", padding: "17px 0",
+                      background: otpInput.length === 4 ? "linear-gradient(135deg, #16a34a, #15803d)" : "#cbd5e1",
+                      color: "white", border: "none", borderRadius: 14,
+                      fontWeight: 900, fontSize: "1.05rem",
+                      cursor: otpInput.length === 4 ? "pointer" : "not-allowed",
+                      display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
+                      transition: "background 0.2s",
+                      boxShadow: otpInput.length === 4 ? "0 6px 20px rgba(22,163,74,0.35)" : "none"
+                    }}
                   >
                     <Check size={18} /> Complete Delivery
                   </button>
                 </div>
               )}
             </div>
-            
           </div>
         </div>
       )}
+    </div>
+  );
+}
 
+function OrderRow({ order, isLast, onClick }: { order: Order; isLast: boolean; onClick: () => void }) {
+  const isTransit = order.status === "out_for_delivery";
+  return (
+    <div
+      className="queue-row"
+      onClick={onClick}
+      style={{
+        padding: "14px 16px",
+        display: "flex", alignItems: "center", justifyContent: "space-between",
+        borderBottom: isLast ? "none" : "1px solid #f1f5f9",
+      }}
+    >
+      <div style={{ flex: 1, minWidth: 0, paddingRight: 10 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 5 }}>
+          <span style={{ fontWeight: 900, fontSize: "0.95rem", color: "#0f172a" }}>
+            #{order.id.slice(-6).toUpperCase()}
+          </span>
+          <span style={{
+            fontSize: "0.6rem", fontWeight: 800, textTransform: "uppercase",
+            padding: "2px 7px", borderRadius: 5,
+            background: isTransit ? "#dbeafe" : "#fef3c7",
+            color: isTransit ? "#1e40af" : "#b45309"
+          }}>
+            {isTransit ? "🚗 Transit" : "📦 Pickup"}
+          </span>
+          {order.paymentMethod === "COD" && (
+            <span style={{ fontSize: "0.6rem", fontWeight: 800, textTransform: "uppercase", padding: "2px 7px", borderRadius: 5, background: "#fef9c3", color: "#854d0e" }}>
+              💵 COD
+            </span>
+          )}
+        </div>
+        <div style={{ fontWeight: 700, fontSize: "0.88rem", color: "#334155", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+          <MapPin size={11} style={{ display: "inline", marginRight: 3 }} />
+          {order.location}
+        </div>
+        <div style={{ fontSize: "0.78rem", color: "#94a3b8", marginTop: 2 }}>
+          {order.userName} · {order.items.length} item{order.items.length > 1 ? "s" : ""}
+        </div>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+        <div style={{ textAlign: "right" }}>
+          <div style={{ fontWeight: 900, color: "#0135FB", fontSize: "1rem" }}>₹{order.total}</div>
+        </div>
+        <ChevronRight size={18} color="#94a3b8" />
+      </div>
     </div>
   );
 }
