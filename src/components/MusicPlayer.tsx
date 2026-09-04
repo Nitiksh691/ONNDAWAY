@@ -135,7 +135,7 @@ export default function MusicPlayer() {
           position: fixed;
           left: 0;
           right: 0;
-          z-index: 9500;
+          z-index: 900;
           font-family: 'Outfit', 'Inter', system-ui, sans-serif;
           transition: bottom 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           bottom: var(--mobile-offset);
@@ -182,11 +182,11 @@ export default function MusicPlayer() {
           display: flex;
           align-items: center;
           gap: 8px;
-          padding: 8px 16px 10px;
+          padding: 6px 16px 8px;
         }
         .mp-icon-wrap {
-          width: 32px;
-          height: 32px;
+          width: 30px;
+          height: 30px;
           border-radius: 8px;
           background: rgba(0,0,0,0.2);
           display: flex;
@@ -237,8 +237,8 @@ export default function MusicPlayer() {
           color: #0135FB;
         }
         .mp-play-btn {
-          width: 34px;
-          height: 34px;
+          width: 30px;
+          height: 30px;
           border-radius: 50%;
           background: #fff;
           border: none;
@@ -361,7 +361,7 @@ export default function MusicPlayer() {
       <div 
         className="mp-bar" 
         style={{ 
-          "--mobile-offset": showCheckoutBar ? "64px" : "58px",
+          "--mobile-offset": isCartPage ? "0px" : (showCheckoutBar ? "64px" : "58px"),
           "--desktop-offset": showCheckoutBar ? "64px" : "0px"
         } as React.CSSProperties}
       >
