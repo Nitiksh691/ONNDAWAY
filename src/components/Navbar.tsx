@@ -244,6 +244,39 @@ export default function Navbar() {
           .nav-location-chevron { display: none; }
         }
 
+        /* Delivery Partner pill */
+        .nav-delivery-pill {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 7px 11px;
+          border-radius: 10px;
+          border: 1.5px solid var(--border-subtle, rgba(1,53,251,0.12));
+          background: var(--accent-2, #EFF6FF);
+          color: var(--primary, #0135FB);
+          cursor: pointer;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 0.76rem;
+          transition: all 0.2s;
+          white-space: nowrap;
+          text-decoration: none;
+        }
+        .nav-delivery-pill:hover {
+          background: var(--accent-3, #DBEAFE);
+          box-shadow: 0 2px 8px rgba(1,53,251,0.1);
+          transform: translateY(-1px);
+        }
+        @media (max-width: 480px) {
+          .nav-delivery-pill {
+            padding: 7px 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            justify-content: center;
+          }
+        }
+
         /* Cart button */
         .nav-cart-btn {
           position: relative;
@@ -453,10 +486,27 @@ export default function Navbar() {
                 Admin
               </Link>
             )}
+            <Link
+              href="/delivery"
+              className={`nav-link${pathname.startsWith("/delivery") ? " active" : ""}`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+            >
+              <Truck size={14} /> Delivery
+            </Link>
           </nav>
 
-          {/* Right: Location + Cart + Auth */}
+          {/* Right: Location + Delivery Pill + Cart + Auth */}
           <div className="nav-right">
+            {/* Delivery Partner Link */}
+            <Link
+              href="/delivery"
+              className="nav-delivery-pill"
+              title="Delivery Partner Portal"
+            >
+              <Truck size={14} />
+              <span className="desktop-only">Delivery</span>
+            </Link>
+
             {/* Location Pill */}
             <button id="location-picker-btn" onClick={() => setLocationOpen(true)} className="nav-location-pill">
               <MapPin size={13} style={{ flexShrink: 0 }} />

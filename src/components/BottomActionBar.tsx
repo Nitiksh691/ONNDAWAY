@@ -5,23 +5,72 @@ import { usePathname, useRouter } from "next/navigation";
 import { ShoppingBag, ArrowRight, Package, Plus, Minus, X, Trash2, Navigation } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { useState, useEffect, useRef } from "react";
-import { getActiveOrderId } from "@/lib/activeOrder";
+import { fetchActiveOrder, getActiveOrderId, clearActiveOrderId } from "@/lib/activeOrder";
+import type { Order } from "@/lib/types";
 
 /** Sticky bottom cart bar + slide-up mini-cart drawer */
 export default function BottomActionBar() {
-  const { cartCount, cartTotal, cart, updateQuantity, removeFromCart } = useApp();
+  const { cartCount, cartTotal, cart, updateQuantity, removeFromCart, profile } = useApp();
   const pathname = usePathname();
   const router = useRouter();
+  const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const check = () => setHasActiveOrder(!!getActiveOrderId());
+    let cancelled = false;
+    const check = async () => {
+      // If delivery partner, don't show customer tracking
+      const isDelivery = profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"));
+      if (isDelivery) {
+        setHasActiveOrder(false);
+        setActiveOrder(null);
+        return;
+      }
+
+      const active = await fetchActiveOrder();
+      if (!cancelled) {
+        if (active && active.status !== "delivered" && active.status !== "cancelled") {
+          setHasActiveOrder(true);
+          setActiveOrder(active);
+        } else {
+          setHasActiveOrder(false);
+          setActiveOrder(null);
+        }
+      }
+    };
+
     check();
     window.addEventListener("otw:active-order", check);
-    return () => window.removeEventListener("otw:active-order", check);
-  }, []);
+    window.addEventListener("storage", check);
+
+    // Real-time SSE updates: when driver marks delivered, track bar vanishes immediately
+    let es: EventSource | null = null;
+    let timer: NodeJS.Timeout;
+    const setupSSE = () => {
+      es = new EventSource("/api/orders/stream");
+      es.onmessage = (event) => {
+        try {
+          const data = JSON.parse(event.data);
+          if (data.type === "order_change") check();
+        } catch {}
+      };
+      es.onerror = () => {
+        es?.close();
+        timer = setTimeout(setupSSE, 5000);
+      };
+    };
+    setupSSE();
+
+    return () => {
+      cancelled = true;
+      es?.close();
+      clearTimeout(timer);
+      window.removeEventListener("otw:active-order", check);
+      window.removeEventListener("storage", check);
+    };
+  }, [profile?.role]);
 
   // Close drawer when navigating
   useEffect(() => { setDrawerOpen(false); }, [pathname]);
@@ -39,33 +88,41 @@ export default function BottomActionBar() {
   }, [drawerOpen]);
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) return null;
   if (pathname === "/cart") return null;
   if (pathname.startsWith("/track/")) return null;
 
-  // If cart is empty but we have an active order → show Track Order bar
-  if (cartCount === 0 && hasActiveOrder) {
-    const activeId = getActiveOrderId();
+  // If cart is empty but we have a verified active order → show Track Order bar until delivered/picked up
+  if (cartCount === 0 && hasActiveOrder && activeOrder) {
+    const statusText =
+      activeOrder.status === "out_for_delivery"
+        ? "🛵 On the way to you!"
+        : activeOrder.status === "preparing"
+        ? "🍳 Being prepared in kitchen"
+        : "📋 Order placed & confirmed";
+
     return (
-      <div className="bottom-action-bar" style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}>
+      <div className="bottom-action-bar" style={{ background: "linear-gradient(135deg, #059669, #10b981)", zIndex: 995 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: 12 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <Navigation size={16} color="#fff" />
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <Navigation size={17} color="#fff" />
             </div>
             <div>
-              <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>Your order is active</div>
-              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>🛵 Track Your Order</div>
+              <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>{statusText}</div>
+              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>🛵 Track Your Order #{activeOrder.id.slice(-6).toUpperCase()}</div>
             </div>
           </div>
           <Link
-            href={`/track/${activeId}`}
+            href={`/track/${activeOrder.id}`}
             style={{
               background: "#fff", color: "#059669",
               padding: "10px 20px", borderRadius: 10,
               fontWeight: 800, fontSize: "0.9rem",
               textDecoration: "none", display: "flex",
               alignItems: "center", gap: 6,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+              flexShrink: 0
             }}
           >
             Track <ArrowRight size={15} />
@@ -268,6 +325,27 @@ export default function BottomActionBar() {
           </button>
 
           <div className="bottom-action-bar__actions">
+            {hasActiveOrder && activeOrder && (
+              <Link
+                href={`/track/${activeOrder.id}`}
+                style={{
+                  background: "#059669",
+                  color: "#fff",
+                  padding: "9px 12px",
+                  borderRadius: 10,
+                  fontWeight: 800,
+                  fontSize: "0.82rem",
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 5,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 2px 8px rgba(5,150,105,0.3)"
+                }}
+              >
+                <Navigation size={13} /> Track
+              </Link>
+            )}
             <Link href="/orders" className="bottom-action-bar__orders">
               <Package size={15} />
               <span className="bottom-action-bar__orders-label">Orders</span>
