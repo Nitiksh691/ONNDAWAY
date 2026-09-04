@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, SkipForward, SkipBack, Square, Music2, ListMusic, X, ChevronDown } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { usePathname } from "next/navigation";
+import { getActiveOrderId } from "@/lib/activeOrder";
 
 interface Track {
   id: number;
@@ -19,7 +20,7 @@ const TRACKS: Track[] = [
 ];
 
 export default function MusicPlayer() {
-  const { cartCount } = useApp();
+  const { cartCount, profile } = useApp();
   const pathname = usePathname();
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
@@ -28,8 +29,35 @@ export default function MusicPlayer() {
   const [showList, setShowList] = useState(false);
   const [expanded, setExpanded] = useState(false); // desktop: show full card
   const [progress, setProgress] = useState(0);
+  const [hasActiveOrder, setHasActiveOrder] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+
+  const handleDismiss = () => {
+    audioRef.current?.pause();
+    setIsPlaying(false);
+    setIsDismissed(true);
+    window.dispatchEvent(new CustomEvent("otw:music-dismissed"));
+  };
+
+  useEffect(() => {
+    const check = () => {
+      const isDelivery = profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"));
+      if (isDelivery) {
+        setHasActiveOrder(false);
+        return;
+      }
+      setHasActiveOrder(!!getActiveOrderId());
+    };
+    check();
+    window.addEventListener("otw:active-order", check);
+    window.addEventListener("storage", check);
+    return () => {
+      window.removeEventListener("otw:active-order", check);
+      window.removeEventListener("storage", check);
+    };
+  }, [profile?.role]);
 
   useEffect(() => { setIsMounted(true); }, []);
 
@@ -91,14 +119,24 @@ export default function MusicPlayer() {
   };
 
   if (!isMounted) return null;
+  if (isDismissed) return null;
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
 
   const track = TRACKS[currentIdx];
   const isCartPage = pathname === "/cart";
   const showCheckoutBar = cartCount > 0 && !isCartPage;
 
-  // ── Mobile offset calculation ──
-  const mobileOffset = isCartPage ? "0px" : showCheckoutBar ? "64px" : "58px";
+  // ── Mobile & Desktop offset calculation ──
+  // The Track bar sits directly over the bottom bar/checkout page (compact 36px).
+  // Music player sits directly ABOVE the Track bar (Track bar is below the music layer).
+  const showTrackBar = hasActiveOrder && !pathname.startsWith("/track/");
+  const mobileOffset = isCartPage
+    ? (showTrackBar ? "42px" : "0px")
+    : showCheckoutBar
+    ? (showTrackBar ? "106px" : "64px")
+    : (showTrackBar ? "98px" : "58px");
+
+  const desktopBottom = showTrackBar ? "52px" : "28px";
 
   const EqBars = () => (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 14 }}>
@@ -131,13 +169,13 @@ export default function MusicPlayer() {
           .mp-desktop { display: block !important; }
         }
 
-        /* mobile bar */
+        /* mobile bar — sits above the Track bar */
         .mp-bar {
           position: fixed;
           left: 0; right: 0;
-          z-index: 900;
+          z-index: 940;
           font-family: 'Outfit','Inter',system-ui,sans-serif;
-          transition: bottom 0.3s cubic-bezier(0.4,0,0.2,1);
+          transition: bottom 0.25s cubic-bezier(0.4,0,0.2,1);
         }
         .mp-bar-inner {
           background: rgba(1,53,251,0.97);
@@ -307,7 +345,8 @@ export default function MusicPlayer() {
               <div className="mp-icon-wrap"><Music2 size={12} color="#fff" /></div>
               {isPlaying && <EqBars />}
               <span className="mp-mini-name">{track.name}</span>
-              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsCollapsed(false); }}>▲</button>
+              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsCollapsed(false); }} title="Expand">▲</button>
+              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); handleDismiss(); }} title="Turn off music" style={{ color: "rgba(255,255,255,0.7)" }}><X size={13} /></button>
             </div>
           ) : (
             <>
@@ -334,14 +373,15 @@ export default function MusicPlayer() {
                   <div className="mp-track-name">{track.name}</div>
                 </div>
                 {isPlaying && <EqBars />}
-                <button className="mp-ctrl-btn" onClick={prevTrack}><SkipBack size={14} /></button>
-                <button className="mp-play-btn" onClick={() => setIsPlaying(p => !p)}>
+                <button className="mp-ctrl-btn" onClick={prevTrack} title="Previous"><SkipBack size={14} /></button>
+                <button className="mp-play-btn" onClick={() => setIsPlaying(p => !p)} title={isPlaying ? "Pause" : "Play"}>
                   {isPlaying ? <Pause size={14} /> : <Play size={14} fill="#0135FB" />}
                 </button>
-                <button className="mp-ctrl-btn" onClick={nextTrack}><SkipForward size={14} /></button>
-                <button className="mp-ctrl-btn" onClick={stopTrack}><Square size={12} /></button>
-                <button className="mp-ctrl-btn" onClick={() => setShowList(p => !p)} style={{ color: showList ? "#22C55E" : undefined }}><ListMusic size={14} /></button>
-                <button className="mp-ctrl-btn" onClick={() => { setIsCollapsed(true); setShowList(false); }}><ChevronDown size={14} /></button>
+                <button className="mp-ctrl-btn" onClick={nextTrack} title="Next"><SkipForward size={14} /></button>
+                <button className="mp-ctrl-btn" onClick={stopTrack} title="Stop"><Square size={12} /></button>
+                <button className="mp-ctrl-btn" onClick={() => setShowList(p => !p)} style={{ color: showList ? "#22C55E" : undefined }} title="Playlist"><ListMusic size={14} /></button>
+                <button className="mp-ctrl-btn" onClick={() => { setIsCollapsed(true); setShowList(false); }} title="Minimize"><ChevronDown size={14} /></button>
+                <button className="mp-ctrl-btn" onClick={handleDismiss} title="Turn off music" style={{ color: "rgba(255,255,255,0.7)" }}><X size={14} /></button>
               </div>
             </>
           )}
@@ -349,7 +389,7 @@ export default function MusicPlayer() {
       </div>
 
       {/* ────────── DESKTOP FLOATING CIRCULAR ────────── */}
-      <div className="mp-desktop mp-fab">
+      <div className="mp-desktop mp-fab" style={{ bottom: desktopBottom }}>
         {/* Expanded card */}
         <AnimatePresence>
           {expanded && (

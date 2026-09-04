@@ -89,53 +89,121 @@ export default function BottomActionBar() {
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
   if (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) return null;
-  if (pathname === "/cart") return null;
   if (pathname.startsWith("/track/")) return null;
 
-  // If cart is empty but we have a verified active order → show Track Order bar until delivered/picked up
-  if (cartCount === 0 && hasActiveOrder && activeOrder) {
-    const statusText =
-      activeOrder.status === "out_for_delivery"
-        ? "🛵 On the way to you!"
-        : activeOrder.status === "preparing"
-        ? "🍳 Being prepared in kitchen"
-        : "📋 Order placed & confirmed";
+  const isCartPage = pathname === "/cart";
+  const hasCartItems = cartCount > 0 && !isCartPage;
+  const showTrackBar = hasActiveOrder && !!activeOrder;
 
-    return (
-      <div className="bottom-action-bar" style={{ background: "linear-gradient(135deg, #059669, #10b981)", zIndex: 995 }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: 12 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.22)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-              <Navigation size={17} color="#fff" />
-            </div>
-            <div>
-              <div style={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>{statusText}</div>
-              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>🛵 Track Your Order #{activeOrder.id.slice(-6).toUpperCase()}</div>
-            </div>
+  const statusText =
+    activeOrder?.status === "out_for_delivery"
+      ? "🛵 On the way to you!"
+      : activeOrder?.status === "preparing"
+      ? "🍳 Being prepared in kitchen"
+      : "📋 Order placed & confirmed";
+
+  const trackBarClass = isCartPage
+    ? "otw-track-bar on-cart-page"
+    : hasCartItems
+    ? "otw-track-bar has-cart-bar"
+    : "otw-track-bar has-bottom-nav";
+
+  const TrackBar = showTrackBar && activeOrder ? (
+    <div className={trackBarClass}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+          <div style={{
+            width: 24, height: 24, borderRadius: 7,
+            background: "rgba(255,255,255,0.22)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+            flexShrink: 0
+          }}>
+            <Navigation size={12} color="#fff" />
           </div>
-          <Link
-            href={`/track/${activeOrder.id}`}
-            style={{
-              background: "#fff", color: "#059669",
-              padding: "10px 20px", borderRadius: 10,
-              fontWeight: 800, fontSize: "0.9rem",
-              textDecoration: "none", display: "flex",
-              alignItems: "center", gap: 6,
-              boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+          <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+            <span style={{
+              fontSize: "0.68rem",
+              fontWeight: 800,
+              color: "#ffffff",
+              background: "rgba(0, 0, 0, 0.22)",
+              padding: "2px 7px",
+              borderRadius: 5,
+              whiteSpace: "nowrap",
               flexShrink: 0
-            }}
-          >
-            Track <ArrowRight size={15} />
-          </Link>
+            }}>
+              {statusText}
+            </span>
+            <span style={{
+              fontWeight: 700,
+              fontSize: "0.78rem",
+              color: "#fff",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}>
+              #{activeOrder.id.slice(-6).toUpperCase()}
+            </span>
+          </div>
         </div>
+        <Link
+          href={`/track/${activeOrder.id}`}
+          style={{
+            background: "#fff", color: "#059669",
+            padding: "5px 12px", borderRadius: 8,
+            fontWeight: 800, fontSize: "0.78rem",
+            textDecoration: "none", display: "flex",
+            alignItems: "center", gap: 4,
+            boxShadow: "0 2px 6px rgba(0,0,0,0.12)",
+            flexShrink: 0, whiteSpace: "nowrap"
+          }}
+        >
+          Track <ArrowRight size={12} />
+        </Link>
       </div>
+    </div>
+  ) : null;
+
+  if (!hasCartItems) {
+    // Only Track Bar is shown if active order exists
+    return (
+      <>
+        {TrackBar}
+        <style>{`
+          .otw-track-bar {
+            position: fixed;
+            left: 0;
+            right: 0;
+            z-index: 925;
+            background: linear-gradient(135deg, #059669, #10b981);
+            padding: 8px 16px;
+            box-shadow: 0 -3px 16px rgba(0,0,0,0.14);
+            border-top: 1px solid rgba(255,255,255,0.18);
+            font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+            transition: bottom 0.25s ease;
+          }
+          @media (max-width: 767px) {
+            .otw-track-bar.has-bottom-nav {
+              bottom: 58px;
+            }
+            .otw-track-bar.on-cart-page {
+              bottom: 0px;
+            }
+          }
+          @media (min-width: 768px) {
+            .otw-track-bar.has-bottom-nav,
+            .otw-track-bar.on-cart-page {
+              bottom: 0px;
+            }
+          }
+        `}</style>
+      </>
     );
   }
 
-  if (cartCount === 0) return null;
-
   return (
     <>
+      {TrackBar}
+
       {/* Backdrop */}
       {drawerOpen && (
         <div
@@ -359,6 +427,38 @@ export default function BottomActionBar() {
 
       <style>{`
         @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+        .otw-track-bar {
+          position: fixed;
+          left: 0;
+          right: 0;
+          z-index: 925;
+          background: linear-gradient(135deg, #059669, #10b981);
+          padding: 8px 16px;
+          box-shadow: 0 -3px 16px rgba(0,0,0,0.14);
+          border-top: 1px solid rgba(255,255,255,0.18);
+          font-family: 'Outfit', 'Inter', system-ui, sans-serif;
+          transition: bottom 0.25s ease;
+        }
+        @media (max-width: 767px) {
+          .otw-track-bar.has-bottom-nav {
+            bottom: 58px;
+          }
+          .otw-track-bar.has-cart-bar {
+            bottom: 64px;
+          }
+          .otw-track-bar.on-cart-page {
+            bottom: 0px;
+          }
+        }
+        @media (min-width: 768px) {
+          .otw-track-bar.has-bottom-nav,
+          .otw-track-bar.on-cart-page {
+            bottom: 0px;
+          }
+          .otw-track-bar.has-cart-bar {
+            bottom: 64px;
+          }
+        }
       `}</style>
     </>
   );

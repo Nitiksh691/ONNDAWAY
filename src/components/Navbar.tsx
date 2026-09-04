@@ -486,26 +486,30 @@ export default function Navbar() {
                 Admin
               </Link>
             )}
-            <Link
-              href="/delivery"
-              className={`nav-link${pathname.startsWith("/delivery") ? " active" : ""}`}
-              style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
-            >
-              <Truck size={14} /> Delivery
-            </Link>
+            {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
+              <Link
+                href="/delivery/dashboard"
+                className={`nav-link${pathname.startsWith("/delivery") ? " active" : ""}`}
+                style={{ display: "inline-flex", alignItems: "center", gap: 5 }}
+              >
+                <Truck size={14} /> Deliveries
+              </Link>
+            )}
           </nav>
 
-          {/* Right: Location + Delivery Pill + Cart + Auth */}
+          {/* Right: Location + Delivery Pill (for partners only) + Cart + Auth */}
           <div className="nav-right">
-            {/* Delivery Partner Link */}
-            <Link
-              href="/delivery"
-              className="nav-delivery-pill"
-              title="Delivery Partner Portal"
-            >
-              <Truck size={14} />
-              <span className="desktop-only">Delivery</span>
-            </Link>
+            {/* Delivery Partner Link — ONLY for delivery partners */}
+            {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
+              <Link
+                href="/delivery/dashboard"
+                className="nav-delivery-pill"
+                title="Delivery Partner Portal"
+              >
+                <Truck size={14} />
+                <span className="desktop-only">Deliveries</span>
+              </Link>
+            )}
 
             {/* Location Pill */}
             <button id="location-picker-btn" onClick={() => setLocationOpen(true)} className="nav-location-pill">

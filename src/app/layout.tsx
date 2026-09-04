@@ -17,6 +17,7 @@ const PwaInstallBanner = dynamic(() => import("@/components/PwaInstallBanner"));
 
 import BottomNav from "@/components/BottomNav";
 import BottomActionBar from "@/components/BottomActionBar";
+import ScrollHideBars from "@/components/ScrollHideBars";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
@@ -64,6 +65,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <BottomActionBar />
           <MusicPlayer />
           <ActiveOrderWidget />
+          <ScrollHideBars />
           <SupportFab />
           <Toaster
             position="top-right"

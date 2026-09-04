@@ -497,7 +497,9 @@ export default function GlobalSidebar() {
           Account
         </div>
         <SidebarItem href="/orders" icon={<MapPin size={17} />} label="Track Order" active={pathname.startsWith("/orders")} />
-        <SidebarItem href="/delivery" icon={<Truck size={17} />} label="Delivery Partner" active={pathname.startsWith("/delivery")} />
+        {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
+          <SidebarItem href="/delivery/dashboard" icon={<Truck size={17} />} label="Deliveries" active={pathname.startsWith("/delivery")} />
+        )}
         <SidebarItem href="/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/offers")} />
         <SidebarItem href="/support" icon={<HelpCircle size={17} />} label="Help & Support" active={pathname.startsWith("/support")} />
 
