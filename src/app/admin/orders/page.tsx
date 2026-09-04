@@ -361,13 +361,108 @@ export default function AdminOrdersPage() {
         </div>
       </div>
 
-      {/* Orders List Display */}
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+      {/* Orders Display — Grid on desktop, list on mobile */}
+      <style>{`
+        .adm-orders-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 12px;
+        }
+        @media (min-width: 768px) {
+          .adm-orders-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1200px) {
+          .adm-orders-grid { grid-template-columns: repeat(3, 1fr); }
+        }
+        .adm-order-card {
+          border-radius: 14px;
+          overflow: hidden;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+          transition: transform 0.15s, box-shadow 0.15s;
+          display: flex;
+          flex-direction: column;
+          cursor: default;
+        }
+        .adm-order-card:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+        }
+        .adm-card-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          padding: 12px 14px 10px;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .adm-card-body {
+          padding: 12px 14px;
+          flex: 1;
+          background: #fff;
+        }
+        .adm-card-footer {
+          padding: 10px 14px;
+          background: #F8FAFC;
+          border-top: 1px solid rgba(0,0,0,0.05);
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .adm-action-btn {
+          width: 100%;
+          padding: 9px 12px;
+          border-radius: 8px;
+          border: none;
+          font-weight: 800;
+          font-size: 0.82rem;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 6px;
+          transition: opacity 0.15s, transform 0.1s;
+        }
+        .adm-action-btn:hover { opacity: 0.88; transform: scale(0.99); }
+        .adm-action-btn:disabled { cursor: not-allowed; opacity: 0.5; }
+        .adm-item-chip {
+          font-size: 0.72rem;
+          font-weight: 700;
+          background: #F1F5F9;
+          color: #334155;
+          border-radius: 6px;
+          padding: 3px 8px;
+          display: inline-block;
+          margin: 2px;
+          border: 1px solid #E2E8F0;
+        }
+        .adm-partner-select {
+          width: 100%;
+          padding: 7px 10px;
+          border-radius: 7px;
+          border: 1px solid #CBD5E1;
+          background: #fff;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: #0F172A;
+          outline: none;
+        }
+        .adm-empty-state {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 60px 20px;
+          background: #FFFFFF;
+          border-radius: 14px;
+          border: 1px solid #E2E8F0;
+          color: #64748B;
+        }
+      `}</style>
+
+      <div className="adm-orders-grid">
         {visibleOrders.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "60px 20px", background: "#FFFFFF", borderRadius: "12px", border: "1px solid #E2E8F0", color: "#64748B" }}>
+          <div className="adm-empty-state">
             <Package size={48} style={{ opacity: 0.3, marginBottom: "12px" }} />
             <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>No Live Orders Found</div>
-            <p style={{ fontSize: "0.85rem", marginTop: "4px" }}>Check back shortly or adjust your search filters.</p>
+            <p style={{ fontSize: "0.85rem", marginTop: "4px" }}>Check back shortly or adjust your filters.</p>
           </div>
         ) : (
           visibleOrders.map(order => {
@@ -377,205 +472,169 @@ export default function AdminOrdersPage() {
             return (
               <div
                 key={order.id}
+                className="adm-order-card"
                 style={{
                   border: `1px solid ${selectedOrders.includes(order.id) ? "#2563EB" : statusConfig.border}`,
-                  borderRadius: "12px",
                   background: statusConfig.bg,
-                  boxShadow: selectedOrders.includes(order.id) ? "0 0 0 2px #2563EB" : "0 1px 3px rgba(0,0,0,0.05)",
-                  overflow: "hidden"
+                  outline: selectedOrders.includes(order.id) ? "2px solid #2563EB" : "none",
+                  outlineOffset: "1px",
                 }}
               >
-                {/* Order Row Header */}
-                <div
-                  onClick={() => toggleExpand(order.id)}
-                  style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", padding: "14px 18px", borderBottom: isExpanded ? `1px solid ${statusConfig.border}` : "none", flexWrap: "wrap", cursor: "pointer" }}
-                >
-                  <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
+                {/* Colored top accent bar */}
+                <div style={{ height: 4, background: statusConfig.badgeBg, flexShrink: 0 }} />
+
+                {/* Card header */}
+                <div className="adm-card-header">
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                     <button
                       onClick={(e) => { e.stopPropagation(); toggleSelect(order.id); }}
-                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#2563EB" }}
+                      style={{ background: "none", border: "none", cursor: "pointer", padding: 0, color: "#2563EB", flexShrink: 0 }}
                     >
-                      {selectedOrders.includes(order.id) ? <CheckSquare size={18} /> : <Square size={18} color="#94A3B8" />}
+                      {selectedOrders.includes(order.id) ? <CheckSquare size={17} /> : <Square size={17} color="#94A3B8" />}
                     </button>
-
-                    <button onClick={(e) => { e.stopPropagation(); toggleExpand(order.id); }} style={{ background: "none", border: "none", padding: 0, cursor: "pointer", color: "#64748B" }}>
-                      {isExpanded ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-                    </button>
-
-                    <span style={{ fontWeight: 900, fontSize: "1rem", color: "#0F172A", letterSpacing: "0.02em" }}>
+                    <span style={{ fontWeight: 900, fontSize: "0.95rem", color: "#0F172A", letterSpacing: "0.02em" }}>
                       #{order.id?.slice(-8).toUpperCase()}
                     </span>
-
-                    {/* Quick Status Dropdown */}
-                    <select
-                      value={order.status}
-                      onChange={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, e.target.value as Order["status"]); }}
-                      onClick={e => e.stopPropagation()}
-                      style={{
-                        padding: "4px 10px",
-                        borderRadius: "20px",
-                        border: `1px solid ${statusConfig.border}`,
-                        fontSize: "0.78rem",
-                        fontWeight: 800,
-                        background: statusConfig.bg,
-                        color: statusConfig.text,
-                        cursor: "pointer"
-                      }}
-                    >
-                      <option value="payment_pending">⚪ Payment Pending</option>
-                      <option value="placed">🔴 Placed</option>
-                      <option value="preparing">🟡 Preparing</option>
-                      <option value="out_for_delivery">🔵 Out for Delivery</option>
-                      <option value="delivered">🟢 Delivered</option>
-                      <option value="cancelled">❌ Cancelled</option>
-                    </select>
-
-                    {/* Payment Status Badge */}
+                    {/* Status badge */}
                     <span style={{
-                      fontSize: "0.72rem",
-                      fontWeight: 800,
-                      padding: "3px 8px",
-                      borderRadius: "6px",
-                      background: order.paymentStatus === "PAID" ? "#DCFCE7" : "#FEF9C3",
-                      color: order.paymentStatus === "PAID" ? "#166534" : "#854D0E",
-                      border: `1px solid ${order.paymentStatus === "PAID" ? "#86EFAC" : "#FDE047"}`
+                      fontSize: "0.68rem", fontWeight: 800, padding: "3px 8px",
+                      borderRadius: "20px", background: statusConfig.badgeBg,
+                      color: "#fff", flexShrink: 0,
                     }}>
-                      {order.paymentMethod === "RAZORPAY" ? "ONLINE" : "COD"} • {order.paymentStatus}
+                      {statusConfig.label}
                     </span>
-
-                    {!isExpanded && (
-                      <span style={{ fontSize: "0.82rem", color: "#64748B", display: "flex", alignItems: "center", gap: "4px" }}>
-                        <Package size={14} /> {order.items.length} items
-                      </span>
-                    )}
                   </div>
-
-                  <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
-                    <span style={{ fontSize: "0.78rem", color: "#64748B", display: "flex", alignItems: "center", gap: "4px" }}>
-                      <Clock size={13} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                    <span style={{ fontSize: "0.75rem", color: "#64748B", display: "flex", alignItems: "center", gap: 3 }}>
+                      <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
                     </span>
-                    {order.scheduledTime && (
-                      <span style={{ fontSize: "0.75rem", color: "#1D4ED8", fontWeight: 700, background: "#EFF6FF", padding: "2px 8px", borderRadius: "4px" }}>
-                        🕒 {order.scheduledTime}
-                      </span>
-                    )}
                     <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>₹{order.total}</span>
                   </div>
                 </div>
 
-                {/* Expanded Details Section */}
-                {isExpanded && (
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "16px", padding: "16px", background: "#FFFFFF", borderTop: `1px solid ${statusConfig.border}` }}>
+                {/* Card body */}
+                <div className="adm-card-body">
+                  {/* Customer info */}
+                  <div style={{ marginBottom: 10 }}>
+                    <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0F172A", marginBottom: 2 }}>{order.userName}</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                      <a href={`tel:+91${order.userPhone}`} style={{ color: "#2563EB", fontWeight: 700, textDecoration: "none", fontSize: "0.82rem", display: "flex", alignItems: "center", gap: 4 }}>
+                        <Phone size={12} /> +91 {order.userPhone}
+                      </a>
+                      <span style={{ fontSize: "0.72rem", fontWeight: 800, padding: "2px 7px", borderRadius: "5px", background: order.paymentStatus === "PAID" ? "#DCFCE7" : "#FEF9C3", color: order.paymentStatus === "PAID" ? "#166534" : "#854D0E", border: `1px solid ${order.paymentStatus === "PAID" ? "#86EFAC" : "#FDE047"}` }}>
+                        {order.paymentMethod === "RAZORPAY" ? "ONLINE" : "COD"} · {order.paymentStatus}
+                      </span>
+                    </div>
+                    <div style={{ display: "flex", alignItems: "flex-start", gap: 5, marginTop: 6, fontSize: "0.8rem", color: "#475569" }}>
+                      <MapPin size={12} color="#64748B" style={{ flexShrink: 0, marginTop: 2 }} />
+                      <span style={{ lineHeight: 1.4 }}>{order.location}</span>
+                    </div>
+                    {order.scheduledTime && (
+                      <span style={{ fontSize: "0.72rem", color: "#1D4ED8", fontWeight: 700, background: "#EFF6FF", padding: "2px 7px", borderRadius: "4px", display: "inline-block", marginTop: 5 }}>
+                        🕒 {order.scheduledTime}
+                      </span>
+                    )}
+                  </div>
 
-                    {/* Customer Info Card */}
-                    <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "14px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.05em", marginBottom: "8px" }}>CUSTOMER DETAILS</div>
-                      <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0F172A", marginBottom: "8px" }}>{order.userName}</div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "6px" }}>
-                        <Phone size={13} color="#64748B" />
-                        <a href={`tel:+91${order.userPhone}`} style={{ color: "#2563EB", fontWeight: 700, textDecoration: "none", fontSize: "0.85rem" }}>
-                          +91 {order.userPhone}
-                        </a>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "flex-start", gap: "6px", color: "#475569", fontSize: "0.82rem", lineHeight: 1.4 }}>
-                        <MapPin size={13} color="#64748B" style={{ flexShrink: 0, marginTop: 2 }} />
-                        <span>{order.location}</span>
-                      </div>
-                      {order.feedback && (
-                        <div style={{ marginTop: "10px", background: "#F0FDF4", border: "1px solid #BBF7D0", padding: "8px", borderRadius: "6px", fontSize: "0.8rem", color: "#166534" }}>
-                          <MessageCircle size={12} style={{ display: "inline", marginRight: "4px" }} />
-                          "{order.feedback}"
-                        </div>
+                  {/* Items */}
+                  <div style={{ marginBottom: 8 }}>
+                    <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.05em", textTransform: "uppercase", marginBottom: 5 }}>
+                      ITEMS ({order.items.length})
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
+                      {order.items.slice(0, 4).map((line, idx) => (
+                        <span key={idx} className="adm-item-chip">
+                          {line.quantity}× {line.item.name}
+                        </span>
+                      ))}
+                      {order.items.length > 4 && (
+                        <span className="adm-item-chip" style={{ color: "#0135FB", borderColor: "#BFDBFE", background: "#EFF6FF" }}>
+                          +{order.items.length - 4} more
+                        </span>
                       )}
                     </div>
+                  </div>
 
-                    {/* Order Items Breakdown */}
-                    <div style={{ background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: "10px", padding: "14px" }}>
-                      <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748B", letterSpacing: "0.05em", marginBottom: "8px" }}>
-                        ORDER ITEMS ({order.items.length})
-                      </div>
+                  {/* Expand for full details */}
+                  <button
+                    onClick={() => toggleExpand(order.id)}
+                    style={{ background: "none", border: "none", fontSize: "0.75rem", fontWeight: 700, color: "#64748B", cursor: "pointer", padding: "4px 0", display: "flex", alignItems: "center", gap: 4 }}
+                  >
+                    {isExpanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+                    {isExpanded ? "Hide details" : "Full details"}
+                  </button>
+
+                  {/* Expanded: order line details + feedback */}
+                  {isExpanded && (
+                    <div style={{ marginTop: 10, borderTop: `1px solid ${statusConfig.border}`, paddingTop: 10 }}>
                       {order.items.map((line, idx) => (
                         <OrderLineItem key={line.cartItemId || idx} line={line} />
                       ))}
                       {order.discount ? (
-                        <div style={{ fontSize: "0.8rem", color: "#166534", marginTop: "6px", fontWeight: 700 }}>
+                        <div style={{ fontSize: "0.8rem", color: "#166534", fontWeight: 700, marginTop: 4 }}>
                           Discount applied: −₹{order.discount}
                         </div>
                       ) : null}
-                    </div>
-
-                    {/* Action Controls */}
-                    <div style={{ display: "flex", flexDirection: "column", gap: "10px", justifyContent: "space-between" }}>
-                      <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
-                        {order.status === "placed" && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); handleStartPreparing(order.id); }}
-                            disabled={preparingId === order.id}
-                            style={{
-                              width: "100%",
-                              padding: "12px",
-                              background: "#10B981",
-                              color: "white",
-                              border: "none",
-                              borderRadius: "8px",
-                              fontWeight: 800,
-                              fontSize: "0.88rem",
-                              cursor: preparingId === order.id ? "not-allowed" : "pointer",
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              gap: "6px"
-                            }}
-                          >
-                            <CookingPot size={16} />
-                            {preparingId === order.id ? "Updating..." : "Start Preparation"}
-                          </button>
-                        )}
-
-                        {order.status !== "cancelled" && order.status !== "delivered" && (
-                          <button
-                            onClick={(e) => { e.stopPropagation(); if (confirm("Are you sure you want to cancel this order?")) handleUpdateStatus(order.id, "cancelled"); }}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              background: "transparent",
-                              color: "#DC2626",
-                              border: "1px solid #FECACA",
-                              borderRadius: "8px",
-                              fontWeight: 700,
-                              fontSize: "0.8rem",
-                              cursor: "pointer"
-                            }}
-                          >
-                            Cancel Order
-                          </button>
-                        )}
-                      </div>
-
-                      {/* Partner Assignment Box */}
-                      <div style={{ background: "#F1F5F9", padding: "10px", borderRadius: "8px", border: "1px solid #E2E8F0" }}>
-                        <div style={{ fontSize: "0.7rem", fontWeight: 800, color: "#64748B", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
-                          <Bike size={12} /> DISPATCH PARTNER
+                      {order.feedback && (
+                        <div style={{ marginTop: 8, background: "#F0FDF4", border: "1px solid #BBF7D0", padding: "8px 10px", borderRadius: "8px", fontSize: "0.8rem", color: "#166534" }}>
+                          <MessageCircle size={12} style={{ display: "inline", marginRight: 4 }} />
+                          "{order.feedback}"
                         </div>
-                        <select
-                          style={{ background: "#FFFFFF", border: "1px solid #CBD5E1", color: "#0F172A", borderRadius: "6px", padding: "8px", width: "100%", outline: "none", fontSize: "0.82rem" }}
-                          value={order.deliveryPersonId || ""}
-                          onClick={e => e.stopPropagation()}
-                          onChange={(e) => { e.stopPropagation(); handleAssignPartner(order.id, e.target.value); }}
-                        >
-                          <option value="">-- Unassigned --</option>
-                          {deliveryPersons.map(dp => <option key={dp.uid} value={dp.uid}>{dp.name}</option>)}
-                        </select>
-                        {order.deliveryPersonName && (
-                          <div style={{ fontSize: "0.75rem", color: "#166534", fontWeight: 700, marginTop: "6px", display: "flex", alignItems: "center", gap: "4px" }}>
-                            <CheckCircle2 size={12} /> Assigned to {order.deliveryPersonName}
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
+                  )}
+                </div>
 
+                {/* Card footer — actions */}
+                <div className="adm-card-footer">
+                  {/* Quick status select */}
+                  <select
+                    value={order.status}
+                    onChange={(e) => { e.stopPropagation(); handleUpdateStatus(order.id, e.target.value as Order["status"]); }}
+                    onClick={e => e.stopPropagation()}
+                    className="adm-partner-select"
+                    style={{ fontWeight: 700, background: statusConfig.bg, color: statusConfig.text, border: `1px solid ${statusConfig.border}` }}
+                  >
+                    <option value="payment_pending">⚪ Payment Pending</option>
+                    <option value="placed">🔴 Placed</option>
+                    <option value="preparing">🟡 Preparing</option>
+                    <option value="out_for_delivery">🔵 Out for Delivery</option>
+                    <option value="delivered">🟢 Delivered</option>
+                    <option value="cancelled">❌ Cancelled</option>
+                  </select>
+
+                  {order.status === "placed" && (
+                    <button
+                      className="adm-action-btn"
+                      onClick={(e) => { e.stopPropagation(); handleStartPreparing(order.id); }}
+                      disabled={preparingId === order.id}
+                      style={{ background: "#10B981", color: "white" }}
+                    >
+                      <CookingPot size={15} />
+                      {preparingId === order.id ? "Updating…" : "Start Preparation"}
+                    </button>
+                  )}
+
+                  {/* Delivery partner assignment */}
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <Bike size={13} color="#64748B" style={{ flexShrink: 0 }} />
+                    <select
+                      className="adm-partner-select"
+                      style={{ flex: 1 }}
+                      value={order.deliveryPersonId || ""}
+                      onClick={e => e.stopPropagation()}
+                      onChange={(e) => { e.stopPropagation(); handleAssignPartner(order.id, e.target.value); }}
+                    >
+                      <option value="">-- Assign Partner --</option>
+                      {deliveryPersons.map(dp => <option key={dp.uid} value={dp.uid}>{dp.name}</option>)}
+                    </select>
                   </div>
-                )}
+                  {order.deliveryPersonName && (
+                    <div style={{ fontSize: "0.72rem", color: "#166534", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                      <CheckCircle2 size={11} /> {order.deliveryPersonName}
+                    </div>
+                  )}
+                </div>
               </div>
             );
           })

@@ -458,23 +458,6 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
               </div>
             </div>
 
-            {/* ── Change Item (only within 1.5 minutes of placement) ── */}
-            {currentStepIndex >= 0 && currentStepIndex <= 1 && (Date.now() - new Date(order.createdAt).getTime() <= 90 * 1000) && (
-              <div style={{ ...cardStyle, padding: "20px", animation: "fade-up 0.65s ease", textAlign: "center" }}>
-                <p style={{ color: "#6B7280", fontSize: "0.85rem", marginBottom: "12px" }}>
-                  Need to replace an item? You can request a change within 1.5 minutes of placing your order.
-                </p>
-                <button
-                  onClick={() => {
-                    sendMessage("URGENT: I need to change an item in my order. Please call me ASAP!");
-                    toast.success("Request sent to admin! Please call the restaurant directly if needed.");
-                  }}
-                  style={{ background: "#EEF1FF", color: "#0135FB", border: "1px solid #0135FB", padding: "10px 20px", borderRadius: "8px", fontWeight: 700, fontSize: "0.9rem", cursor: "pointer", transition: "all 0.2s" }}
-                >
-                  Request Item Change
-                </button>
-              </div>
-            )}
           </>
         )}
 

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
-import { MapPin, Navigation, X, ChevronDown, Building2, Map, Plus, Clock } from "lucide-react";
+import { MapPin, X, ChevronDown, Building2, Map, Plus, Clock } from "lucide-react";
 
 const STORAGE_KEY = "otw_delivery_location";
 const HISTORY_KEY = "otw_saved_locations";
@@ -44,9 +44,6 @@ interface LocationModalProps {
 export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
   const [exactSpot, setExactSpot] = useState("");
   const [landmark, setLandmark] = useState("");
-  const [geoLoading, setGeoLoading] = useState(false);
-  const [geoError, setGeoError] = useState("");
-  const [gpsCoordinates, setGpsCoordinates] = useState<string | null>(null);
   const [view, setView] = useState<"list" | "form">("form");
   const [savedLocations, setSavedLocations] = useState<string[]>([]);
 
@@ -55,8 +52,6 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
     if (isOpen) {
       setExactSpot("");
       setLandmark("");
-      setGeoError("");
-      setGpsCoordinates(null);
 
       try {
         const historyStr = localStorage.getItem(HISTORY_KEY);
@@ -87,9 +82,6 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
     if (landmark.trim()) {
       combined += ` (Near ${landmark.trim()})`;
     }
-    if (gpsCoordinates) {
-      combined += ` [GPS attached]`;
-    }
 
     onSave(combined);
     onClose();
@@ -98,32 +90,6 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
   const handleSelectSaved = (loc: string) => {
     onSave(loc);
     onClose();
-  };
-
-  const handleGeolocate = () => {
-    if (!navigator.geolocation) {
-      setGeoError("Geolocation is not supported by your browser.");
-      return;
-    }
-    setGeoLoading(true);
-    setGeoError("");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setGpsCoordinates(`${latitude},${longitude}`);
-        setGeoLoading(false);
-      },
-      (error) => {
-        setGeoLoading(false);
-        const msgs: Record<number, string> = {
-          1: "Location access denied. Please enable it in browser settings.",
-          2: "Location unavailable. Try again.",
-          3: "Location request timed out. Please try again.",
-        };
-        setGeoError(msgs[error.code] || "Could not detect location.");
-      },
-      { enableHighAccuracy: true, timeout: 12000, maximumAge: 0 }
-    );
   };
 
   if (!isOpen) return null;
@@ -206,11 +172,6 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
                     {loc.includes("(Near ") && (
                       <div style={{ fontSize: "0.8rem", color: "#6B7280", marginTop: "4px" }}>
                         Landmark: {loc.split("(Near ")[1].split(")")[0]}
-                      </div>
-                    )}
-                    {loc.includes("[GPS attached]") && (
-                      <div style={{ fontSize: "0.75rem", color: "#16A34A", marginTop: "4px", fontWeight: 700 }}>
-                        ✓ GPS attached
                       </div>
                     )}
                   </div>
@@ -307,36 +268,6 @@ export function LocationModal({ isOpen, onClose, onSave }: LocationModalProps) {
                     onBlur={e => (e.currentTarget.style.borderColor = "#E5E7EB")}
                   />
                 </div>
-              </div>
-
-              {/* Divider */}
-              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "20px" }}>
-                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
-                <span style={{ fontSize: "0.75rem", color: "#9CA3AF", fontWeight: 700, textTransform: "uppercase" }}>Or Pin Exact Location</span>
-                <div style={{ flex: 1, height: 1, background: "#E5E7EB" }} />
-              </div>
-
-              {/* GPS Button */}
-              <div style={{ marginBottom: "24px" }}>
-                <button
-                  onClick={handleGeolocate}
-                  disabled={geoLoading || !!gpsCoordinates}
-                  style={{
-                    width: "100%", padding: "14px 18px", borderRadius: "12px",
-                    border: gpsCoordinates ? "2px solid #22C55E" : "2px dashed #0135FB",
-                    background: gpsCoordinates ? "#F0FDF4" : (geoLoading ? "#EEF1FF" : "white"),
-                    color: gpsCoordinates ? "#16A34A" : "#0135FB", fontWeight: 700, fontSize: "0.9rem",
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: "10px",
-                    cursor: (geoLoading || !!gpsCoordinates) ? "default" : "pointer",
-                    transition: "all 0.2s", fontFamily: "inherit",
-                  }}
-                >
-                  <Navigation size={18} />
-                  {gpsCoordinates ? "Location Pinned! ✓" : (geoLoading ? "Detecting location…" : "Pin Current Location (Optional)")}
-                </button>
-                {geoError && (
-                  <p style={{ color: "#EF4444", fontSize: "0.78rem", marginTop: "8px", fontWeight: 600, textAlign: "center" }}>{geoError}</p>
-                )}
               </div>
 
               {/* Save Button */}

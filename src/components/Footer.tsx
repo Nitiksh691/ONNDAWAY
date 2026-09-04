@@ -80,7 +80,7 @@ export default function Footer() {
                 display: "flex", alignItems: "center", justifyContent: "center",
                 overflow: "hidden",
               }}>
-                <img src="/logo.png.jpeg" alt="ONN DA WAY" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                <img src="/icon-512x512.png" alt="ONN DA WAY" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
               </div>
               <div>
                 <div style={{ fontWeight: 900, fontSize: "1.15rem", letterSpacing: "0.5px", lineHeight: 1.1 }}>ONN DA WAY</div>

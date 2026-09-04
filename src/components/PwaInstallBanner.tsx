@@ -84,27 +84,28 @@ export default function PwaInstallBanner() {
   return (
     <>
       <style>{`
-        @keyframes pwa-slide-up {
-          from { transform: translateY(110%); opacity: 0; }
-          to { transform: translateY(0); opacity: 1; }
-        }
         .pwa-banner {
           position: fixed;
-          bottom: 0; left: 0; right: 0;
+          top: 16px;
+          right: 16px;
           z-index: 1200;
-          animation: pwa-slide-up 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
-          padding: 0 12px env(safe-area-inset-bottom, 12px);
-          padding-bottom: max(12px, env(safe-area-inset-bottom));
+          animation: pwa-slide-down 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+          width: calc(100% - 32px);
+          max-width: 360px;
+        }
+        @keyframes pwa-slide-down {
+          from { transform: translateY(-110%); opacity: 0; }
+          to { transform: translateY(0); opacity: 1; }
         }
         .pwa-card {
           background: #fff;
-          border-radius: 20px 20px 16px 16px;
+          border-radius: 20px;
           padding: 18px 18px 16px;
-          box-shadow: 0 -2px 30px rgba(1,35,95,0.12), 0 6px 0 rgba(1,53,251,0.85);
+          box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
           display: flex;
           flex-direction: column;
           gap: 12px;
-          margin-bottom: 4px;
+          border: 1px solid rgba(0,0,0,0.05);
         }
         .pwa-header {
           display: flex;
