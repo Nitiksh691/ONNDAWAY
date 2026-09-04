@@ -2,7 +2,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { ShoppingBag, ArrowRight, Package, Plus, Minus, X, Trash2 } from "lucide-react";
+import { ShoppingBag, ArrowRight, Package, Plus, Minus, X, Trash2, Navigation } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { useState, useEffect, useRef } from "react";
 import { getActiveOrderId } from "@/lib/activeOrder";
@@ -40,6 +40,41 @@ export default function BottomActionBar() {
 
   if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
   if (pathname === "/cart") return null;
+  if (pathname.startsWith("/track/")) return null;
+
+  // If cart is empty but we have an active order → show Track Order bar
+  if (cartCount === 0 && hasActiveOrder) {
+    const activeId = getActiveOrderId();
+    return (
+      <div className="bottom-action-bar" style={{ background: "linear-gradient(135deg, #059669, #10b981)" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <div style={{ width: 32, height: 32, borderRadius: 8, background: "rgba(255,255,255,0.2)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <Navigation size={16} color="#fff" />
+            </div>
+            <div>
+              <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.8)", fontWeight: 600 }}>Your order is active</div>
+              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#fff" }}>🛵 Track Your Order</div>
+            </div>
+          </div>
+          <Link
+            href={`/track/${activeId}`}
+            style={{
+              background: "#fff", color: "#059669",
+              padding: "10px 20px", borderRadius: 10,
+              fontWeight: 800, fontSize: "0.9rem",
+              textDecoration: "none", display: "flex",
+              alignItems: "center", gap: 6,
+              boxShadow: "0 4px 12px rgba(0,0,0,0.15)"
+            }}
+          >
+            Track <ArrowRight size={15} />
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
   if (cartCount === 0) return null;
 
   return (

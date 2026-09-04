@@ -52,7 +52,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const [reviewText, setReviewText] = useState("");
   const [ratingSubmitted, setRatingSubmitted] = useState(false);
   const [sendingMsg, setSendingMsg] = useState(false);
-  const [showOtp, setShowOtp] = useState(false);
+  const [showOtp, setShowOtp] = useState(true);
   const [feedbackText, setFeedbackText] = useState("");
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
