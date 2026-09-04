@@ -17,9 +17,10 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     // 🔒 SECURITY: Verify permissions
     const isAdmin = !requireAdmin(req);
     const isOwner = userId && currentOrder.userId === userId;
-    const isDelivery = deliveryPersonId && currentOrder.deliveryPersonId === deliveryPersonId;
-    
-    // Allow assignment (deliveryPersonId update) only if admin, or if it's currently unassigned
+    const isDelivery = !!(deliveryPersonId && (
+      currentOrder.deliveryPersonId === deliveryPersonId || // assigned to this person
+      !currentOrder.deliveryPersonId                        // unassigned — self-assigning
+    ));
     const isSelfAssigning = deliveryPersonId && !currentOrder.deliveryPersonId;
 
     if (!isAdmin && !isOwner && !isDelivery && !isSelfAssigning) {
@@ -27,8 +28,9 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
     }
 
     // 🔒 SECURITY: Status allowlist — prevent spoofing
-    const ADMIN_ONLY_STATUSES = ["preparing", "out_for_delivery", "placed", "payment_pending", "cancelled"];
-    const DELIVERY_ALLOWED_STATUSES = ["delivered", "out_for_delivery"];
+    // Admin can set anything. Delivery can set out_for_delivery + delivered. Customer can only cancel.
+    const ADMIN_ONLY_STATUSES = ["preparing", "placed", "payment_pending", "cancelled"];
+    const DELIVERY_ALLOWED_STATUSES = ["out_for_delivery", "delivered"];
     const CUSTOMER_ALLOWED_STATUSES = ["cancelled"];
     const VALID_STATUSES = ["payment_pending", "placed", "preparing", "out_for_delivery", "delivered", "cancelled"];
 
@@ -37,13 +39,16 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
         return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
       }
       if (!isAdmin) {
+        // Delivery person: can set out_for_delivery or delivered
         if (isDelivery && !DELIVERY_ALLOWED_STATUSES.includes(status)) {
           return NextResponse.json({ error: "Delivery personnel cannot set this status" }, { status: 403 });
         }
+        // Customer: can only cancel
         if (isOwner && !isDelivery && !CUSTOMER_ALLOWED_STATUSES.includes(status)) {
           return NextResponse.json({ error: "Customers cannot set this status" }, { status: 403 });
         }
-        if (ADMIN_ONLY_STATUSES.includes(status) && !isDelivery) {
+        // Block non-delivery, non-admin from setting admin-only statuses
+        if (ADMIN_ONLY_STATUSES.includes(status) && !isDelivery && !isOwner) {
           return NextResponse.json({ error: "This status can only be set by admin" }, { status: 403 });
         }
       }

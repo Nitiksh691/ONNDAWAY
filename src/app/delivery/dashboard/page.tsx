@@ -103,7 +103,11 @@ export default function DeliveryDashboard() {
       const res = await fetch(`/api/orders/${orderId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus, otp: otpInput }),
+        body: JSON.stringify({
+          status: newStatus,
+          otp: otpInput,
+          deliveryPersonId: DELIVERY_ID, // identify as delivery person
+        }),
       });
       if (res.ok) {
         await fetchOrders(true);
