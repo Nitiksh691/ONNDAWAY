@@ -152,6 +152,7 @@ const _POST = async (req: NextRequest) => {
       paymentStatus: "PENDING",
       paymentInitializationStatus: "PENDING",
       scheduledTime: scheduledTime || "ASAP (~15 mins)",
+      deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
       messages: [],
     });
   } catch (error: any) {

@@ -262,11 +262,11 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
           </div>
         ) : (
           <>
-            {/* ── Delivery OTP (out_for_delivery) ── */}
-            {isOnWay && order.deliveryOtp && (
+            {/* ── Delivery OTP — show whenever order is active ── */}
+            {!isDelivered && !isCancelled && order.deliveryOtp && (
               <div style={{ background: "linear-gradient(135deg, #064e3b, #065f46)", borderRadius: "16px", padding: "24px", animation: "fade-up 0.4s ease, otp-glow 2s ease-in-out infinite", textAlign: "center" }}>
                 <div style={{ fontSize: "0.72rem", color: "#6ee7b7", letterSpacing: "2px", textTransform: "uppercase", fontWeight: 700, marginBottom: "8px" }}>
-                  🔐 Delivery OTP — Share with rider upon arrival
+                  🔐 Your Delivery OTP — Share with rider to confirm delivery
                 </div>
                 <div style={{ display: "flex", gap: "10px", justifyContent: "center", alignItems: "center", marginBottom: "12px" }}>
                   {showOtp ? (
@@ -287,7 +287,7 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
                   {showOtp ? "🙈 Hide OTP" : "👁 Reveal OTP"}
                 </button>
                 <p style={{ color: "#a7f3d0", fontSize: "0.76rem", marginTop: "10px", lineHeight: 1.5 }}>
-                  Share this 4-digit code with your rider to confirm delivery. <strong>Do not share with anyone else.</strong>
+                  Share this 4-digit code with your rider when they arrive. <strong>Do not share with anyone else.</strong>
                 </p>
               </div>
             )}
