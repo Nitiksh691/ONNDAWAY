@@ -26,6 +26,29 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       return NextResponse.json({ error: "Unauthorized to modify this order" }, { status: 403 });
     }
 
+    // 🔒 SECURITY: Status allowlist — prevent spoofing
+    const ADMIN_ONLY_STATUSES = ["preparing", "out_for_delivery", "placed", "payment_pending", "cancelled"];
+    const DELIVERY_ALLOWED_STATUSES = ["delivered", "out_for_delivery"];
+    const CUSTOMER_ALLOWED_STATUSES = ["cancelled"];
+    const VALID_STATUSES = ["payment_pending", "placed", "preparing", "out_for_delivery", "delivered", "cancelled"];
+
+    if (status) {
+      if (!VALID_STATUSES.includes(status)) {
+        return NextResponse.json({ error: "Invalid status value" }, { status: 400 });
+      }
+      if (!isAdmin) {
+        if (isDelivery && !DELIVERY_ALLOWED_STATUSES.includes(status)) {
+          return NextResponse.json({ error: "Delivery personnel cannot set this status" }, { status: 403 });
+        }
+        if (isOwner && !isDelivery && !CUSTOMER_ALLOWED_STATUSES.includes(status)) {
+          return NextResponse.json({ error: "Customers cannot set this status" }, { status: 403 });
+        }
+        if (ADMIN_ONLY_STATUSES.includes(status) && !isDelivery) {
+          return NextResponse.json({ error: "This status can only be set by admin" }, { status: 403 });
+        }
+      }
+    }
+
     if (status === "delivered") {
       if (currentOrder.deliveryOtp && currentOrder.deliveryOtp !== otp) {
         return NextResponse.json({ error: "Invalid Delivery OTP" }, { status: 400 });

@@ -62,7 +62,9 @@ const _POST = async (req: NextRequest) => {
   }
 
   const body = await req.json();
-  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, total, couponCode, discount, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, couponCode, scheduledTime } = body;
+  // NOTE: 'total' and 'discount' from the client are intentionally ignored for security.
+  // We recompute them server-side from DB prices, just like the Razorpay route.
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -101,6 +103,36 @@ const _POST = async (req: NextRequest) => {
     );
   }
 
+  // Re-compute total server-side from DB prices (never trust client-supplied total)
+  const dbItemsCOD = await import("@/models/MenuItem").then(m => m.default.find({ _id: { $in: itemIds } }).lean());
+  let serverSubtotal = 0;
+  for (const cartItem of normalizedItems) {
+    const dbItem = (dbItemsCOD as Record<string, unknown>[]).find((d: Record<string, unknown>) => (d._id as { toString(): string }).toString() === cartItem.item.id);
+    if (!dbItem) continue;
+    let unitPrice = dbItem.price as number;
+    for (const cust of cartItem.selectedCustomizations || []) {
+      for (const cat of (dbItem.customizationCategories as { name: string; options: { name: string; price: number }[] }[] || [])) {
+        const opt = cat.options.find(o => o.name === cust.option && cat.name === cust.category);
+        if (opt) { unitPrice += opt.price; break; }
+      }
+    }
+    cartItem.unitPrice = unitPrice;
+    serverSubtotal += unitPrice * cartItem.quantity;
+  }
+
+  const deliveryFee = settings?.deliveryFee || 0;
+  let finalDiscount = 0;
+  if (couponCode) {
+    const Coupon = (await import("@/models/Coupon")).default;
+    const dbCoupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
+    if (dbCoupon) {
+      finalDiscount = dbCoupon.type === "percentage"
+        ? (serverSubtotal * dbCoupon.discount) / 100
+        : dbCoupon.discount;
+    }
+  }
+  const serverTotal = Math.max(0, serverSubtotal - finalDiscount + deliveryFee);
+
   try {
     const order = await Order.create({
       idempotencyKey: idempotencyKey || undefined,
@@ -112,9 +144,9 @@ const _POST = async (req: NextRequest) => {
       locationNotes: locationNotes || "",
       latitude: latitude ?? null,
       longitude: longitude ?? null,
-      total: total || 0,
+      total: serverTotal,
       couponCode: couponCode || null,
-      discount: discount || 0,
+      discount: finalDiscount,
       status: "placed",
       paymentMethod: "COD",
       paymentStatus: "PENDING",
@@ -124,8 +156,9 @@ const _POST = async (req: NextRequest) => {
     });
 
     return NextResponse.json({ ...order.toObject(), id: order._id.toString() }, { status: 201 });
-  } catch (error: any) {
-    if (error.code === 11000 && error.keyPattern && error.keyPattern.idempotencyKey) {
+  } catch (error: unknown) {
+    const e = error as { code?: number; keyPattern?: Record<string, unknown> };
+    if (e.code === 11000 && e.keyPattern?.idempotencyKey) {
       const existingOrder = await Order.findOne({ idempotencyKey });
       if (existingOrder) {
         return NextResponse.json({ ...existingOrder.toObject(), id: existingOrder._id.toString() }, { status: 200 });
@@ -133,6 +166,7 @@ const _POST = async (req: NextRequest) => {
     }
     throw error;
   }
+
 };
 
 export const GET  = withLogger("GET /api/orders",  _GET);

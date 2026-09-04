@@ -105,9 +105,7 @@ const _POST = async (req: NextRequest) => {
     serverTotal += unitPrice * cartItem.quantity;
   }
 
-  // Delivery fee
-  const deliveryFee = settings?.deliveryFee || 0;
-  serverTotal += deliveryFee;
+  let subtotal = serverTotal;
 
   // Discount
   let finalDiscount = 0;
@@ -115,14 +113,16 @@ const _POST = async (req: NextRequest) => {
     const dbCoupon = await Coupon.findOne({ code: couponCode.toUpperCase(), active: true });
     if (dbCoupon) {
       if (dbCoupon.type === "percentage") {
-        finalDiscount = (serverTotal * dbCoupon.discount) / 100;
+        finalDiscount = (subtotal * dbCoupon.discount) / 100;
       } else {
         finalDiscount = dbCoupon.discount;
       }
     }
   }
-  
-  serverTotal = Math.max(0, serverTotal - finalDiscount);
+
+  // Delivery fee
+  const deliveryFee = settings?.deliveryFee || 0;
+  serverTotal = Math.max(0, subtotal - finalDiscount + deliveryFee);
 
   // Reject 0-value orders for Razorpay (cannot create a ₹0 payment)
   if (serverTotal <= 0) {
