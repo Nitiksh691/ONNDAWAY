@@ -3,7 +3,7 @@ import { useEffect, useRef, useCallback } from "react";
 
 interface SSEOptions {
   /** Called when SSE sends an event */
-  onMessage: (data: any) => void;
+  onMessage: (data: unknown) => void;
   /** Called when SSE fails and polling fallback starts */
   onFallback?: () => void;
   /** Called when SSE reconnects successfully */
@@ -84,7 +84,7 @@ export function useSSEWithFallback(
           onReconnect?.();
         }
         retryCountRef.current = 0; // reset backoff on successful message
-      } catch (e) {}
+      } catch { /* ignore malformed SSE data */ }
     };
 
     es.onerror = () => {

@@ -1,7 +1,7 @@
 "use client";
 import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from "react";
 import toast from "react-hot-toast";
-import { UserProfile, CartItem, MenuItem, SelectedCustomization } from "./types";
+import { UserProfile, CartItem, MenuItem, SelectedCustomization, AppSettings } from "./types";
 import { buildLineDetails, normalizeCartLine } from "./orderLine";
 import { STORAGE_KEYS, MAX_CART_TOTAL_ITEMS, MAX_ITEM_QUANTITY } from "./constants";
 
@@ -43,7 +43,7 @@ interface AppContextType {
   wishlist: string[];
   toggleWishlist: (itemId: string) => void;
   /** Global settings */
-  settings: any | null;
+  settings: AppSettings | null;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -55,7 +55,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
   const [wishlist, setWishlist] = useState<string[]>([]);
-  const [settings, setSettings] = useState<any | null>(null);
+  const [settings, setSettings] = useState<AppSettings | null>(null);
   const [showLaunchingSoon, setShowLaunchingSoon] = useState(false);
 
   // ── Global Settings Fetch ───────────────────────────────────────────────────
@@ -175,15 +175,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   // ── Cart helpers ────────────────────────────────────────────────────────────
-  const saveCart = useCallback((newCart: CartItem[]) => {
-    // Migrate legacy carts to have cartItemId
-    const migrated = newCart.map(c => ({
-      ...c,
-      cartItemId: c.cartItemId || `${c.item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`
-    }));
-    setCart(migrated);
-    localStorage.setItem(STORAGE_KEYS.cart, JSON.stringify(migrated));
-  }, []);
+  // saveCart is handled inline inside each cart mutation to avoid stale closures
 
   const addToCart = useCallback((item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => {
     // Check Launching Soon Mode first!

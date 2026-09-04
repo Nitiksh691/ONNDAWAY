@@ -36,12 +36,12 @@ const WalkInCustomerSchema = new Schema(
 
 // ── Virtuals ──────────────────────────────────────────────────────────────────
 // drinksInCycle: position in the current loyalty cycle (0-6)
-WalkInCustomerSchema.virtual("drinksInCycle").get(function (this: any) {
+WalkInCustomerSchema.virtual("drinksInCycle").get(function (this: { totalDrinks: number }) {
   return this.totalDrinks % 7;
 });
 
 // isEligibleForFree: true when customer has earned a free drink
-WalkInCustomerSchema.virtual("isEligibleForFree").get(function (this: any) {
+WalkInCustomerSchema.virtual("isEligibleForFree").get(function (this: { totalDrinks: number }) {
   return this.totalDrinks % 7 >= 6;
 });
 

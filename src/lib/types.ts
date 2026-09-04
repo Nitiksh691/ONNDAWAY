@@ -1,5 +1,28 @@
 export type UserRole = "user" | "delivery" | "admin";
 
+export interface AppSettings {
+  // Kitchen / order control
+  kitchenClosed?: boolean;
+  kitchenOpenTime?: string;
+  ordersPaused?: boolean;
+  // Maintenance mode
+  maintenanceMode?: boolean;
+  maintenancePhone?: string;
+  maintenanceMessage?: string;
+  // Delivery & payments
+  deliveryFee?: number;
+  onlinePaymentEnabled?: boolean;
+  codEnabled?: boolean;
+  // App mode
+  launchingSoonMode?: boolean;
+  // Banner
+  bannerText?: string;
+  bannerEnabled?: boolean;
+  bannerLink?: string;
+  // Allow any additional fields from DB without breaking types
+  [key: string]: string | number | boolean | null | undefined;
+}
+
 export interface UserProfile {
   uid: string;
   name: string;
