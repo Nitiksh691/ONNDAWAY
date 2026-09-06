@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Phone, Mail, MapPin, Clock, MessageCircle, ShoppingBag, Package } from "lucide-react";
+import { Phone, Mail, MessageCircle, ArrowRight, FileText, Shield, Truck, RefreshCcw } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Contact Us — ONN DA WAY",
@@ -9,189 +9,274 @@ export const metadata: Metadata = {
 
 export default function ContactUsPage() {
   return (
-    <div style={{ background: "#F5F7FF", minHeight: "100vh", paddingBottom: "60px" }}>
+    <div style={{ background: "#ffffff", minHeight: "100vh", paddingBottom: "100px" }}>
       <style>{`
-        @keyframes contact-fade-up {
-          from { opacity: 0; transform: translateY(24px); }
-          to { opacity: 1; transform: translateY(0); }
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800;900&display=swap');
+
+        .cu-wrap {
+          max-width: 640px;
+          margin: 0 auto;
+          padding: 0 20px;
         }
-        .contact-fade-up { animation: contact-fade-up 0.5s ease both; }
-        .contact-card {
-          background: #fff;
-          border-radius: 16px;
-          padding: 28px 24px;
-          box-shadow: 0 2px 16px rgba(1,53,251,0.07);
-          transition: box-shadow 0.2s, transform 0.2s;
+
+        /* Hero */
+        .cu-hero {
+          background: linear-gradient(160deg, #0A0F2E 0%, #0135FB 100%);
+          padding: 64px 24px 80px;
+          text-align: center;
+          position: relative;
+          overflow: hidden;
         }
-        .contact-card:hover {
-          box-shadow: 0 8px 32px rgba(1,53,251,0.13);
-          transform: translateY(-2px);
+        .cu-hero::after {
+          content: '';
+          position: absolute;
+          bottom: -40px; left: 0; right: 0;
+          height: 80px;
+          background: #ffffff;
+          border-radius: 50% 50% 0 0 / 100% 100% 0 0;
         }
-        .contact-method-link {
+        .cu-hero-icon {
+          width: 72px; height: 72px;
+          border-radius: 22px;
+          background: rgba(255,255,255,0.1);
+          border: 1px solid rgba(255,255,255,0.18);
+          display: flex; align-items: center; justify-content: center;
+          margin: 0 auto 24px;
+          backdrop-filter: blur(8px);
+        }
+        .cu-hero h1 {
+          font-family: 'Outfit', sans-serif;
+          font-size: clamp(2rem, 6vw, 3rem);
+          font-weight: 900;
+          color: #fff;
+          margin: 0 0 12px;
+          letter-spacing: -0.03em;
+          line-height: 1.1;
+        }
+        .cu-hero p {
+          color: rgba(255,255,255,0.7);
+          font-size: 1rem;
+          max-width: 400px;
+          margin: 0 auto;
+          line-height: 1.65;
+          font-weight: 500;
+        }
+
+        /* Contact methods */
+        .cu-methods {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+          margin-top: -20px;
+          position: relative;
+          z-index: 2;
+        }
+        .cu-method {
           display: flex;
           align-items: center;
-          gap: 14px;
-          padding: 16px 20px;
-          border-radius: 12px;
-          background: #F5F7FF;
+          gap: 18px;
+          padding: 20px 22px;
+          background: #fff;
+          border: 1.5px solid #E8ECF4;
+          border-radius: 18px;
           text-decoration: none;
-          color: #0A0F2E;
-          transition: background 0.15s, transform 0.15s;
-          border: 1.5px solid transparent;
+          color: inherit;
+          box-shadow: 0 2px 12px rgba(1, 53, 251, 0.05);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .contact-method-link:hover {
-          background: #EEF1FF;
-          border-color: rgba(1,53,251,0.2);
-          transform: translateX(4px);
-        }
-        .contact-tag {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 5px 14px;
-          border-radius: 999px;
-          background: #EEF1FF;
-          color: #0135FB;
-          font-size: 0.78rem;
-          font-weight: 700;
-          letter-spacing: 0.3px;
-        }
-        .policy-link-btn {
-          display: inline-flex;
-          align-items: center;
-          gap: 6px;
-          padding: 8px 16px;
-          border-radius: 10px;
-          background: #F5F7FF;
-          border: 1.5px solid #e5e7eb;
-          color: #0135FB;
-          text-decoration: none;
-          font-size: 0.83rem;
-          font-weight: 700;
-          transition: all 0.15s;
-        }
-        .policy-link-btn:hover {
-          background: #EEF1FF;
+        .cu-method:hover {
           border-color: #0135FB;
+          box-shadow: 0 8px 28px rgba(1, 53, 251, 0.12);
+          transform: translateY(-2px);
         }
+        .cu-method-icon {
+          width: 52px; height: 52px;
+          border-radius: 16px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .cu-method-label {
+          font-size: 0.68rem;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 3px;
+        }
+        .cu-method-val {
+          font-size: 1.05rem;
+          font-weight: 800;
+          line-height: 1.2;
+        }
+        .cu-method-sub {
+          font-size: 0.78rem;
+          color: #94A3B8;
+          margin-top: 3px;
+          font-weight: 500;
+        }
+        .cu-method-arrow {
+          margin-left: auto;
+          color: #CBD5E1;
+          transition: color 0.2s, transform 0.2s;
+        }
+        .cu-method:hover .cu-method-arrow {
+          color: #0135FB;
+          transform: translateX(3px);
+        }
+
+        /* Section heading */
+        .cu-section-label {
+          font-size: 0.7rem;
+          font-weight: 800;
+          color: #94A3B8;
+          text-transform: uppercase;
+          letter-spacing: 1.5px;
+          margin: 36px 0 14px;
+        }
+
+        /* Policy grid */
+        .cu-policy-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+        }
+        .cu-policy-btn {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          padding: 14px 16px;
+          background: #F8FAFF;
+          border: 1.5px solid #E8ECF4;
+          border-radius: 14px;
+          text-decoration: none;
+          color: #475569;
+          font-size: 0.85rem;
+          font-weight: 700;
+          transition: all 0.2s;
+        }
+        .cu-policy-btn:hover {
+          background: #EEF3FF;
+          border-color: #0135FB;
+          color: #0135FB;
+        }
+        .cu-policy-btn svg { flex-shrink: 0; }
+
+        /* CTA banner */
+        .cu-cta {
+          margin-top: 40px;
+          background: linear-gradient(135deg, #0A0F2E, #0135FB);
+          border-radius: 22px;
+          padding: 36px 28px;
+          text-align: center;
+          color: #fff;
+          position: relative;
+          overflow: hidden;
+        }
+        .cu-cta::before {
+          content: '';
+          position: absolute;
+          top: -60px; right: -60px;
+          width: 180px; height: 180px;
+          border-radius: 50%;
+          background: rgba(255,255,255,0.04);
+        }
+        .cu-cta h2 {
+          font-family: 'Outfit', sans-serif;
+          font-size: 1.6rem;
+          font-weight: 900;
+          margin: 0 0 8px;
+          letter-spacing: -0.02em;
+        }
+        .cu-cta p { opacity: 0.75; margin: 0 0 24px; font-size: 0.92rem; }
+        .cu-cta-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: #fff;
+          color: #0135FB;
+          padding: 13px 28px;
+          border-radius: 12px;
+          font-weight: 900;
+          text-decoration: none;
+          font-size: 0.95rem;
+          box-shadow: 0 4px 0 rgba(0,0,0,0.2);
+          transition: transform 0.15s, box-shadow 0.15s;
+        }
+        .cu-cta-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0,0,0,0.2); }
       `}</style>
 
       {/* Hero */}
-      <div style={{
-        background: "linear-gradient(135deg, #0135FB 0%, #2A55FF 100%)",
-        padding: "56px 24px 48px",
-        textAlign: "center",
-        position: "relative",
-        overflow: "hidden",
-      }}>
-        <div style={{ position: "absolute", inset: 0, backgroundImage: "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.06) 0%, transparent 50%), radial-gradient(circle at 80% 20%, rgba(255,255,255,0.06) 0%, transparent 50%)" }} />
-        <div className="contact-fade-up" style={{ position: "relative", zIndex: 1 }}>
-          <div style={{
-            width: 64, height: 64,
-            borderRadius: "18px",
-            background: "rgba(255,255,255,0.15)",
-            display: "flex", alignItems: "center", justifyContent: "center",
-            margin: "0 auto 20px",
-            backdropFilter: "blur(8px)",
-          }}>
-            <MessageCircle size={30} color="white" />
-          </div>
-          <h1 style={{
-            fontSize: "clamp(1.8rem, 5vw, 2.8rem)",
-            fontWeight: 900,
-            color: "#fff",
-            marginBottom: "10px",
-            letterSpacing: "-0.03em",
-            lineHeight: 1.1,
-          }}>Contact Us</h1>
-          <p style={{
-            color: "rgba(255,255,255,0.78)",
-            fontSize: "1rem",
-            maxWidth: 420,
-            margin: "0 auto",
-            lineHeight: 1.6,
-            fontWeight: 500,
-          }}>
-            We&apos;re here to help with your orders, delivery questions, payment issues and general queries.
-          </p>
+      <div className="cu-hero">
+        <div className="cu-hero-icon">
+          <MessageCircle size={32} color="white" />
         </div>
+        <h1 style={{ letterSpacing: ".65px" }}>Contact Us</h1>
+        <p>We&apos;re here to help — orders, delivery, payments, anything.</p>
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 16px" }}>
-
-        {/* Main contact methods */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 16, marginTop: "-28px", position: "relative", zIndex: 2 }} className="contact-fade-up">
-          <a href="tel:+918130939274" className="contact-card" style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "14px", background: "linear-gradient(135deg, #0135FB, #2A55FF)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 12px rgba(1,53,251,0.35)" }}>
+      <div className="cu-wrap">
+        {/* Contact Methods */}
+        <div className="cu-methods">
+          <a href="tel:+918130939274" className="cu-method">
+            <div className="cu-method-icon" style={{ background: "linear-gradient(135deg, #0135FB, #2A55FF)", boxShadow: "0 6px 16px rgba(1,53,251,0.25)" }}>
               <Phone size={22} color="white" />
             </div>
             <div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px" }}>Call Us</div>
-              <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#0135FB" }}>+91 8130939274</div>
-              <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: "2px" }}>Tap to call</div>
+              <div className="cu-method-label">Call Us</div>
+              <div className="cu-method-val" style={{ color: "#0135FB" }}>+91 81309 39274</div>
+              <div className="cu-method-sub">Tap to call directly</div>
             </div>
+            <ArrowRight size={18} className="cu-method-arrow" />
           </a>
 
-          <a href="mailto:nitikshpal@gmail.com" className="contact-card" style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "14px", background: "linear-gradient(135deg, #7C3AED, #A855F7)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 12px rgba(124,58,237,0.35)" }}>
-              <Mail size={22} color="white" />
-            </div>
-            <div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px" }}>Email Us</div>
-              <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#7C3AED" }}>nitikshpal@gmail.com</div>
-              <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: "2px" }}>We reply as soon as possible</div>
-            </div>
-          </a>
-
-          <a href="https://wa.me/918130939274" target="_blank" rel="noopener noreferrer" className="contact-card" style={{ display: "flex", alignItems: "center", gap: 16, textDecoration: "none" }}>
-            <div style={{ width: 52, height: 52, borderRadius: "14px", background: "linear-gradient(135deg, #22C55E, #16A34A)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, boxShadow: "0 4px 12px rgba(34,197,94,0.35)" }}>
+          <a href="https://wa.me/918130939274" target="_blank" rel="noopener noreferrer" className="cu-method">
+            <div className="cu-method-icon" style={{ background: "linear-gradient(135deg, #22C55E, #16A34A)", boxShadow: "0 6px 16px rgba(34,197,94,0.25)" }}>
               <MessageCircle size={22} color="white" />
             </div>
             <div>
-              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "#6B7280", textTransform: "uppercase", letterSpacing: "0.8px", marginBottom: "4px" }}>WhatsApp</div>
-              <div style={{ fontWeight: 800, fontSize: "1.05rem", color: "#22C55E" }}>+91 8130939274</div>
-              <div style={{ fontSize: "0.78rem", color: "#9ca3af", marginTop: "2px" }}>Chat with us</div>
+              <div className="cu-method-label">WhatsApp</div>
+              <div className="cu-method-val" style={{ color: "#16A34A" }}>+91 81309 39274</div>
+              <div className="cu-method-sub">Fastest response · Usually within minutes</div>
             </div>
+            <ArrowRight size={18} className="cu-method-arrow" />
+          </a>
+
+          <a href="mailto:nitikshpal@gmail.com" className="cu-method">
+            <div className="cu-method-icon" style={{ background: "linear-gradient(135deg, #7C3AED, #9333EA)", boxShadow: "0 6px 16px rgba(124,58,237,0.25)" }}>
+              <Mail size={22} color="white" />
+            </div>
+            <div>
+              <div className="cu-method-label">Email Us</div>
+              <div className="cu-method-val" style={{ color: "#7C3AED" }}>nitikshpal@gmail.com</div>
+              <div className="cu-method-sub">We reply within a few hours</div>
+            </div>
+            <ArrowRight size={18} className="cu-method-arrow" />
           </a>
         </div>
 
-        {/* Policy Links */}
-        <div className="contact-card" style={{ marginTop: 20, animationDelay: "0.25s" }}>
-          <p style={{ fontSize: "0.72rem", fontWeight: 800, color: "#2A3060", textTransform: "uppercase", letterSpacing: "1px", marginBottom: 16 }}>Helpful Policies</p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {[
-              { label: "Terms & Conditions", href: "/terms-and-conditions" },
-              { label: "Privacy Policy", href: "/privacy-policy" },
-              { label: "Delivery Policy", href: "/delivery-policy" },
-              { label: "Cancellation & Refund", href: "/cancellation-and-refund" },
-            ].map(link => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="policy-link-btn"
-              >
-                {link.label}
-              </Link>
-            ))}
-          </div>
+        {/* Policies */}
+        <div className="cu-section-label">Helpful Policies</div>
+        <div className="cu-policy-grid">
+          {[
+            { label: "Terms & Conditions", href: "/terms-and-conditions", icon: <FileText size={16} color="#0135FB" /> },
+            { label: "Privacy Policy", href: "/privacy-policy", icon: <Shield size={16} color="#0135FB" /> },
+            { label: "Delivery Policy", href: "/delivery-policy", icon: <Truck size={16} color="#0135FB" /> },
+            { label: "Cancellation & Refund", href: "/cancellation-and-refund", icon: <RefreshCcw size={16} color="#0135FB" /> },
+          ].map(link => (
+            <Link key={link.href} href={link.href} className="cu-policy-btn">
+              {link.icon} {link.label}
+            </Link>
+          ))}
         </div>
 
         {/* CTA */}
-        <div style={{ textAlign: "center", marginTop: 36, padding: "32px 24px", background: "linear-gradient(135deg, #0135FB 0%, #2A55FF 100%)", borderRadius: 20, color: "#fff" }}>
-          <h2 style={{ fontSize: "1.4rem", fontWeight: 900, marginBottom: 8, letterSpacing: "-0.02em" }}>Ready to order?</h2>
-          <p style={{ opacity: 0.8, marginBottom: 20, fontSize: "0.92rem" }}>Fresh beverages and meals delivered to your campus spot.</p>
-          <Link href="/" style={{
-            display: "inline-flex", alignItems: "center", gap: 8,
-            background: "#fff", color: "#0135FB",
-            padding: "13px 28px", borderRadius: "12px",
-            fontWeight: 900, textDecoration: "none",
-            fontSize: "0.95rem", letterSpacing: "0.2px",
-            boxShadow: "0 4px 0 rgba(0,0,0,0.15)",
-          }}>
-            Browse Menu
+        <div className="cu-cta">
+          <h2 style={{ color: "white" }}>Ready to order?</h2>
+          <p style={{ color: "white" }}>Fresh beverages and meals delivered to your campus spot.</p>
+          <Link href="/" className="cu-cta-btn">
+            Browse Menu <ArrowRight size={16} />
           </Link>
         </div>
-
       </div>
     </div>
   );

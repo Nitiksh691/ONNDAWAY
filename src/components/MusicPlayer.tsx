@@ -15,8 +15,9 @@ interface Track {
 }
 
 const TRACKS: Track[] = [
-  { id: 1, name: "Chill Vibes", artist: "ONN DA WAY", url: "/music/track1.mp3" },
-  { id: 2, name: "Good Mood", artist: "ONN DA WAY", url: "/music/track2.mp3" },
+  { id: 1, name: "Rakh Lo Tum Chupa Ke", artist: "Lilu-G & Arpit Bala", url: "/music/track1.mp3" },
+  { id: 2, name: "Toosie Slide", artist: "Drake", url: "/music/track2.mp3" },
+  { id: 3, name: "Hypnotic", artist: "Deep Dhaliwal x Anker Deol", url: "/music/track3.mp3" }
 ];
 
 export default function MusicPlayer() {
@@ -66,12 +67,12 @@ export default function MusicPlayer() {
     const tryPlay = () => {
       audioRef.current?.play()
         .then(() => setIsPlaying(true))
-        .catch(() => {});
+        .catch(() => { });
     };
     const t = setTimeout(tryPlay, 600);
     const onInteraction = () => {
       if (!isPlaying && audioRef.current) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
       }
       document.removeEventListener("click", onInteraction);
       document.removeEventListener("touchstart", onInteraction);
@@ -133,8 +134,8 @@ export default function MusicPlayer() {
   const mobileOffset = isCartPage
     ? (showTrackBar ? "42px" : "0px")
     : showCheckoutBar
-    ? (showTrackBar ? "106px" : "64px")
-    : (showTrackBar ? "98px" : "58px");
+      ? (showTrackBar ? "106px" : "64px")
+      : (showTrackBar ? "90px" : "50px");
 
   const desktopBottom = showTrackBar ? "52px" : "28px";
 
@@ -178,7 +179,7 @@ export default function MusicPlayer() {
           transition: bottom 0.25s cubic-bezier(0.4,0,0.2,1);
         }
         .mp-bar-inner {
-          background: rgba(1,53,251,0.97);
+          background: rgba(1, 53, 251, 0.97);
           backdrop-filter: blur(20px);
           border-top: 1px solid rgba(255,255,255,0.08);
           box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
@@ -191,7 +192,7 @@ export default function MusicPlayer() {
           transition: width 0.5s linear; pointer-events: none;
         }
         .mp-controls-row {
-          display: flex; align-items: center; gap: 8px; padding: 6px 14px 8px;
+          display: flex; align-items: center; gap: 8px; padding: 4px 14px 6px;
         }
         .mp-icon-wrap {
           width: 28px; height: 28px; border-radius: 7px;
@@ -216,7 +217,7 @@ export default function MusicPlayer() {
         }
         .mp-play-btn:hover { transform: scale(1.1); }
         .mp-mini-strip {
-          display: flex; align-items: center; gap: 8px; padding: 5px 14px; cursor: pointer;
+          display: flex; align-items: center; gap: 8px; padding: 4px 14px; cursor: pointer; height: 36px;
         }
         .mp-mini-name {
           font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.8);
@@ -231,14 +232,14 @@ export default function MusicPlayer() {
           border-bottom: 1px solid rgba(255,255,255,0.04);
         }
         .mp-song-item:hover { background: rgba(255,255,255,0.07); }
-        .mp-song-item.active { background: rgba(1,53,251,0.15); }
+        .mp-song-item.active { background: rgba(255,255,255,0.12); }
         .mp-song-num {
           width: 18px; height: 18px; border-radius: 50%;
           background: rgba(255,255,255,0.08); font-size: 0.58rem; font-weight: 800;
           display: flex; align-items: center; justify-content: center;
           color: rgba(255,255,255,0.4); flex-shrink: 0;
         }
-        .mp-song-item.active .mp-song-num { background: #0135FB; color: #fff; }
+        .mp-song-item.active .mp-song-num { background: rgba(255,255,255,0.2); color: #fff; }
 
         /* ──────────── DESKTOP: floating circular widget ──────────── */
         .mp-fab {

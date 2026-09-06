@@ -45,7 +45,7 @@ export default function BottomNav() {
           display: flex;
           align-items: stretch;
           justify-content: space-around;
-          height: 58px;
+          height: 50px;
           padding-bottom: env(safe-area-inset-bottom);
         }
 

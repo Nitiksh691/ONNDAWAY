@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import toast from "react-hot-toast";
-import { Save, AlertTriangle, Info, Clock, Phone } from "lucide-react";
+import { Save, AlertTriangle, Info, Clock, Phone, MapPin } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
 export default function AdminSettingsPage() {
@@ -15,6 +15,10 @@ export default function AdminSettingsPage() {
   const [launchingSoonMode, setLaunchingSoonMode] = useState(false);
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState<boolean>(true);
   const [codEnabled, setCodEnabled] = useState<boolean>(false);
+  const [geoRestrictionEnabled, setGeoRestrictionEnabled] = useState<boolean>(false);
+  const [geoLat, setGeoLat] = useState<string>("28.6139"); // default: New Delhi
+  const [geoLng, setGeoLng] = useState<string>("77.2090");
+  const [geoRadiusKm, setGeoRadiusKm] = useState<string>("1.0");
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -40,6 +44,10 @@ export default function AdminSettingsPage() {
           if (data.launchingSoonMode !== undefined) setLaunchingSoonMode(data.launchingSoonMode);
           if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
           if (data.codEnabled !== undefined) setCodEnabled(data.codEnabled);
+          if (data.geoRestrictionEnabled !== undefined) setGeoRestrictionEnabled(data.geoRestrictionEnabled);
+          if (data.geoLat !== undefined) setGeoLat(data.geoLat);
+          if (data.geoLng !== undefined) setGeoLng(data.geoLng);
+          if (data.geoRadiusKm !== undefined) setGeoRadiusKm(data.geoRadiusKm);
         }
         setLoading(false);
       })
@@ -61,6 +69,10 @@ export default function AdminSettingsPage() {
       launchingSoonMode,
       onlinePaymentEnabled,
       codEnabled,
+      geoRestrictionEnabled,
+      geoLat,
+      geoLng,
+      geoRadiusKm,
     };
     
     // Only show confirmation if enabling disruptive modes
@@ -249,6 +261,49 @@ export default function AdminSettingsPage() {
             </label>
           </div>
           
+        </div>
+
+        {/* Geolocation Restriction */}
+        <div className="otw-card" style={{ padding: "32px" }}>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
+            <MapPin size={20} color="#0135FB" /> Geo-Restriction
+          </h3>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: geoRestrictionEnabled ? "#EFF6FF" : "#F8FAFC", borderRadius: "12px", border: geoRestrictionEnabled ? "1px solid #93C5FD" : "1px solid #E2E8F0", marginBottom: "20px" }}>
+            <div>
+              <strong style={{ display: "block", color: geoRestrictionEnabled ? "#1D4ED8" : "var(--text-dark)" }}>Campus-Only Orders</strong>
+              <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Only allow orders from within {geoRadiusKm}km of your campus.</span>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ position: "relative" }}>
+                <input type="checkbox" checked={geoRestrictionEnabled} onChange={e => setGeoRestrictionEnabled(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                <div style={{ width: 44, height: 24, background: geoRestrictionEnabled ? "#3B82F6" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                <div style={{ position: "absolute", left: geoRestrictionEnabled ? 22 : 2, top: 2, width: 20, height: 20, background: "white", borderRadius: "50%", transition: "0.3s" }}></div>
+              </div>
+            </label>
+          </div>
+          {geoRestrictionEnabled && (
+            <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div style={{ padding: "12px 16px", background: "#FFF7ED", border: "1px solid #FED7AA", borderRadius: "10px", fontSize: "0.82rem", color: "#9A3412" }}>
+                ⚠️ Users more than {geoRadiusKm}km away will be blocked from placing orders. Make sure to set the exact coordinates of your college.
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>College Latitude</label>
+                  <input type="number" step="any" className="otw-input" style={{ padding: "10px 12px" }} value={geoLat} onChange={e => setGeoLat(e.target.value)} placeholder="e.g. 28.6139" />
+                </div>
+                <div>
+                  <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>College Longitude</label>
+                  <input type="number" step="any" className="otw-input" style={{ padding: "10px 12px" }} value={geoLng} onChange={e => setGeoLng(e.target.value)} placeholder="e.g. 77.2090" />
+                </div>
+              </div>
+              <div>
+                <label style={{ display: "block", fontSize: "0.8rem", fontWeight: 700, marginBottom: "4px" }}>Radius (km)</label>
+                <input type="number" step="0.1" min="0.1" max="10" className="otw-input" style={{ padding: "10px 12px", maxWidth: "120px" }} value={geoRadiusKm} onChange={e => setGeoRadiusKm(e.target.value)} />
+                <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", marginTop: "6px" }}>Recommended: 1.0 km for strict campus-only, 2.0 km to include nearby PGs.</p>
+              </div>
+              <a href="https://maps.google.com" target="_blank" rel="noreferrer" style={{ fontSize: "0.82rem", color: "#0135FB", fontWeight: 600, textDecoration: "none" }}>📍 Find your college coordinates on Google Maps →</a>
+            </div>
+          )}
         </div>
       </div>
 

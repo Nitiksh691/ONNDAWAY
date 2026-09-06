@@ -8,11 +8,9 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 const STORAGE_KEY = "otw_pwa_dismissed";
-// Only check within the current session — sessionStorage clears when the tab/browser closes
-// So if user dismissed it, it won't show again THIS visit, but WILL show next time they open the site
+// Track visit count — require 5 visits minimum before showing
 const VISITS_KEY = "otw_pwa_visits";
-// Still require 3 visits minimum before showing (tracked in localStorage across sessions)
-const MIN_VISITS = 3;
+const MIN_VISITS = 5;
 
 export default function PwaInstallBanner() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -26,11 +24,14 @@ export default function PwaInstallBanner() {
     // Don't show if already installed as a PWA
     if (window.matchMedia("(display-mode: standalone)").matches) return;
 
-    // Don't show if already dismissed THIS session (sessionStorage clears on tab close)
-    const dismissedThisSession = sessionStorage.getItem(STORAGE_KEY);
-    if (dismissedThisSession) return;
+    // Check if dismissed in the last 7 days
+    const dismissedAt = localStorage.getItem(STORAGE_KEY);
+    if (dismissedAt) {
+      const timeSinceDismissed = Date.now() - parseInt(dismissedAt);
+      if (timeSinceDismissed < 7 * 24 * 60 * 60 * 1000) return;
+    }
 
-    // Track visit count — only show to returning users who've visited 3+ times
+    // Track visit count
     const visits = parseInt(localStorage.getItem(VISITS_KEY) || "0") + 1;
     localStorage.setItem(VISITS_KEY, visits.toString());
     if (visits < MIN_VISITS) return;
@@ -43,17 +44,17 @@ export default function PwaInstallBanner() {
 
     if (isIosSafari) {
       setIsIos(true);
-      // Show after 8s on iOS — user has spent time on the site
-      setTimeout(() => setShow(true), 8000);
+      // Show after 30s on iOS
+      setTimeout(() => setShow(true), 30000);
       return;
     }
 
-    // Android/Chrome: capture the deferred install prompt
+    // Android/Chrome
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
-      // Show after 8s delay
-      setTimeout(() => setShow(true), 8000);
+      // Show after 30s delay
+      setTimeout(() => setShow(true), 30000);
     };
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
@@ -66,7 +67,6 @@ export default function PwaInstallBanner() {
     setShow(false);
     setDeferredPrompt(null);
     if (outcome === "accepted") {
-      // Reset visit counter so it never shows again
       localStorage.removeItem(VISITS_KEY);
       localStorage.removeItem(STORAGE_KEY);
     }
@@ -74,9 +74,8 @@ export default function PwaInstallBanner() {
 
   const handleDismiss = () => {
     setShow(false);
-    // Use sessionStorage — will clear when tab/browser is closed
-    // So next time they open the site fresh, the banner can show again
-    sessionStorage.setItem(STORAGE_KEY, "1");
+    // Dismiss for 7 days
+    localStorage.setItem(STORAGE_KEY, Date.now().toString());
   };
 
   if (!show) return null;
@@ -91,7 +90,7 @@ export default function PwaInstallBanner() {
           z-index: 1200;
           animation: pwa-slide-down 0.45s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
           width: calc(100% - 32px);
-          max-width: 360px;
+          max-width: 320px;
         }
         @keyframes pwa-slide-down {
           from { transform: translateY(-110%); opacity: 0; }
@@ -99,8 +98,8 @@ export default function PwaInstallBanner() {
         }
         .pwa-card {
           background: #fff;
-          border-radius: 20px;
-          padding: 18px 18px 16px;
+          border-radius: 18px;
+          padding: 16px 16px 14px;
           box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
           display: flex;
           flex-direction: column;
@@ -113,15 +112,15 @@ export default function PwaInstallBanner() {
           gap: 12px;
         }
         .pwa-icon {
-          width: 50px; height: 50px;
-          border-radius: 12px;
+          width: 44px; height: 44px;
+          border-radius: 10px;
           overflow: hidden;
           flex-shrink: 0;
           box-shadow: 0 3px 10px rgba(1,53,251,0.18);
         }
         .pwa-icon img { width: 100%; height: 100%; object-fit: cover; display: block; }
         .pwa-text { flex: 1; min-width: 0; }
-        .pwa-title { font-size: 0.95rem; font-weight: 900; color: #0A0F2E; line-height: 1.2; }
+        .pwa-title { font-size: 0.9rem; font-weight: 900; color: #0A0F2E; line-height: 1.2; }
         .pwa-sub { font-size: 0.75rem; color: #64748B; margin-top: 2px; }
         .pwa-close {
           background: none; border: none; cursor: pointer; padding: 4px;

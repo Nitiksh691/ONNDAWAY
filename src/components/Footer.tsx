@@ -102,7 +102,7 @@ export default function Footer() {
             {[
               { label: "Menu", href: "/menu" },
               { label: "My Orders", href: "/orders" },
-              { label: "About Us", href: "/about" },
+              // { label: "About Us", href: "/about" },
               { label: "Contact Us", href: "/contact-us" },
               { label: "Become a Partner", href: "/delivery/login" },
             ].map(l => (

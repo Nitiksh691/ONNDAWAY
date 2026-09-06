@@ -2,7 +2,7 @@
 @import "tailwindcss";
 
 :root {
-  --bottom-bar-height: 58px;
+  --bottom-bar-height: 50px;
   --nav-height: 68px;
   --sidebar-width: 260px;
 
@@ -933,7 +933,7 @@ body.bars-hidden .mp-desktop.mp-fab {
 .otw-track-bar,
 .mp-bar,
 .mp-desktop.mp-fab {
-  transition: transform 0.32s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease, bottom 0.25s ease !important;
+  transition: transform 0.45s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.35s ease, bottom 0.35s ease !important;
 }
 
 /* ── Bottom checkout bar ── */

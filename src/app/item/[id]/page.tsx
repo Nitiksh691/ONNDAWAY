@@ -22,10 +22,11 @@ export default function ItemPage() {
   const [selectedSugar, setSelectedSugar] = useState<string>("Sweet");
   const [selectedStrength, setSelectedStrength] = useState<string>("Regular");
 
-  const { data: menu = [], isLoading } = useSWR<MenuItem[]>("/api/menu", fetcher, {
+  const { data: rawMenu, isLoading } = useSWR<MenuItem[]>("/api/menu", fetcher, {
     revalidateOnFocus: false,
     dedupingInterval: 60000,
   });
+  const menu = Array.isArray(rawMenu) ? rawMenu : [];
 
   const item = useMemo(() => menu.find(m => m.id === id), [menu, id]);
 
@@ -202,12 +203,12 @@ export default function ItemPage() {
 
         /* --- RIGHT COLUMN --- */
         .card-box {
-          border: 1.5px solid #F3F4F6;
+          border: 1.5px solid #E2E8F0;
           border-radius: 16px;
-          padding: 28px;
+          padding: 20px;
           background: #fff;
-          margin-bottom: 20px;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.015);
+          margin-bottom: 16px;
+          box-shadow: 0 1px 4px rgba(0,0,0,0.04);
         }
         
         /* Product Header */
@@ -222,15 +223,20 @@ export default function ItemPage() {
         }
 
         /* Pricing */
+        .price-wrap { margin-bottom: 20px; }
+        /* Row: MRP on left crossed, our price on right */
         .price-row {
-          display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+          display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; margin-bottom: 6px;
         }
-        .green-price {
-          background: #22C55E; color: #fff; padding: 0px 6px; border-radius: 10px;
-          font-size: 1.8rem; font-weight: 900; letter-spacing: -0.5px;
+        .price-mrp-left { display: flex; flex-direction: column; gap: 2px; }
+        .price-mrp-label { font-size: 0.78rem; color: #94A3B8; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+        .price-mrp-val { font-size: 1rem; color: #94A3B8; font-weight: 500; text-decoration: line-through; }
+        .price-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+        .current-price {
+          font-size: 2.2rem; font-weight: 900; color: #0A0F2E; letter-spacing: -1px; line-height: 1;
         }
-        .mrp-block { font-size: 0.9rem; color: #6B7280; line-height: 1.5; }
-        .discount-text { color: #22C55E; font-weight: 800; }
+        .savings-badge { background: #DCFCE7; color: #16A34A; padding: 3px 10px; border-radius: 6px; font-size: 0.78rem; font-weight: 800; }
+        .tax-incl { font-size: 0.8rem; color: #94A3B8; font-weight: 500; }
 
         /* Customizations */
         .custom-group { margin-bottom: 24px; }
@@ -242,25 +248,25 @@ export default function ItemPage() {
         }
         .pill-grid { display: flex; flex-wrap: wrap; gap: 8px; }
         .custom-pill {
-          padding: 8px 14px; border: 1.5px solid #E5E7EB; border-radius: 99px;
-          font-size: 0.8rem; font-weight: 600; color: #4B5563; background: #fff;
-          cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 6px;
+          padding: 10px 16px; border: 1.5px solid #E2E8F0; border-radius: 12px;
+          font-size: 0.88rem; font-weight: 600; color: #475569; background: #fff;
+          cursor: pointer; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; gap: 8px;
         }
-        .custom-pill.active { border-color: #0135FB; background: #EEF3FF; color: #0135FB; }
-        .custom-pill:hover:not(.active) { border-color: #D1D5DB; background: #F9FAFB; }
+        .custom-pill.active { border-color: #0135FB; background: #EEF1FF; color: #0135FB; box-shadow: 0 4px 12px rgba(1, 53, 251, 0.1); }
+        .custom-pill:hover:not(.active) { border-color: #CBD5E1; background: #F8FAFC; transform: translateY(-1px); }
 
         /* Highlights */
         .highlights-title {
           font-family: 'Outfit', sans-serif;
-          font-size: 1.3rem; font-weight: 900; color: #0A0F2E; margin-bottom: 16px;
+          font-size: 1.4rem; font-weight: 900; color: #0A0F2E; margin-bottom: 20px; letter-spacing: -0.01em;
         }
         .highlight-row {
-          display: flex; padding: 14px 0;
+          display: flex; padding: 16px 0;
           border-bottom: 1px solid #F1F5F9;
         }
         .highlight-row:last-child { border-bottom: none; padding-bottom: 0; }
-        .highlight-label { width: 45%; color: #64748B; font-weight: 500; font-size: 0.9rem; }
-        .highlight-value { width: 55%; color: #0F172A; font-weight: 700; font-size: 0.9rem; text-transform: capitalize; }
+        .highlight-label { width: 45%; color: #64748B; font-weight: 500; font-size: 0.95rem; }
+        .highlight-value { width: 55%; color: #0F172A; font-weight: 700; font-size: 0.95rem; text-transform: capitalize; }
 
         /* Related Items */
         .related-section { padding-top: 48px; }
@@ -289,9 +295,9 @@ export default function ItemPage() {
           
           .main-image-box { aspect-ratio: 1/1; height: auto; }
           
-          .card-box { padding: 20px; border-radius: 16px; margin-bottom: 16px; }
-          .product-title { font-size: 1.5rem; colo }
-          .green-price { font-size: 1.5rem; }
+          .card-box { padding: 16px; border-radius: 14px; margin-bottom: 12px; }
+          .product-title { font-size: 1.6rem; }
+          .current-price { font-size: 1.9rem; }
           
           .mobile-sticky-bar {
             display: flex; position: fixed; bottom: 0; left: 0; right: 0;
@@ -350,19 +356,28 @@ export default function ItemPage() {
               </div>
               <h1 className="product-title">{item.name}</h1>
 
-              <div className="price-row">
-                <div className="green-price">₹{currentPrice}</div>
-                <div className="mrp-block">
-                  {hasDiscount && (
-                    <>
-                      MRP <s>₹{item.originalPrice}</s> (Incl. of all taxes)<br />
-                      <span className="discount-text">₹{item.originalPrice! - item.price} OFF</span>
-                    </>
+              <div className="price-wrap">
+                <div className="price-row">
+                  {/* Left: MRP crossed out */}
+                  {hasDiscount ? (
+                    <div className="price-mrp-left">
+                      <span className="price-mrp-label">MRP</span>
+                      <span className="price-mrp-val">₹{item.originalPrice}</span>
+                    </div>
+                  ) : (
+                    <div className="price-mrp-left">
+                      <span className="price-mrp-label">Price</span>
+                    </div>
                   )}
-                  {!hasDiscount && (
-                    <>MRP ₹{currentPrice} (Incl. of all taxes)</>
-                  )}
+                  {/* Right: Our price + savings */}
+                  <div className="price-right">
+                    <div className="current-price">₹{currentPrice}</div>
+                    {hasDiscount && (
+                      <span className="savings-badge">Save ₹{item.originalPrice! - currentPrice} ({discountPct}% OFF)</span>
+                    )}
+                  </div>
                 </div>
+                <div className="tax-incl">(Incl. of all taxes)</div>
               </div>
             </div>
 

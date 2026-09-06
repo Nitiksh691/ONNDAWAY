@@ -104,6 +104,45 @@ export default function RazorpayButton({
     if (disabled || loading || paid) return;
     setLoading(true);
 
+    // Step 0 – geo-restriction check
+    try {
+      const settingsRes = await fetch("/api/settings");
+      if (settingsRes.ok) {
+        const settings = await settingsRes.json();
+        if (settings?.geoRestrictionEnabled && settings.geoLat && settings.geoLng) {
+          const centerLat = parseFloat(settings.geoLat);
+          const centerLng = parseFloat(settings.geoLng);
+          const radiusKm = parseFloat(settings.geoRadiusKm || "1.0");
+          // Request current location
+          const userPos = await new Promise<GeolocationPosition>((resolve, reject) => {
+            if (!navigator.geolocation) { reject(new Error("no_geo")); return; }
+            navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 });
+          }).catch(() => null);
+
+          if (userPos) {
+            const toRad = (d: number) => (d * Math.PI) / 180;
+            const R = 6371;
+            const dLat = toRad(userPos.coords.latitude - centerLat);
+            const dLng = toRad(userPos.coords.longitude - centerLng);
+            const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(centerLat)) * Math.cos(toRad(userPos.coords.latitude)) * Math.sin(dLng / 2) ** 2;
+            const dist = R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            if (dist > radiusKm) {
+              toast.error(`Sorry! We only deliver within ${radiusKm} km of our campus. You appear to be ${dist.toFixed(1)} km away.`, { duration: 5000 });
+              setLoading(false);
+              return;
+            }
+          } else {
+            // Location denied or unavailable — block the order
+            toast.error("Please allow location access to place an order. We deliver only near our campus.", { duration: 5000 });
+            setLoading(false);
+            return;
+          }
+        }
+      }
+    } catch {
+      // If settings fetch fails, proceed without geo check
+    }
+
     // Step 1 – load checkout.js
     const scriptLoaded = await loadRazorpayScript();
     if (!scriptLoaded) {
