@@ -73,6 +73,7 @@ export interface MenuItem {
   customizationCategories?: CustomizationCategory[];
   details?: { label: string; value: string }[];
   sizes?: { name: string; price: number }[];
+  hasTallSize?: boolean;
   createdAt?: string;
 }
 

@@ -19,7 +19,7 @@ export default function AdminMenuPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", customizationCategories: [], details: [], sizes: [] });
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [] });
   const [uploadingImage, setUploadingImage] = useState(false);
 
 
@@ -49,7 +49,7 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
+      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
     }
     setDialogOpen(true);
   };
@@ -422,6 +422,14 @@ export default function AdminMenuPage() {
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <label htmlFor="banner" style={{ fontWeight: 700, cursor: "pointer", color: "#1E3A8A" }}>🎇 Feature in Top Banner</label>
                       <span style={{ fontSize: "0.8rem", color: "#1D4ED8" }}>Item will appear in the large moving carousel on the homepage.</span>
+                    </div>
+                  </div>
+
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: form.hasTallSize ? "#0d2218" : "#f8fafc", border: form.hasTallSize ? "1px solid #14532d" : "1px solid #e2e8f0", borderRadius: "12px" }}>
+                    <input type="checkbox" id="hasTallSize" checked={form.hasTallSize || false} onChange={e => setForm({ ...form, hasTallSize: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#16a34a" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="hasTallSize" style={{ fontWeight: 700, cursor: "pointer", color: form.hasTallSize ? "#15803d" : "var(--text-dark)" }}>☕ Enable Tall Size (+₹20)</label>
+                      <span style={{ fontSize: "0.8rem", color: form.hasTallSize ? "#16a34a" : "var(--text-muted)" }}>When enabled, tapping + on this item shows a size popup: Regular (base price) or Tall (+₹20).</span>
                     </div>
                   </div>
                 </div>

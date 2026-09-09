@@ -28,9 +28,11 @@ import {
   LayoutGrid,
   List,
   PauseCircle,
-  PlayCircle
+  PlayCircle,
+  Printer
 } from "lucide-react";
 import toast from "react-hot-toast";
+import { printOrder, printBatchOrders, GridPreset } from "@/components/OrderPrintSlip";
 
 const fetcher = (url: string) => {
   const token = typeof window !== "undefined" ? sessionStorage.getItem("otw_admin_token") : "";
@@ -96,6 +98,26 @@ export default function AdminOrdersPage() {
   const [expandedOrders, setExpandedOrders] = useState<Set<string>>(new Set());
   const [visibleCount, setVisibleCount] = useState(30);
 
+  // Multi-Bill & Auto-Print State
+  const [autoPrintEnabled, setAutoPrintEnabled] = useState<boolean>(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("otw_auto_print") === "true";
+    }
+    return false;
+  });
+  const [showBatchPrintModal, setShowBatchPrintModal] = useState<boolean>(false);
+  const [gridPreset, setGridPreset] = useState<GridPreset>("2x3");
+  const [startSlotIndex, setStartSlotIndex] = useState<number>(0);
+
+  const toggleAutoPrint = () => {
+    const next = !autoPrintEnabled;
+    setAutoPrintEnabled(next);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("otw_auto_print", String(next));
+    }
+    toast.success(next ? "🖨️ Auto-Print Enabled!" : "Auto-Print Disabled");
+  };
+
   const fetchUrl = statusFilter === "all"
     ? "/api/orders?status=placed,preparing,out_for_delivery"
     : `/api/orders?status=${statusFilter}`;
@@ -132,10 +154,14 @@ export default function AdminOrdersPage() {
     useCallback(() => mutateOrders(), [mutateOrders]),
     {
       onMessage: useCallback((data: any) => {
-        if (data.type === "order_change") {
+        if (data.type === "order_change" || data.type === "new_order") {
           mutateOrders();
+          if (autoPrintEnabled && data.order && data.order.status === "placed") {
+            toast.success(`🖨️ Auto-printing Order #${data.order.id?.slice(-6).toUpperCase()}`);
+            printOrder(data.order);
+          }
         }
-      }, [mutateOrders]),
+      }, [mutateOrders, autoPrintEnabled]),
       pollIntervalMs: 15000
     }
   );
@@ -262,6 +288,37 @@ export default function AdminOrdersPage() {
         </div>
 
         <div style={{ display: "flex", gap: "10px", alignItems: "center", flexWrap: "wrap" }}>
+          <button
+            onClick={toggleAutoPrint}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              background: autoPrintEnabled ? "#ECFDF5" : "#F8FAFC",
+              border: `1px solid ${autoPrintEnabled ? "#A7F3D0" : "#CBD5E1"}`,
+              color: autoPrintEnabled ? "#047857" : "#475569",
+              padding: "8px 14px", borderRadius: "8px", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            title="Automatically trigger print dialog for new incoming orders"
+          >
+            <Printer size={15} />
+            {autoPrintEnabled ? "Auto-Print: ON 🖨️" : "Auto-Print: OFF"}
+          </button>
+
+          <button
+            onClick={() => setShowBatchPrintModal(true)}
+            style={{
+              display: "flex", alignItems: "center", gap: "6px",
+              background: "#0F172A", color: "#FFFFFF",
+              border: "none",
+              padding: "8px 14px", borderRadius: "8px", fontSize: "0.85rem", fontWeight: 800, cursor: "pointer",
+              transition: "all 0.2s"
+            }}
+            title="Print multiple bills in grid layout (2x3, 3x3, 4x2, 1x1)"
+          >
+            <LayoutGrid size={15} />
+            Multi-Bill Grid Print
+          </button>
+
           {settings && (
             <button
               onClick={handleTogglePause}
@@ -323,6 +380,13 @@ export default function AdminOrdersPage() {
             {deliveryPersons.map(dp => <option key={dp.uid} value={dp.uid}>{dp.name} ({dp.phone})</option>)}
           </select>
           <button onClick={handleBatchAssign} style={{ background: "#2563EB", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer" }}>Assign Selected</button>
+          <button
+            onClick={() => setShowBatchPrintModal(true)}
+            style={{ background: "#10B981", color: "white", border: "none", borderRadius: "8px", padding: "8px 16px", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer", display: "flex", alignItems: "center", gap: "6px" }}
+          >
+            <Printer size={15} />
+            Print Selected ({selectedOrders.length})
+          </button>
           <button onClick={() => setSelectedOrders([])} style={{ background: "transparent", color: "#94A3B8", border: "none", padding: "8px 12px", fontWeight: 600, fontSize: "0.85rem", cursor: "pointer" }}>Clear</button>
         </div>
       )}
@@ -587,6 +651,16 @@ export default function AdminOrdersPage() {
 
                 {/* Card footer — actions */}
                 <div className="adm-card-footer">
+                  <button
+                    className="adm-action-btn"
+                    onClick={(e) => { e.stopPropagation(); printOrder(order); }}
+                    style={{ background: "#0F172A", color: "#FFFFFF", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}
+                    title="Print 4/6 split order slip for kitchen & customer receipt"
+                  >
+                    <Printer size={15} />
+                    Print Slip
+                  </button>
+
                   {/* Quick status select */}
                   <select
                     value={order.status}
@@ -650,6 +724,102 @@ export default function AdminOrdersPage() {
           >
             Load More Orders ({filtered.length - visibleCount} remaining)
           </button>
+        </div>
+      )}
+      {/* Multi-Bill Grid Layout Modal */}
+      {showBatchPrintModal && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.75)", backdropFilter: "blur(4px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 9999, padding: 16 }}>
+          <div style={{ background: "#FFFFFF", borderRadius: 16, maxWidth: 520, width: "100%", padding: 24, boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <h2 style={{ fontSize: "1.25rem", fontWeight: 900, color: "#0F172A", margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+                <Printer size={22} color="#2563EB" /> Multi-Bill Layout System
+              </h2>
+              <button onClick={() => setShowBatchPrintModal(false)} style={{ background: "none", border: "none", fontSize: "1.4rem", color: "#64748B", cursor: "pointer" }}>×</button>
+            </div>
+
+            <p style={{ fontSize: "0.88rem", color: "#475569", marginBottom: 20, lineHeight: 1.5 }}>
+              Batch print multiple bills formatted neatly on grid pages. Choose your layout configuration and cut-paper slot offset.
+            </p>
+
+            {/* Layout Grid Selector */}
+            <label style={{ fontSize: "0.82rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Choose Page Grid Layout:
+            </label>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 20 }}>
+              {[
+                { id: "2x3", title: "2 × 3 Grid", desc: "6 bills / page", sub: "Standard A4 layout" },
+                { id: "3x3", title: "3 × 3 Grid", desc: "9 bills / page", sub: "Compact mini slips" },
+                { id: "4x2", title: "4 × 2 Grid", desc: "8 bills / page", sub: "Horizontal wide slips" },
+                { id: "1x1", title: "1 × 1 Single", desc: "1 bill / page", sub: "Standard single receipt" },
+              ].map(p => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setGridPreset(p.id as GridPreset)}
+                  style={{
+                    textAlign: "left",
+                    padding: "12px 14px",
+                    borderRadius: 10,
+                    border: `2px solid ${gridPreset === p.id ? "#2563EB" : "#E2E8F0"}`,
+                    background: gridPreset === p.id ? "#EFF6FF" : "#F8FAFC",
+                    cursor: "pointer",
+                    transition: "all 0.15s"
+                  }}
+                >
+                  <div style={{ fontWeight: 800, fontSize: "0.95rem", color: gridPreset === p.id ? "#1D4ED8" : "#0F172A" }}>{p.title}</div>
+                  <div style={{ fontSize: "0.78rem", fontWeight: 700, color: gridPreset === p.id ? "#2563EB" : "#475569", marginTop: 2 }}>{p.desc}</div>
+                  <div style={{ fontSize: "0.72rem", color: "#64748B", marginTop: 2 }}>{p.sub}</div>
+                </button>
+              ))}
+            </div>
+
+            {/* Cut Sheet Offset Selector */}
+            <label style={{ fontSize: "0.82rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              Starting Slot Offset (Re-used Cut Paper):
+            </label>
+            <div style={{ fontSize: "0.78rem", color: "#64748B", marginBottom: 8 }}>
+              If bills were cut out from this paper sheet previously, select which slot to start printing on:
+            </div>
+            <select
+              value={startSlotIndex}
+              onChange={e => setStartSlotIndex(Number(e.target.value))}
+              style={{ width: "100%", padding: "10px 12px", border: "1px solid #CBD5E1", borderRadius: 8, fontSize: "0.88rem", fontWeight: 700, color: "#0F172A", marginBottom: 20, background: "#FFFFFF", outline: "none" }}
+            >
+              <option value={0}>Slot 1 (Start at Top-Left — Fresh Uncut Page)</option>
+              <option value={1}>Slot 2 (1st Slot Cut Out — Start at Position 2)</option>
+              <option value={2}>Slot 3 (Slots 1 & 2 Cut Out — Start at Position 3)</option>
+              <option value={3}>Slot 4 (3 Slots Cut Out — Start at Position 4)</option>
+              <option value={4}>Slot 5 (4 Slots Cut Out — Start at Position 5)</option>
+              <option value={5}>Slot 6 (5 Slots Cut Out — Start at Position 6)</option>
+            </select>
+
+            <div style={{ background: "#F1F5F9", padding: "12px 14px", borderRadius: 8, fontSize: "0.85rem", color: "#334155", marginBottom: 20, border: "1px solid #E2E8F0" }}>
+              📄 Printing <strong>{selectedOrders.length > 0 ? selectedOrders.length : filtered.length} order(s)</strong> {selectedOrders.length > 0 ? "(Selected orders)" : "(All active filtered orders)"}
+            </div>
+
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button
+                type="button"
+                onClick={() => setShowBatchPrintModal(false)}
+                style={{ padding: "10px 18px", borderRadius: 8, border: "1px solid #CBD5E1", background: "#FFFFFF", color: "#475569", fontWeight: 700, fontSize: "0.88rem", cursor: "pointer" }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const targetOrders = selectedOrders.length > 0
+                    ? orders.filter(o => selectedOrders.includes(o.id))
+                    : filtered;
+                  setShowBatchPrintModal(false);
+                  printBatchOrders({ orders: targetOrders, gridPreset, startSlotIndex });
+                }}
+                style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: "#2563EB", color: "#FFFFFF", fontWeight: 800, fontSize: "0.88rem", cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}
+              >
+                <Printer size={16} /> Print Grid Bills Now
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

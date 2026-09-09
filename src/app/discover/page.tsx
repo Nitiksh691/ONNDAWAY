@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-// import FoodSwipeContainer from "@/components/FoodSwipeContainer";
+
 import { MenuItem } from "@/lib/types";
 import { useMenu } from "@/hooks/useMenu";
 
@@ -161,9 +161,7 @@ export default function DiscoverPage() {
               Discover Mode is designed for a thumb-friendly touch experience. Please open this page on your smartphone to start swiping!
             </p>
           </div>
-          {/* <div className="block md:hidden">
-            <FoodSwipeContainer initialFoods={menuItems} />
-          </div> */}
+
         </>
       )}
     </div>
