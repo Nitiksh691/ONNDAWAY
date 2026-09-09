@@ -12,6 +12,7 @@ const MenuItemSchema = new Schema({
   isPopular:     { type: Boolean, default: false },
   isRecommended: { type: Boolean, default: false },
   isBanner:      { type: Boolean, default: false },
+  hasTallSize:   { type: Boolean, default: false },
   isLaunchingSoon: { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },

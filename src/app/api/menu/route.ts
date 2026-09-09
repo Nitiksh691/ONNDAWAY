@@ -5,21 +5,26 @@ import { appCache, CACHE_KEYS, CACHE_TTL } from "@/lib/cache";
 import { withLogger } from "@/lib/withLogger";
 import { requireAdmin } from "@/lib/adminAuth";
 
-const _GET = async () => {
+const _GET = async (req: NextRequest) => {
   await dbConnect();
   try {
-    // Serve from cache if available (cache key: "menu", TTL: 60s)
-    const cached = appCache.get<object[]>(CACHE_KEYS.MENU);
-    if (cached) {
-      const res = NextResponse.json(cached);
-      res.headers.set("X-Cache", "HIT");
-      return res;
+    const showAll = req.nextUrl.searchParams.get("all") === "true";
+    if (!showAll) {
+      const cached = appCache.get<object[]>(CACHE_KEYS.MENU);
+      if (cached) {
+        const res = NextResponse.json(cached);
+        res.headers.set("X-Cache", "HIT");
+        return res;
+      }
     }
 
-    const items = await MenuItem.find({ available: true }).sort({ category: 1, name: 1 }).lean();
+    const query = showAll ? {} : { available: true };
+    const items = await MenuItem.find(query).sort({ category: 1, name: 1 }).lean();
     const mapped = items.map((i: any) => ({ ...i, id: i._id.toString() }));
 
-    appCache.set(CACHE_KEYS.MENU, mapped, CACHE_TTL.MENU);
+    if (!showAll) {
+      appCache.set(CACHE_KEYS.MENU, mapped, CACHE_TTL.MENU);
+    }
 
     const res = NextResponse.json(mapped);
     res.headers.set("X-Cache", "MISS");
@@ -38,7 +43,7 @@ const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner, customizationCategories } = body;
+    const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner, hasTallSize, details, sizes, sortOrder, available, customizationCategories } = body;
 
     if (!name || !price || !category) {
       return NextResponse.json({ error: "Missing required fields (name, price, category)" }, { status: 400 });
@@ -54,7 +59,12 @@ const _POST = async (req: NextRequest) => {
       isPopular:     isPopular     || false,
       isRecommended: isRecommended || false,
       isBanner:      isBanner      || false,
+      hasTallSize:   hasTallSize   || false,
       section:       section       || "",
+      sortOrder:     sortOrder     || 0,
+      available:     available !== undefined ? available : true,
+      details:       details       || [],
+      sizes:         sizes         || [],
       customizationCategories: customizationCategories || [],
     });
 

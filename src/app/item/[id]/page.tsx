@@ -382,17 +382,20 @@ export default function ItemPage() {
             </div>
 
             {/* Customizations Card */}
-            {(item.sizes?.length || item.category === "coffee") ? (
+            {((item.sizes && item.sizes.length > 0) || item.hasTallSize || item.category === "coffee") ? (
               <div className="card-box">
-                {item.sizes && item.sizes.length > 0 && (
+                {((item.sizes && item.sizes.length > 0) || item.hasTallSize) && (
                   <div className="custom-group">
-                    <div className="custom-label">Select Size</div>
+                    <div className="custom-label">☕ Select Serving Size</div>
                     <div className="pill-grid">
-                      {item.sizes.map(size => {
-                        const isActive = selectedSize?.name === size.name;
+                      {(item.hasTallSize ? [
+                        { name: "Regular", price: item.price },
+                        { name: "Tall", price: item.price + 20 }
+                      ] : item.sizes!).map(size => {
+                        const isActive = selectedSize?.name === size.name || (!selectedSize && size.name === "Regular");
                         return (
-                          <button key={size.name} onClick={() => setSelectedSize(size)} className={`custom-pill ${isActive ? "active" : ""}`}>
-                            {size.name} - ₹{size.price}
+                          <button key={size.name} type="button" onClick={() => setSelectedSize(size)} className={`custom-pill ${isActive ? "active" : ""}`}>
+                            {size.name === "Tall" ? "🥤 Tall (+₹20)" : "☕ Regular"} — ₹{size.price}
                           </button>
                         );
                       })}

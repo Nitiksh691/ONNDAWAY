@@ -19,20 +19,39 @@ interface FoodCardProps {
   onUpdateQuantity?: (cartItemId: string, qty: number) => void;
 }
 
-/* ── Size Picker Bottom Sheet ── */
+/* ── Size Picker Bottom Sheet / Modal ── */
 function SizePicker({ item, onClose, onAdd }: {
   item: MenuItem;
   onClose: () => void;
   onAdd: (item: MenuItem, si?: string, sc?: SelectedCustomization[], price?: number) => void;
 }) {
+  const [selected, setSelected] = useState<{ name: string; price: number }>({
+    name: "Regular",
+    price: item.price,
+  });
+
   const sizes = [
-    { name: "Regular", price: item.price, desc: "Standard serving" },
-    { name: "Tall", price: item.price + 20, desc: "Larger cup · +₹20" },
+    {
+      name: "Regular",
+      label: "Regular Size",
+      price: item.price,
+      desc: "Standard cup serving",
+      icon: "☕",
+      badge: null,
+    },
+    {
+      name: "Tall",
+      label: "Tall / Large",
+      price: item.price + 20,
+      desc: "Extra volume · +₹20",
+      icon: "🥤",
+      badge: "+₹20 EXTRA",
+    },
   ];
 
-  const handlePick = (s: { name: string; price: number }) => {
-    onAdd(item, "", [{ category: "Size", option: s.name, price: s.price }], s.price);
-    toast.success(`${item.name} (${s.name}) added!`, { duration: 1400 });
+  const handleConfirm = () => {
+    onAdd(item, "", [{ category: "Size", option: selected.name, price: selected.price }], selected.price);
+    toast.success(`Added ${item.name} (${selected.name}) to cart!`, { duration: 1600 });
     onClose();
   };
 
@@ -42,70 +61,167 @@ function SizePicker({ item, onClose, onAdd }: {
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)",
-          zIndex: 9998, backdropFilter: "blur(3px)",
+          position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.65)",
+          zIndex: 9998, backdropFilter: "blur(6px)",
+          animation: "size-fade-in 0.2s ease-out both"
         }}
       />
-      {/* Sheet */}
+      {/* Container - Bottom sheet on mobile, centered modal on desktop */}
       <div style={{
-        position: "fixed", bottom: 0, left: 0, right: 0, zIndex: 9999,
-        background: "#fff", borderRadius: "22px 22px 0 0",
-        padding: "0 0 env(safe-area-inset-bottom)",
-        boxShadow: "0 -8px 40px rgba(0,0,0,0.18)",
-        animation: "size-sheet-up 0.28s cubic-bezier(0.34,1.26,0.64,1) both",
+        position: "fixed",
+        bottom: 0, left: 0, right: 0,
+        zIndex: 9999,
+        background: "#FFFFFF",
+        borderRadius: "24px 24px 0 0",
+        padding: "20px 24px calc(24px + env(safe-area-inset-bottom)) 24px",
+        boxShadow: "0 -10px 40px rgba(0, 0, 0, 0.2)",
+        animation: "size-sheet-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both",
+        maxWidth: "480px",
+        margin: "0 auto",
       }}>
         <style>{`
+          @keyframes size-fade-in { from { opacity: 0; } to { opacity: 1; } }
           @keyframes size-sheet-up {
             from { transform: translateY(100%); }
             to   { transform: translateY(0); }
           }
+          @media (min-width: 640px) {
+            div[style*="size-sheet-up"] {
+              bottom: auto !important;
+              top: 50% !important;
+              left: 50% !important;
+              right: auto !important;
+              transform: translate(-50%, -50%) !important;
+              border-radius: 24px !important;
+              animation: size-pop-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) both !important;
+              width: 90% !important;
+            }
+          }
+          @keyframes size-pop-in {
+            from { opacity: 0; transform: translate(-50%, -46%) scale(0.96); }
+            to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+          }
         `}</style>
 
-        {/* Handle + header */}
-        <div style={{ padding: "14px 20px 0" }}>
-          <div style={{ width: 36, height: 4, background: "#E2E8F0", borderRadius: 99, margin: "0 auto 16px" }} />
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+        {/* Drag handle */}
+        <div style={{ width: 40, height: 4, background: "#CBD5E1", borderRadius: 99, margin: "0 auto 16px" }} />
+
+        {/* Header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            {item.image ? (
+              <div style={{ width: 44, height: 44, borderRadius: 12, overflow: "hidden", position: "relative", flexShrink: 0, border: "1px solid #E2E8F0" }}>
+                <Image src={item.image} alt={item.name} fill sizes="44px" style={{ objectFit: "cover" }} />
+              </div>
+            ) : (
+              <div style={{ width: 44, height: 44, borderRadius: 12, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem" }}>☕</div>
+            )}
             <div>
-              <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0A0F2E" }}>{item.name}</div>
-              <div style={{ fontSize: "0.78rem", color: "#64748B", fontWeight: 500 }}>Choose your size</div>
+              <div style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A", lineHeight: 1.2 }}>{item.name}</div>
+              <div style={{ fontSize: "0.78rem", color: "#64748B", fontWeight: 600, marginTop: 2 }}>Select cup serving size</div>
             </div>
-            <button onClick={onClose} style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748B" }}>
-              <X size={16} />
-            </button>
           </div>
+
+          <button onClick={onClose} style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748B" }}>
+            <X size={16} />
+          </button>
         </div>
 
-        {/* Cup options */}
-        <div style={{ display: "flex", gap: 12, padding: "16px 20px 24px" }}>
-          {sizes.map(s => (
-            <button
-              key={s.name}
-              onClick={() => handlePick(s)}
-              style={{
-                flex: 1, display: "flex", flexDirection: "column", alignItems: "center",
-                padding: "18px 12px", border: "2px solid #E2E8F0", borderRadius: 16,
-                background: "#fff", cursor: "pointer",
-                transition: "all 0.18s",
-                gap: 6,
-              }}
-              onMouseEnter={e => { e.currentTarget.style.borderColor = "#0135FB"; e.currentTarget.style.background = "#EEF3FF"; }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = "#E2E8F0"; e.currentTarget.style.background = "#fff"; }}
-            >
-              {/* Cup visual */}
-              <div style={{
-                fontSize: s.name === "Tall" ? "2.4rem" : "1.9rem",
-                lineHeight: 1, transition: "font-size 0.18s",
-              }}>☕</div>
-              <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#0A0F2E" }}>{s.name}</div>
-              <div style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 500 }}>{s.desc}</div>
-              <div style={{
-                marginTop: 4, background: "#0135FB", color: "#fff",
-                fontWeight: 900, fontSize: "0.88rem",
-                padding: "4px 14px", borderRadius: 8,
-              }}>₹{s.price}</div>
-            </button>
-          ))}
+        {/* Cup Options Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 20 }}>
+          {sizes.map(s => {
+            const isSelected = selected.name === s.name;
+            return (
+              <div
+                key={s.name}
+                onClick={() => setSelected({ name: s.name, price: s.price })}
+                style={{
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  padding: "16px 12px 14px",
+                  borderRadius: 18,
+                  border: `2px solid ${isSelected ? "#0135FB" : "#E2E8F0"}`,
+                  background: isSelected ? "#F0F4FF" : "#FFFFFF",
+                  cursor: "pointer",
+                  transition: "all 0.18s ease-in-out",
+                  boxShadow: isSelected ? "0 4px 16px rgba(1, 53, 251, 0.15)" : "0 2px 6px rgba(0,0,0,0.02)",
+                  transform: isSelected ? "scale(1.02)" : "scale(1)",
+                }}
+              >
+                {s.badge && (
+                  <span style={{
+                    position: "absolute", top: -10, right: 10,
+                    background: "#0135FB", color: "#FFFFFF",
+                    fontSize: "0.62rem", fontWeight: 900,
+                    padding: "2px 8px", borderRadius: 99,
+                    letterSpacing: "0.5px", boxShadow: "0 2px 6px rgba(1,53,251,0.3)"
+                  }}>
+                    {s.badge}
+                  </span>
+                )}
+
+                <div style={{
+                  fontSize: s.name === "Tall" ? "2.4rem" : "1.9rem",
+                  lineHeight: 1, marginBottom: 8,
+                  filter: isSelected ? "drop-shadow(0 4px 8px rgba(1,53,251,0.25))" : "none",
+                  transition: "transform 0.18s",
+                }}>
+                  {s.icon}
+                </div>
+
+                <div style={{ fontWeight: 900, fontSize: "0.95rem", color: isSelected ? "#0135FB" : "#0F172A" }}>
+                  {s.label}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#64748B", fontWeight: 600, marginTop: 2, textAlign: "center" }}>
+                  {s.desc}
+                </div>
+
+                <div style={{
+                  marginTop: 10,
+                  background: isSelected ? "#0135FB" : "#F1F5F9",
+                  color: isSelected ? "#FFFFFF" : "#0F172A",
+                  fontWeight: 900,
+                  fontSize: "0.88rem",
+                  padding: "5px 14px",
+                  borderRadius: 10,
+                  transition: "all 0.18s"
+                }}>
+                  ₹{s.price}
+                </div>
+              </div>
+            );
+          })}
         </div>
+
+        {/* Confirm Action Button */}
+        <button
+          onClick={handleConfirm}
+          style={{
+            width: "100%",
+            background: "#0135FB",
+            color: "#FFFFFF",
+            border: "none",
+            borderRadius: 14,
+            padding: "14px 20px",
+            fontSize: "1rem",
+            fontWeight: 900,
+            cursor: "pointer",
+            boxShadow: "0 6px 20px rgba(1, 53, 251, 0.3)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 8,
+            transition: "transform 0.15s, background 0.15s",
+          }}
+          onMouseEnter={e => e.currentTarget.style.background = "#002BE0"}
+          onMouseLeave={e => e.currentTarget.style.background = "#0135FB"}
+        >
+          <span>Add to Order</span>
+          <span style={{ opacity: 0.8 }}>·</span>
+          <span>₹{selected.price}</span>
+        </button>
       </div>
     </>
   );
