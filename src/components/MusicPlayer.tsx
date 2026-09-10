@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, SkipForward, SkipBack, Square, Music2, ListMusic, X, ChevronDown } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Square, Music2, ListMusic, X, ChevronDown, ChevronUp } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { usePathname } from "next/navigation";
 import { getActiveOrderId } from "@/lib/activeOrder";
@@ -343,10 +343,15 @@ export default function MusicPlayer() {
 
           {isCollapsed ? (
             <div className="mp-mini-strip" onClick={() => setIsCollapsed(false)}>
-              <div className="mp-icon-wrap"><Music2 size={12} color="#fff" /></div>
+              <div className="mp-icon-wrap" style={{ width: 24, height: 24 }}><Music2 size={12} color="#fff" /></div>
               {isPlaying && <EqBars />}
               <span className="mp-mini-name">{track.name}</span>
-              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsCollapsed(false); }} title="Expand">▲</button>
+              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsPlaying(p => !p); }} title={isPlaying ? "Pause" : "Play"}>
+                {isPlaying ? <Pause size={13} /> : <Play size={13} fill="#fff" />}
+              </button>
+              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsCollapsed(false); }} title="Expand controls">
+                <ChevronUp size={14} />
+              </button>
               <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); handleDismiss(); }} title="Turn off music" style={{ color: "rgba(255,255,255,0.7)" }}><X size={13} /></button>
             </div>
           ) : (

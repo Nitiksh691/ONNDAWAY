@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import Image from "next/image";
 import { Plus, Minus, X } from "lucide-react";
 import { MenuItem, SelectedCustomization } from "@/lib/types";
@@ -25,10 +26,15 @@ function SizePicker({ item, onClose, onAdd }: {
   onClose: () => void;
   onAdd: (item: MenuItem, si?: string, sc?: SelectedCustomization[], price?: number) => void;
 }) {
+  const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState<{ name: string; price: number }>({
     name: "Regular",
     price: item.price,
   });
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const sizes = [
     {
@@ -55,14 +61,16 @@ function SizePicker({ item, onClose, onAdd }: {
     onClose();
   };
 
-  return (
+  if (!mounted || typeof document === "undefined") return null;
+
+  return createPortal(
     <>
       {/* Backdrop */}
       <div
         onClick={onClose}
         style={{
-          position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.65)",
-          zIndex: 9998, backdropFilter: "blur(6px)",
+          position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.7)",
+          zIndex: 999999, backdropFilter: "blur(6px)",
           animation: "size-fade-in 0.2s ease-out both"
         }}
       />
@@ -70,7 +78,7 @@ function SizePicker({ item, onClose, onAdd }: {
       <div style={{
         position: "fixed",
         bottom: 0, left: 0, right: 0,
-        zIndex: 9999,
+        zIndex: 1000000,
         background: "#FFFFFF",
         borderRadius: "24px 24px 0 0",
         padding: "20px 24px calc(24px + env(safe-area-inset-bottom)) 24px",
@@ -223,7 +231,8 @@ function SizePicker({ item, onClose, onAdd }: {
           <span>₹{selected.price}</span>
         </button>
       </div>
-    </>
+    </>,
+    document.body
   );
 }
 

@@ -54,7 +54,7 @@ export default function BottomActionBar() {
         try {
           const data = JSON.parse(event.data);
           if (data.type === "order_change") check();
-        } catch {}
+        } catch { }
       };
       es.onerror = () => {
         es?.close();
@@ -99,14 +99,14 @@ export default function BottomActionBar() {
     activeOrder?.status === "out_for_delivery"
       ? "🛵 On the way to you!"
       : activeOrder?.status === "preparing"
-      ? "🍳 Being prepared in kitchen"
-      : "📋 Order placed & confirmed";
+        ? "🍳 Being prepared in kitchen"
+        : "📋 Order placed & confirmed";
 
   const trackBarClass = isCartPage
     ? "otw-track-bar on-cart-page"
     : hasCartItems
-    ? "otw-track-bar has-cart-bar"
-    : "otw-track-bar has-bottom-nav";
+      ? "otw-track-bar has-cart-bar"
+      : "otw-track-bar has-bottom-nav";
 
   const TrackBar = showTrackBar && activeOrder ? (
     <div className={trackBarClass}>
