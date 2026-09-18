@@ -187,7 +187,6 @@ export default function StorePosPage() {
           <form onSubmit={handleLogin} style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <input
               type="password"
-              inputMode="numeric"
               placeholder="PIN Code"
               value={pin}
               onChange={(e) => setPin(e.target.value)}
