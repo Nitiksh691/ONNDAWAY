@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -38,7 +38,7 @@ export default function Navbar() {
     setPrevCount(cartCount);
   }, [cartCount, mounted]);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/store")) return null;
 
   const handleLogout = async () => {
     localStorage.removeItem("otw_user_id");
@@ -599,3 +599,4 @@ export default function Navbar() {
     </>
   );
 }
+

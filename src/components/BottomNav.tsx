@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, UtensilsCrossed, ShoppingBag, ClipboardList, User } from "lucide-react";
@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   useEffect(() => { setMounted(true); }, []);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/store")) return null;
   if (cartCount > 0) return null;
 
   const isActive = (href: string) => {
@@ -231,3 +231,4 @@ export default function BottomNav() {
     </>
   );
 }
+

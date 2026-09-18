@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -567,3 +567,4 @@ function SidebarItem({ href, icon, label, active }: { href: string; icon: React.
     </Link>
   );
 }
+
