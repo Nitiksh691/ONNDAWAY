@@ -90,6 +90,25 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       sendWhatsAppMessage(order.userPhone, message).catch(console.error);
     }
 
+    // 🔔 Send push notification for key status transitions
+    const PUSH_STATUSES: Record<string, { title: string; body: string }> = {
+      preparing:        { title: "🍳 Being prepared!", body: "Our kitchen is cooking your order. Hang tight!" },
+      out_for_delivery: { title: "🛵 On the way!", body: "Your rider is heading to you right now. Get ready!" },
+      delivered:        { title: "🎉 Delivered!", body: "Your food has arrived. Enjoy your meal!" },
+      cancelled:        { title: "❌ Order Cancelled", body: "Your order was cancelled. Contact support if needed." },
+    };
+    if (status && PUSH_STATUSES[status] && (order as any).pushSubscription) {
+      try {
+        const { sendPushNotification } = await import("@/lib/push");
+        const pushPayload = PUSH_STATUSES[status];
+        sendPushNotification((order as any).pushSubscription, {
+          title: pushPayload.title,
+          message: pushPayload.body,
+          url: `/track/${params.id}`,
+        }).catch(console.error); // Async non-blocking push notification
+      } catch { /* ignore push errors */ }
+    }
+
     return NextResponse.json({ ...order, id: (order as any)._id.toString() });
   } catch (error) {
     console.error("Error updating order:", error);

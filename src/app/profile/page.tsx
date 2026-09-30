@@ -57,6 +57,11 @@ export default function ProfilePage() {
 
   const handleLogout = () => {
     localStorage.removeItem("otw_user_id");
+    localStorage.removeItem("otw_cart");
+    localStorage.removeItem("otw_profile");
+    localStorage.removeItem("otw_demo_profile");
+    localStorage.removeItem("otw_demo_banner");
+    localStorage.removeItem("otw_delivery_id");
     toast.success("Logged out successfully");
     window.location.href = "/";
   };

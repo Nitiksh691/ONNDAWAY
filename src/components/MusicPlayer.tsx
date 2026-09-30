@@ -132,10 +132,10 @@ export default function MusicPlayer() {
   // Music player sits directly ABOVE the Track bar (Track bar is below the music layer).
   const showTrackBar = hasActiveOrder && !pathname.startsWith("/track/");
   const mobileOffset = isCartPage
-    ? (showTrackBar ? "42px" : "0px")
+    ? (showTrackBar ? "32px" : "0px")
     : showCheckoutBar
-      ? (showTrackBar ? "106px" : "64px")
-      : (showTrackBar ? "90px" : "50px");
+      ? (showTrackBar ? "88px" : "56px")
+      : (showTrackBar ? "82px" : "50px");
 
   const desktopBottom = showTrackBar ? "52px" : "28px";
 

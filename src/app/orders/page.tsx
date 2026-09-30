@@ -1,11 +1,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { setActiveOrderId, isActiveOrderStatus } from "@/lib/activeOrder";
-import { Package, Clock, MapPin, ChevronRight, RefreshCw, Compass } from "lucide-react";
+import { Package, Clock, MapPin, ChevronRight, RefreshCw, Compass, RotateCcw, FileText } from "lucide-react";
 import { useMenu } from "@/hooks/useMenu";
+import toast from "react-hot-toast";
 
 const CAT_EMOJI: Record<string, string> = {
   coffee: "☕", snacks: "🍟", meals: "🍜", drinks: "🥤",
@@ -18,14 +20,14 @@ const CAT_COLORS: string[] = [
 ];
 
 export default function OrdersPage() {
-  const { user, loading } = useApp();
+  const router = useRouter();
+  const { user, loading, addToCart } = useApp();
   const [orders, setOrders] = useState<Order[]>([]);
   const [fetching, setFetching] = useState(true);
-  const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu();
+  const { menuItems: rawMenuItems } = useMenu();
   
   // For empty state categories
   const categories = Array.from(new Set(rawMenuItems.filter(i => i.available).map(i => i.category as string)));
-
 
   useEffect(() => {
     if (!loading && !user) {
@@ -62,6 +64,36 @@ export default function OrdersPage() {
     };
     if (user) fetchOrders();
   }, [user]);
+
+  const handleOrderAgain = (order: Order) => {
+    if (!order.items || order.items.length === 0) {
+      toast.error("No items found in this order");
+      return;
+    }
+
+    let itemsAdded = 0;
+    for (const cartItem of order.items) {
+      if (cartItem.item) {
+        const qty = cartItem.quantity || 1;
+        for (let i = 0; i < qty; i++) {
+          addToCart(
+            cartItem.item,
+            cartItem.specialInstructions,
+            cartItem.selectedCustomizations,
+            cartItem.unitPrice
+          );
+        }
+        itemsAdded++;
+      }
+    }
+
+    if (itemsAdded > 0) {
+      toast.success("🛒 Items added to your cart!");
+      router.push("/cart");
+    } else {
+      toast.error("Could not add items to cart");
+    }
+  };
 
   const getStatusBadge = (status: Order["status"]) => {
     switch (status) {
@@ -205,9 +237,12 @@ export default function OrdersPage() {
                         ))}
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-primary" style={{ width: "100%", textAlign: "center", justifyContent: "center" }}>
-                          Track Order Live <ChevronRight size={16}/>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", flexWrap: "wrap" }}>
+                        <Link href={`/receipt/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <FileText size={14} /> Receipt
+                        </Link>
+                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-primary otw-btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          Track Live <ChevronRight size={14}/>
                         </Link>
                       </div>
                     </div>
@@ -222,7 +257,7 @@ export default function OrdersPage() {
                 <h2 style={{ fontSize: "1.3rem", fontWeight: 800, marginBottom: "16px", color: "var(--text-dark)" }}>Previous Orders</h2>
                 <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
                   {orders.filter(o => !isActiveOrderStatus(o.status)).map(order => (
-                    <div key={order.id} className="otw-card" style={{ padding: "24px", opacity: 0.8 }}>
+                    <div key={order.id} className="otw-card" style={{ padding: "24px", opacity: 0.9 }}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "16px" }}>
                         <div>
                           <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
@@ -248,10 +283,20 @@ export default function OrdersPage() {
                         ))}
                       </div>
 
-                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px" }}>
-                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm">
-                          View Details <ChevronRight size={14}/>
+                      <div style={{ display: "flex", justifyContent: "flex-end", gap: "10px", flexWrap: "wrap" }}>
+                        <Link href={`/receipt/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          <FileText size={14} /> Receipt
                         </Link>
+                        <Link href={`/track/${order.id}`} className="otw-btn otw-btn-outline otw-btn-sm" style={{ display: "inline-flex", alignItems: "center", gap: "4px" }}>
+                          Details <ChevronRight size={14}/>
+                        </Link>
+                        <button
+                          onClick={() => handleOrderAgain(order)}
+                          className="otw-btn otw-btn-primary otw-btn-sm"
+                          style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: "#0135FB", color: "#fff", border: "none", cursor: "pointer" }}
+                        >
+                          <RotateCcw size={14} /> Order Again
+                        </button>
                       </div>
                     </div>
                   ))}

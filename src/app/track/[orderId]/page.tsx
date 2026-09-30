@@ -12,6 +12,7 @@ import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from 
 import toast from "react-hot-toast";
 import Link from "next/link";
 import WalkingLoader from "@/components/WalkingLoader";
+import PushNotificationSetup from "@/components/PushNotificationSetup";
 
 const STATUS_STEPS = [
   { id: "placed", label: "Placed", subLabel: "We've received your order", icon: "📋", color: "#F59E0B" },
@@ -194,6 +195,12 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
 
   return (
     <div style={{ background: "#F5F7FF", minHeight: "100vh", color: "#0A0F2E", fontFamily: "inherit" }}>
+      {/* Push notifications for active orders */}
+      <PushNotificationSetup
+        orderId={orderId}
+        userId={typeof window !== "undefined" ? localStorage.getItem(STORAGE_KEYS.userId) : null}
+        orderStatus={order.status}
+      />
       <style>{`
         @keyframes spin-track { to { transform: rotate(360deg); } }
         @keyframes pulse-dot { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.6; } }
@@ -554,6 +561,37 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
             )}
           </div>
         )}
+
+        {/* ── View Receipt Card ── */}
+        <div style={{ ...cardStyle, padding: "18px 20px", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", animation: "fade-up 0.7s ease" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            <div style={{ width: 42, height: 42, borderRadius: "12px", background: "#EEF1FF", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem", fontWeight: 700 }}>
+              🧾
+            </div>
+            <div>
+              <div style={{ fontWeight: 800, fontSize: "0.95rem", color: "#0A0F2E" }}>Digital Tax Receipt</div>
+              <div style={{ fontSize: "0.78rem", color: "#6B7280" }}>View, print, or download official PDF invoice</div>
+            </div>
+          </div>
+          <Link
+            href={`/receipt/${order.id}`}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "6px",
+              background: "#0A0F2E",
+              color: "#fff",
+              padding: "10px 16px",
+              borderRadius: "10px",
+              fontWeight: 700,
+              fontSize: "0.85rem",
+              textDecoration: "none",
+              whiteSpace: "nowrap",
+            }}
+          >
+            Receipt →
+          </Link>
+        </div>
 
         {/* ── Support Helpline ── */}
         <div style={{ ...cardStyle, padding: "20px", animation: "fade-up 0.7s ease" }}>

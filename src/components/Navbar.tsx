@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
@@ -46,6 +46,7 @@ export default function Navbar() {
     localStorage.removeItem("otw_profile");
     localStorage.removeItem("otw_demo_profile");
     localStorage.removeItem("otw_demo_banner");
+    localStorage.removeItem("otw_delivery_id");
     toast.success("Logged out successfully");
     router.push("/");
     setProfileOpen(false);

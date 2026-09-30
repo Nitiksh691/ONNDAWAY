@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
@@ -61,6 +61,9 @@ export default function GlobalSidebar() {
     localStorage.removeItem("otw_user_id");
     localStorage.removeItem("otw_cart");
     localStorage.removeItem("otw_profile");
+    localStorage.removeItem("otw_demo_profile");
+    localStorage.removeItem("otw_demo_banner");
+    localStorage.removeItem("otw_delivery_id");
     toast.success("Logged out successfully");
     router.push("/");
     setProfileOpen(false);

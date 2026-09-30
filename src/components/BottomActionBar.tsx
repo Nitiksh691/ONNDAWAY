@@ -441,10 +441,10 @@ export default function BottomActionBar() {
         }
         @media (max-width: 767px) {
           .otw-track-bar.has-bottom-nav {
-            bottom: 58px;
+            bottom: 50px;
           }
           .otw-track-bar.has-cart-bar {
-            bottom: 64px;
+            bottom: 56px;
           }
           .otw-track-bar.on-cart-page {
             bottom: 0px;
@@ -456,7 +456,7 @@ export default function BottomActionBar() {
             bottom: 0px;
           }
           .otw-track-bar.has-cart-bar {
-            bottom: 64px;
+            bottom: 56px;
           }
         }
       `}</style>

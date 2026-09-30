@@ -63,6 +63,7 @@ const OrderSchema = new Schema(
     rating:  { type: Number, min: 1, max: 5, default: null },
     review:  { type: String, default: null },
     feedback: { type: String, default: null },
+    pushSubscription: { type: Schema.Types.Mixed, default: null },
   },
   { timestamps: true }
 );
