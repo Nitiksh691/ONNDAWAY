@@ -62,30 +62,24 @@ export default function MusicPlayer() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
+  // ── Auto-play on first user interaction (browsers require a gesture) ──────────
   useEffect(() => {
-    if (!audioRef.current) return;
-    const tryPlay = () => {
-      audioRef.current?.play()
-        .then(() => setIsPlaying(true))
-        .catch(() => { });
-    };
-    const t = setTimeout(tryPlay, 600);
-    const onInteraction = () => {
-      if (!isPlaying && audioRef.current) {
-        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => { });
+    if (!isMounted) return;
+    const start = () => {
+      if (audioRef.current && !isPlaying) {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
       }
-      document.removeEventListener("click", onInteraction);
-      document.removeEventListener("touchstart", onInteraction);
+      document.removeEventListener("click", start);
+      document.removeEventListener("touchstart", start);
     };
-    document.addEventListener("click", onInteraction, { once: true });
-    document.addEventListener("touchstart", onInteraction, { once: true });
+    document.addEventListener("click", start, { once: true });
+    document.addEventListener("touchstart", start, { once: true });
     return () => {
-      clearTimeout(t);
-      document.removeEventListener("click", onInteraction);
-      document.removeEventListener("touchstart", onInteraction);
+      document.removeEventListener("click", start);
+      document.removeEventListener("touchstart", start);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMounted]);
 
   useEffect(() => {
     if (!audioRef.current) return;
@@ -132,18 +126,18 @@ export default function MusicPlayer() {
   // Music player sits directly ABOVE the Track bar (Track bar is below the music layer).
   const showTrackBar = hasActiveOrder && !pathname.startsWith("/track/");
   const mobileOffset = isCartPage
-    ? (showTrackBar ? "32px" : "0px")
+    ? (showTrackBar ? "40px" : "0px")
     : showCheckoutBar
-      ? (showTrackBar ? "88px" : "56px")
-      : (showTrackBar ? "82px" : "50px");
+      ? (showTrackBar ? "100px" : "60px") // 60px checkout bar + 40px trackbar
+      : (showTrackBar ? "90px" : "50px"); // 50px bottom nav + 40px trackbar
 
   const desktopBottom = showTrackBar ? "52px" : "28px";
 
   const EqBars = () => (
     <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 14 }}>
-      <span style={{ display: "inline-block", width: 2, height: 10, background: "#22C55E", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite" }} />
-      <span style={{ display: "inline-block", width: 2, height: 14, background: "#22C55E", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.1s" }} />
-      <span style={{ display: "inline-block", width: 2, height: 8, background: "#22C55E", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.2s" }} />
+      <span style={{ display: "inline-block", width: 2, height: 10, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite" }} />
+      <span style={{ display: "inline-block", width: 2, height: 14, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.1s" }} />
+      <span style={{ display: "inline-block", width: 2, height: 8, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.2s" }} />
     </div>
   );
 

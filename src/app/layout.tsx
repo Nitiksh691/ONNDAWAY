@@ -14,6 +14,7 @@ const KitchenClosedBanner = dynamic(() => import("@/components/KitchenClosedBann
 const WaitlistOverlay = dynamic(() => import("@/components/WaitlistOverlay"));
 const MusicPlayer = dynamic(() => import("@/components/MusicPlayer"));
 const PwaInstallBanner = dynamic(() => import("@/components/PwaInstallBanner"));
+const LaunchingSoonOverlay = dynamic(() => import("@/components/LaunchingSoonOverlay"));
 
 import BottomNav from "@/components/BottomNav";
 import BottomActionBar from "@/components/BottomActionBar";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <AppProvider>
           <MaintenanceOverlay />
           <WaitlistOverlay />
+          <LaunchingSoonOverlay />
           <KitchenClosedBanner />
           <Loader />
           <Navbar />

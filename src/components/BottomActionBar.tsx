@@ -183,7 +183,7 @@ export default function BottomActionBar() {
           }
           @media (max-width: 767px) {
             .otw-track-bar.has-bottom-nav {
-              bottom: 58px;
+              bottom: 50px;
             }
             .otw-track-bar.on-cart-page {
               bottom: 0px;
@@ -444,7 +444,7 @@ export default function BottomActionBar() {
             bottom: 50px;
           }
           .otw-track-bar.has-cart-bar {
-            bottom: 56px;
+            bottom: 60px;
           }
           .otw-track-bar.on-cart-page {
             bottom: 0px;
