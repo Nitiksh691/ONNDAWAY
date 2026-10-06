@@ -43,7 +43,12 @@ const _POST = async (req: NextRequest) => {
   await dbConnect();
   try {
     const body = await req.json();
-    const { name, description, price, originalPrice, image, category, isPopular, isRecommended, section, isBanner, hasTallSize, details, sizes, sortOrder, available, customizationCategories } = body;
+    const { 
+      name, description, price, originalPrice, image, category, 
+      isPopular, isRecommended, section, isBanner, hasTallSize, 
+      details, sizes, sortOrder, available, customizationCategories,
+      brand, subcategory, unit, tags, badges, isDeal
+    } = body;
 
     if (!name || !price || !category) {
       return NextResponse.json({ error: "Missing required fields (name, price, category)" }, { status: 400 });
@@ -56,6 +61,12 @@ const _POST = async (req: NextRequest) => {
       originalPrice: originalPrice || null,
       image,
       category,
+      brand:         brand         || "",
+      subcategory:   subcategory   || "",
+      unit:          unit          || "",
+      tags:          tags          || [],
+      badges:        badges        || [],
+      isDeal:        isDeal        || false,
       isPopular:     isPopular     || false,
       isRecommended: isRecommended || false,
       isBanner:      isBanner      || false,

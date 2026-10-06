@@ -327,6 +327,73 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
         <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
       </div>
 
+      {/* ─── GROCERY TRANSITION / BRAND MOMENT ─── */}
+      <section style={{ padding: "40px 24px", background: "#FFFFFF", textAlign: "center", borderBottom: "1px solid #F1F5F9" }}>
+        <div className="otw-container" style={{ maxWidth: 600 }}>
+          <div style={{
+            display: "inline-block", fontSize: "0.75rem", fontWeight: 800, color: "#0135FB",
+            background: "rgba(1, 53, 251, 0.1)", padding: "6px 14px", borderRadius: 999,
+            textTransform: "uppercase", letterSpacing: "1px", marginBottom: 20
+          }}>
+            New Addition
+          </div>
+          <h2 style={{
+            fontFamily: "'Outfit', sans-serif", fontSize: "clamp(2rem, 6vw, 3rem)", fontWeight: 900,
+            color: "#0F172A", lineHeight: 1.1, textTransform: "uppercase", letterSpacing: "-0.02em",
+            marginBottom: 16
+          }}>
+            COFFEE WAS JUST <br /> THE BEGINNING.
+          </h2>
+          <p style={{ color: "#64748B", fontSize: "1rem", fontWeight: 500, lineHeight: 1.6, marginBottom: 32 }}>
+            Your late-night cravings, your campus munchies, your everyday little addictions — all in one place. Welcome to the Store.
+          </p>
+
+          {/* STORE DISCOVERY BENTO GRID */}
+          <div style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
+            gap: 12,
+            marginTop: 20,
+            textAlign: "left"
+          }}>
+            {[
+              { title: "Munchies", icon: "🍟", color: "#FEE2E2", url: "/store/munchies" },
+              { title: "Beverages", icon: "🥤", color: "#E0F2FE", url: "/store/beverages" },
+              { title: "Sweet Indulgence", icon: "🍫", color: "#F3E8FF", url: "/store/sweet-indulgence" },
+              { title: "Instant Food", icon: "🍜", color: "#FEF9C3", url: "/store/instant-food" },
+            ].map(cat => (
+              <Link href={cat.url} key={cat.title} style={{
+                background: cat.color,
+                padding: "20px 16px",
+                borderRadius: 20,
+                textDecoration: "none",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "space-between",
+                minHeight: 120,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
+                transition: "transform 0.2s"
+              }}>
+                <div style={{ fontSize: "2rem" }}>{cat.icon}</div>
+                <div style={{
+                  fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#0F172A", lineHeight: 1.2
+                }}>
+                  {cat.title}
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          <Link href="/store" style={{
+            display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 32px",
+            background: "#0F172A", color: "white", borderRadius: 999, fontWeight: 800,
+            textDecoration: "none", marginTop: 32, fontSize: "0.95rem", boxShadow: "0 8px 24px rgba(15,23,42,0.25)"
+          }}>
+            EXPLORE THE STORE <ChevronRight size={16} />
+          </Link>
+        </div>
+      </section>
+
       {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
       <div style={{
         background: "rgba(255,255,255,0.97)",

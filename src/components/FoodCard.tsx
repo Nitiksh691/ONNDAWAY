@@ -483,10 +483,27 @@ const FoodCard = ({
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
             marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? "4px" : "0px"
           }}>
+            {item.brand ? <span style={{ fontWeight: 800, color: "#0F172A" }}>{item.brand} </span> : null}
             {item.name}
           </div>
 
-          {item.section && (
+          {item.unit && (
+            <div style={{ fontSize: "0.75rem", color: "#64748B", marginBottom: 6 }}>
+              {item.unit}
+            </div>
+          )}
+
+          {item.badges && item.badges.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+              {item.badges.map(b => (
+                <span key={b} style={{ background: "#ECFDF5", color: "#059669", fontSize: "0.6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>
+                  {b}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {item.section && !item.badges?.length && (
             <div style={{ marginBottom: 8, display: "flex", overflow: "hidden" }}>
               <span style={{ background: "rgba(1, 53, 251, 0.08)", color: "var(--primary)", fontSize: "0.65rem", fontWeight: 700, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
                 {item.section}

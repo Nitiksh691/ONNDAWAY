@@ -6,6 +6,15 @@ const MenuItemSchema = new Schema({
   price:         { type: Number, required: true },
   image:         { type: String, required: true },
   category:      { type: String, required: true },
+  
+  // ── Grocery / Store Extensions ──
+  brand:         { type: String, default: "" },
+  subcategory:   { type: String, default: "" },
+  unit:          { type: String, default: "" },
+  tags:          { type: [String], default: [] },
+  badges:        { type: [String], default: [] },
+  isDeal:        { type: Boolean, default: false },
+  
   orderCount:    { type: Number, default: 0 },
   available:     { type: Boolean, default: true },
   stock:         { type: Number, default: null },
