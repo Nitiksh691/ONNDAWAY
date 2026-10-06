@@ -350,6 +350,25 @@ export default function AdminMenuPage() {
                         <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="0" value={form.sortOrder ?? 0} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })} min="0" />
                         <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "4px" }}>Lower = appears first.</p>
                       </div>
+                      
+                      {/* Store Additions */}
+                      <div style={{ gridColumn: "1 / -1", height: 1, background: "#E2E8F0", margin: "8px 0" }} />
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Brand</label>
+                        <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Lay's" value={form.brand || ""} onChange={e => setForm({ ...form, brand: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Subcategory</label>
+                        <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Chips & Crisps" value={form.subcategory || ""} onChange={e => setForm({ ...form, subcategory: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Unit / Weight</label>
+                        <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. 1 pack (43g)" value={form.unit || ""} onChange={e => setForm({ ...form, unit: e.target.value })} />
+                      </div>
+                      <div>
+                        <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Badges (comma separated)</label>
+                        <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="e.g. Chilli, Zero Maida" value={form.badges?.join(", ") || ""} onChange={e => setForm({ ...form, badges: e.target.value.split(",").map(s => s.trim()).filter(Boolean) })} />
+                      </div>
                     </div>
                   )}
                 </div>
