@@ -89,7 +89,7 @@ export default function LaunchingSoonPage() {
   return (
     <div style={{
       minHeight: "100vh",
-      background: "#000000",
+      background: "#050505",
       color: "#FFFFFF",
       display: "flex",
       flexDirection: "column",
@@ -97,167 +97,119 @@ export default function LaunchingSoonPage() {
       justifyContent: "center",
       position: "relative",
       overflow: "hidden",
-      fontFamily: "'Inter', sans-serif",
+      fontFamily: "'Outfit', sans-serif",
       padding: "32px 24px",
       textAlign: "center",
     }}>
-      {/* Animated background particles */}
-      <canvas ref={canvasRef} style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 0 }} />
-
-      {/* Blue glow radial behind content */}
+      {/* Premium ambient light */}
       <div style={{
-        position: "absolute",
-        top: "40%",
-        left: "50%",
-        transform: "translate(-50%, -50%)",
-        width: "80vw",
-        height: "80vw",
-        maxWidth: 700,
-        maxHeight: 700,
-        background: "radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 70%)",
-        pointerEvents: "none",
-        zIndex: 0,
+        position: "absolute", top: "-20%", left: "50%", transform: "translateX(-50%)",
+        width: "120vw", height: "80vh",
+        background: "radial-gradient(circle at 50% 0%, rgba(1, 53, 251, 0.25) 0%, rgba(0,0,0,0) 60%)",
+        pointerEvents: "none", zIndex: 0, filter: "blur(60px)"
       }} />
 
-      {/* Content */}
-      <div style={{ position: "relative", zIndex: 1, maxWidth: 640, width: "100%" }}>
-
-        {/* Logo */}
-        <div style={{ marginBottom: 40 }}>
+      <div style={{ position: "relative", zIndex: 1, maxWidth: 800, width: "100%", display: "flex", flexDirection: "column", alignItems: "center" }}>
+        
+        {/* Sleek Logo pill */}
+        <div style={{
+          display: "inline-flex", alignItems: "center", gap: 10,
+          background: "rgba(255,255,255,0.02)", border: "1px solid rgba(255,255,255,0.06)",
+          padding: "8px 20px", borderRadius: 999, marginBottom: 50,
+          backdropFilter: "blur(12px)", boxShadow: "0 4px 24px rgba(0,0,0,0.4)"
+        }}>
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 12,
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 999, padding: "10px 22px",
-            background: "rgba(255,255,255,0.03)",
-            backdropFilter: "blur(10px)",
-          }}>
-            <div style={{
-              width: 32, height: 32, borderRadius: "50%",
-              background: "linear-gradient(135deg, #2563EB, #3B82F6)",
-              display: "flex", alignItems: "center", justifyContent: "center",
-            }}>
-              <span style={{ fontSize: 16 }}>☕</span>
-            </div>
-            <span style={{ fontWeight: 800, fontSize: "1rem", letterSpacing: "1px", textTransform: "uppercase", color: "#E2E8F0" }}>
-              ONN DA WAY
-            </span>
-          </div>
+            width: 8, height: 8, borderRadius: "50%", background: "#38BDF8",
+            boxShadow: "0 0 12px #38BDF8", animation: "pulse 2s infinite"
+          }} />
+          <span style={{ fontSize: "0.75rem", fontWeight: 800, textTransform: "uppercase", letterSpacing: "2px", color: "#E2E8F0" }}>
+            ONN DA WAY
+          </span>
         </div>
 
-        {/* Headline */}
+        {/* Massive Typeface */}
         <h1 style={{
-          fontSize: "clamp(2.5rem, 8vw, 4.5rem)",
-          fontWeight: 900,
-          lineHeight: 1.05,
-          letterSpacing: "-0.03em",
-          marginBottom: 24,
-          fontFamily: "'Outfit', sans-serif",
-          background: "linear-gradient(to bottom right, #FFFFFF 40%, rgba(255,255,255,0.5))",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
+          fontSize: "clamp(3rem, 10vw, 7rem)", fontWeight: 900, lineHeight: 0.9, letterSpacing: "-0.04em",
+          background: "linear-gradient(180deg, #FFFFFF 20%, rgba(255,255,255,0.3) 100%)",
+          WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent",
+          marginBottom: 32, textTransform: "uppercase"
         }}>
-          Something<br />Brewing 🚀
+          THE NEXT <br /> EVOLUTION.
         </h1>
 
         <p style={{
-          fontSize: "clamp(1rem, 2.5vw, 1.25rem)",
-          color: "rgba(255,255,255,0.55)",
-          lineHeight: 1.6,
-          marginBottom: 48,
-          maxWidth: 460,
-          margin: "0 auto 48px",
+          fontSize: "clamp(1.1rem, 3vw, 1.4rem)", color: "rgba(255,255,255,0.6)",
+          lineHeight: 1.5, fontWeight: 500, maxWidth: 500, margin: "0 auto 60px",
+          fontFamily: "'Inter', sans-serif"
         }}>
-          We&apos;re working hard to get things ready for you. Fresh coffee and a brand new experience is on its way.
+          Coffee was just the beginning. The ultimate campus store experience is dropping soon.
         </p>
 
-        {/* Countdown */}
-        <div style={{
-          display: "flex", justifyContent: "center", gap: "clamp(12px, 3vw, 32px)",
-          marginBottom: 56,
-        }}>
+        {/* Minimal Countdown */}
+        <div style={{ display: "flex", gap: "clamp(16px, 4vw, 40px)", marginBottom: 60, justifyContent: "center" }}>
           {[
-            { label: "Days", val: timeLeft.d },
-            { label: "Hours", val: timeLeft.h },
-            { label: "Minutes", val: timeLeft.m },
-            { label: "Seconds", val: timeLeft.s },
+            { label: "DAYS", val: timeLeft.d },
+            { label: "HOURS", val: timeLeft.h },
+            { label: "MINS", val: timeLeft.m },
+            { label: "SECS", val: timeLeft.s },
           ].map(({ label, val }) => (
-            <div key={label} style={{
-              display: "flex", flexDirection: "column", alignItems: "center", gap: 8,
-              minWidth: "clamp(64px, 15vw, 90px)",
-            }}>
+            <div key={label} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               <div style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: 16,
-                width: "100%",
-                paddingTop: 16,
-                paddingBottom: 16,
-                fontFamily: "'Outfit', sans-serif",
-                fontSize: "clamp(1.8rem, 5vw, 2.8rem)",
-                fontWeight: 900,
-                color: "#FFFFFF",
-                letterSpacing: "-0.02em",
+                fontSize: "clamp(2rem, 6vw, 4rem)", fontWeight: 900, color: "#FFFFFF",
+                lineHeight: 1, marginBottom: 8, fontVariantNumeric: "tabular-nums"
               }}>
                 {String(val).padStart(2, "0")}
               </div>
-              <span style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.35)", fontWeight: 700, textTransform: "uppercase", letterSpacing: "1px" }}>
+              <div style={{ fontSize: "0.7rem", fontWeight: 700, color: "rgba(255,255,255,0.4)", letterSpacing: "2px" }}>
                 {label}
-              </span>
+              </div>
             </div>
           ))}
         </div>
 
-        {/* Email Notify Form */}
+        {/* Glassmorphic Form */}
         {!submitted ? (
           <form onSubmit={handleNotify} style={{
-            display: "flex", gap: 12, maxWidth: 460, margin: "0 auto",
-            flexWrap: "wrap", justifyContent: "center",
+            display: "flex", background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 999, padding: "6px", maxWidth: 440, width: "100%", backdropFilter: "blur(20px)"
           }}>
             <input
-              type="email"
-              required
-              placeholder="Enter your email"
-              value={email}
-              onChange={e => setEmail(e.target.value)}
+              type="email" required placeholder="Enter your email for early access"
+              value={email} onChange={e => setEmail(e.target.value)}
               style={{
-                flex: 1, minWidth: 200, padding: "16px 20px",
-                borderRadius: 14, border: "1px solid rgba(255,255,255,0.1)",
-                background: "rgba(255,255,255,0.05)",
-                color: "#FFFFFF", fontSize: "1rem",
-                outline: "none",
-                fontFamily: "inherit",
+                flex: 1, background: "transparent", border: "none", color: "#FFF",
+                padding: "0 20px", fontSize: "0.95rem", outline: "none", fontFamily: "'Inter', sans-serif"
               }}
             />
             <button type="submit" style={{
-              padding: "16px 28px", borderRadius: 14, border: "none",
-              background: "linear-gradient(135deg, #2563EB, #3B82F6)",
-              color: "white", fontWeight: 800, fontSize: "1rem",
-              cursor: "pointer", whiteSpace: "nowrap",
-              boxShadow: "0 8px 32px rgba(59,130,246,0.3)",
-              fontFamily: "inherit",
-            }}>
-              Notify Me
+              background: "#FFFFFF", color: "#000000", border: "none", borderRadius: 999,
+              padding: "14px 28px", fontSize: "0.9rem", fontWeight: 800, cursor: "pointer",
+              transition: "transform 0.2s, background 0.2s", textTransform: "uppercase", letterSpacing: "1px"
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = "scale(1.02)"}
+            onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+            >
+              Get Notified
             </button>
           </form>
         ) : (
           <div style={{
-            display: "inline-flex", alignItems: "center", gap: 10,
             background: "rgba(34,197,94,0.1)", border: "1px solid rgba(34,197,94,0.3)",
-            borderRadius: 14, padding: "16px 28px", color: "#4ADE80",
-            fontWeight: 700, fontSize: "1rem",
+            color: "#4ADE80", padding: "16px 32px", borderRadius: 999, fontWeight: 700,
+            fontSize: "0.95rem", letterSpacing: "0.5px"
           }}>
-            ✅ You&apos;re on the list! We&apos;ll let you know.
+            ACCESS SECURED. WE'LL BE IN TOUCH.
           </div>
         )}
 
-        {/* Footer note */}
-        <p style={{
-          marginTop: 48, fontSize: "0.85rem",
-          color: "rgba(255,255,255,0.2)", fontWeight: 500,
-        }}>
-          © {new Date().getFullYear()} ONN DA WAY Coffee. All rights reserved.
-        </p>
       </div>
+      <style>{`
+        @keyframes pulse {
+          0% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.7); }
+          70% { box-shadow: 0 0 0 10px rgba(56, 189, 248, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+        }
+      `}</style>
     </div>
   );
 }
