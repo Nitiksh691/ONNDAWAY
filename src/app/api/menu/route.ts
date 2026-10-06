@@ -47,7 +47,7 @@ const _POST = async (req: NextRequest) => {
       name, description, price, originalPrice, image, category, 
       isPopular, isRecommended, section, isBanner, hasTallSize, 
       details, sizes, sortOrder, available, customizationCategories,
-      brand, subcategory, unit, tags, badges, isDeal
+      brand, subcategory, unit, tags, badges, isDeal, world
     } = body;
 
     if (!name || !price || !category) {
@@ -61,6 +61,7 @@ const _POST = async (req: NextRequest) => {
       originalPrice: originalPrice || null,
       image,
       category,
+      world:         world          || "food",
       brand:         brand         || "",
       subcategory:   subcategory   || "",
       unit:          unit          || "",

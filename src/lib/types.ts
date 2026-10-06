@@ -61,6 +61,7 @@ export interface MenuItem {
   price: number;
   image: string;
   category: string;
+  world?: "food" | "munchies";
   brand?: string;
   subcategory?: string;
   unit?: string;

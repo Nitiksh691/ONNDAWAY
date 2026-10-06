@@ -15,11 +15,12 @@ export default function AdminMenuPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const [adminWorld, setAdminWorld] = useState<"food" | "munchies">("food");
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
 
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [] });
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", world: "food", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [] });
   const [uploadingImage, setUploadingImage] = useState(false);
 
 
@@ -49,7 +50,7 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
+      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: adminWorld === "munchies" ? "munchies" : "coffee", world: adminWorld, available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
     }
     setDialogOpen(true);
   };
@@ -138,15 +139,48 @@ export default function AdminMenuPage() {
     }
   };
 
+  // Filter by world and search
+  const filtered = items
+    .filter(i => (i.world || "food") === adminWorld)
+    .filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+
   return (
     <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "32px", flexWrap: "wrap", gap: "16px" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "24px", flexWrap: "wrap", gap: "16px" }}>
         <div>
           <h1 style={{ fontSize: "2rem", fontWeight: 900, color: "var(--text-dark)", marginBottom: "8px" }}>Menu Management</h1>
           <p style={{ color: "var(--text-muted)" }}>Add, edit, or remove items from the campus menu.</p>
         </div>
-        <button onClick={() => handleOpenEdit(null)} style={{ background: "#0055ff", color: "#0f172a", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+        <button onClick={() => handleOpenEdit(null)} style={{ background: "#0055ff", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "8px", fontWeight: 700, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
           <Plus size={18} /> Add New Item
+        </button>
+      </div>
+
+      {/* ── World Flip Toggle ── */}
+      <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 12, padding: 4, gap: 4, marginBottom: 24, maxWidth: 460 }}>
+        <button
+          onClick={() => setAdminWorld("food")}
+          style={{
+            flex: 1, padding: "12px 16px", borderRadius: 9, border: "none", cursor: "pointer",
+            fontFamily: "inherit", fontWeight: 700, fontSize: "0.9rem", transition: "all 0.18s",
+            background: adminWorld === "food" ? "#FFFFFF" : "transparent",
+            color: adminWorld === "food" ? "#0F172A" : "#94A3B8",
+            boxShadow: adminWorld === "food" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
+          }}
+        >
+          ☕ Coffee &amp; Food
+        </button>
+        <button
+          onClick={() => setAdminWorld("munchies")}
+          style={{
+            flex: 1, padding: "12px 16px", borderRadius: 9, border: "none", cursor: "pointer",
+            fontFamily: "inherit", fontWeight: 700, fontSize: "0.9rem", transition: "all 0.18s",
+            background: adminWorld === "munchies" ? "#FFFFFF" : "transparent",
+            color: adminWorld === "munchies" ? "#0F172A" : "#94A3B8",
+            boxShadow: adminWorld === "munchies" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
+          }}
+        >
+          🛒 Grocery &amp; Munchies
         </button>
       </div>
 
@@ -156,13 +190,12 @@ export default function AdminMenuPage() {
           <Search size={18} style={{ position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)", color: "var(--text-muted)" }} />
           <input
             type="text"
-            placeholder="Search menu items..."
+            placeholder={`Search ${adminWorld === "food" ? "food & coffee" : "grocery & munchies"} items...`}
             style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px 14px 48px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
-
         <div style={{ overflowX: "auto" }}>
           <table style={{ width: "100%", borderCollapse: "collapse", minWidth: "700px" }}>
             <thead>
@@ -263,6 +296,32 @@ export default function AdminMenuPage() {
                   <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Item Name</label>
                   <input type="text" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "14px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required />
                 </div>
+
+                {/* ── World Selector ── */}
+                <div>
+                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>
+                    Item belongs to
+                  </label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    {([["food", "☕ Coffee & Food"], ["munchies", "🛒 Grocery & Munchies"]] as const).map(([val, label]) => (
+                      <button
+                        key={val}
+                        type="button"
+                        onClick={() => setForm({ ...form, world: val })}
+                        style={{
+                          flex: 1, padding: "10px 14px", borderRadius: 10, fontFamily: "inherit",
+                          fontWeight: 700, fontSize: "0.85rem", cursor: "pointer", transition: "all 0.15s",
+                          border: (form.world || "food") === val ? "2px solid #0055ff" : "2px solid #e2e8f0",
+                          background: (form.world || "food") === val ? "rgba(0,85,255,0.06)" : "#ffffff",
+                          color: (form.world || "food") === val ? "#0055ff" : "#64748b",
+                        }}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
                   <div>
                     <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Current Price (₹)</label>

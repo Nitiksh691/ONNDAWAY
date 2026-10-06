@@ -327,72 +327,63 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
         <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
       </div>
 
-      {/* ─── GROCERY TRANSITION / BRAND MOMENT ─── */}
-      <section style={{ padding: "40px 24px", background: "#FFFFFF", textAlign: "center", borderBottom: "1px solid #F1F5F9" }}>
-        <div className="otw-container" style={{ maxWidth: 600 }}>
-          <div style={{
-            display: "inline-block", fontSize: "0.75rem", fontWeight: 800, color: "#0135FB",
-            background: "rgba(1, 53, 251, 0.1)", padding: "6px 14px", borderRadius: 999,
-            textTransform: "uppercase", letterSpacing: "1px", marginBottom: 20
-          }}>
-            New Addition
-          </div>
-          <h2 style={{
-            fontFamily: "'Outfit', sans-serif", fontSize: "clamp(2rem, 6vw, 3rem)", fontWeight: 900,
-            color: "#0F172A", lineHeight: 1.1, textTransform: "uppercase", letterSpacing: "-0.02em",
-            marginBottom: 16
-          }}>
-            COFFEE WAS JUST <br /> THE BEGINNING.
-          </h2>
-          <p style={{ color: "#64748B", fontSize: "1rem", fontWeight: 500, lineHeight: 1.6, marginBottom: 32 }}>
-            Your late-night cravings, your campus munchies, your everyday little addictions — all in one place. Welcome to the Store.
-          </p>
+      {/* ─── STORE WELCOME STRIP (compact, inline) ─── */}
+      <Link href="/menu?world=munchies" style={{ textDecoration: "none", display: "block" }}>
+        <div style={{
+          background: "linear-gradient(110deg, #0028D4 0%, #0135FB 55%, #2A55FF 100%)",
+          padding: "0 20px",
+          position: "relative",
+          overflow: "hidden",
+          cursor: "pointer",
+        }}>
+          <style>{`
+            .store-strip { display: flex; align-items: center; gap: 14px; height: 64px; max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
+            .store-strip-pills { display: flex; gap: 8px; }
+            .store-pill { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 4px 10px; font-size: 0.7rem; font-weight: 800; color: white; white-space: nowrap; letter-spacing: 0.3px; }
+            .store-strip-snacks { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: flex-end; gap: -8px; pointer-events: none; padding-right: 16px; }
+            .store-snack-img { height: 58px; transform: translateY(4px); filter: drop-shadow(0 -4px 8px rgba(0,0,0,0.25)); transition: transform 0.3s; }
+            @media (max-width: 480px) { .store-strip-pills .store-pill:nth-child(2) { display: none; } .store-snack-img { height: 46px; } }
+          `}</style>
 
-          {/* STORE DISCOVERY BENTO GRID */}
-          <div style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
-            gap: 12,
-            marginTop: 20,
-            textAlign: "left"
-          }}>
-            {[
-              { title: "Munchies", icon: "🍟", color: "#FEE2E2", url: "/store/munchies" },
-              { title: "Beverages", icon: "🥤", color: "#E0F2FE", url: "/store/beverages" },
-              { title: "Sweet Indulgence", icon: "🍫", color: "#F3E8FF", url: "/store/sweet-indulgence" },
-              { title: "Instant Food", icon: "🍜", color: "#FEF9C3", url: "/store/instant-food" },
-            ].map(cat => (
-              <Link href={cat.url} key={cat.title} style={{
-                background: cat.color,
-                padding: "20px 16px",
-                borderRadius: 20,
-                textDecoration: "none",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
-                minHeight: 120,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.03)",
-                transition: "transform 0.2s"
-              }}>
-                <div style={{ fontSize: "2rem" }}>{cat.icon}</div>
-                <div style={{
-                  fontFamily: "'Outfit', sans-serif", fontWeight: 800, fontSize: "1rem", color: "#0F172A", lineHeight: 1.2
-                }}>
-                  {cat.title}
-                </div>
-              </Link>
-            ))}
+          {/* Glow orb */}
+          <div style={{ position: "absolute", top: "-40px", right: "20%", width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.07)", filter: "blur(30px)", pointerEvents: "none" }} />
+
+          <div className="store-strip">
+            {/* Icon */}
+            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>
+              🛒
+            </div>
+
+            {/* Text */}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ color: "white", fontWeight: 900, fontSize: "0.88rem", fontFamily: "'Outfit', sans-serif", lineHeight: 1.2, letterSpacing: "0.2px" }}>
+                Welcome to ONN DA WAY Store
+              </div>
+              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.72rem", fontWeight: 600, marginTop: 2 }}>
+                Your chips &amp; snacks are waiting 🍟
+              </div>
+            </div>
+
+            {/* Pills */}
+            <div className="store-strip-pills">
+              <div className="store-pill">🚀 FREE DELIVERY</div>
+              <div className="store-pill">✨ NEW ARRIVALS</div>
+            </div>
+
+            {/* Arrow */}
+            <div style={{ color: "white", flexShrink: 0, opacity: 0.9, marginLeft: 4 }}>
+              <ChevronRight size={20} />
+            </div>
           </div>
 
-          <Link href="/store" style={{
-            display: "inline-flex", alignItems: "center", gap: 8, padding: "16px 32px",
-            background: "#0F172A", color: "white", borderRadius: 999, fontWeight: 800,
-            textDecoration: "none", marginTop: 32, fontSize: "0.95rem", boxShadow: "0 8px 24px rgba(15,23,42,0.25)"
-          }}>
-            EXPLORE THE STORE <ChevronRight size={16} />
-          </Link>
+          {/* Floating snack pack emojis peeking from right */}
+          <div className="store-strip-snacks">
+            <span className="store-snack-img" style={{ fontSize: "2.6rem", lineHeight: 1, transform: "rotate(-8deg) translateY(6px)" }}>🍿</span>
+            <span className="store-snack-img" style={{ fontSize: "2.2rem", lineHeight: 1, transform: "rotate(5deg) translateY(2px)", marginLeft: -4 }}>🧃</span>
+            <span className="store-snack-img" style={{ fontSize: "2.8rem", lineHeight: 1, transform: "rotate(-4deg) translateY(8px)", marginLeft: -8 }}>🍫</span>
+          </div>
         </div>
-      </section>
+      </Link>
 
       {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
       <div style={{
