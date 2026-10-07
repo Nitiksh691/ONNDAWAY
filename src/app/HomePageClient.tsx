@@ -26,6 +26,7 @@ function HSliderSection({
   cart,
   onAdd,
   onUpdateQuantity,
+  priority = false,
 }: {
   title: string;
   emoji: string;
@@ -33,6 +34,7 @@ function HSliderSection({
   cart: any[];
   onAdd: any;
   onUpdateQuantity: any;
+  priority?: boolean;
 }) {
   if (items.length === 0) return null;
   return (
@@ -71,10 +73,10 @@ function HSliderSection({
       <div
         className="nudge-anim"
         style={{
-        display: "flex", gap: 14, overflowX: "auto",
-        paddingBottom: 10, WebkitOverflowScrolling: "touch",
-        scrollbarWidth: "none", msOverflowStyle: "none",
-      }}>
+          display: "flex", gap: 14, overflowX: "auto",
+          paddingBottom: 10, WebkitOverflowScrolling: "touch",
+          scrollbarWidth: "none", msOverflowStyle: "none",
+        }}>
         {items.map(item => (
           <div key={item.id} style={{ flexShrink: 0, width: 154 }}>
             <FoodCard
@@ -83,6 +85,7 @@ function HSliderSection({
               cartItem={cart.find((c: any) => c.item.id === item.id)}
               onAdd={onAdd}
               onUpdateQuantity={onUpdateQuantity}
+              priority={priority}
             />
           </div>
         ))}
@@ -91,7 +94,293 @@ function HSliderSection({
   );
 }
 
-export default function HomePageClient({ initialMenu = [], initialBanner = {} }: { initialMenu?: any[], initialBanner?: any }) {
+/* ─── SDUI Components (Flipkart-style SDUI sections) ─── */
+function DealTimer() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 14, seconds: 36 });
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setTimeLeft(prev => {
+        if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
+        if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
+        if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
+        return { hours: 2, minutes: 0, seconds: 0 };
+      });
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const pad = (n: number) => n.toString().padStart(2, "0");
+  return (
+    <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+      <span style={{ background: "white", color: "#0135FB", fontWeight: 900, fontSize: "0.85rem", padding: "2px 6px", borderRadius: 6 }}>{pad(timeLeft.hours)}</span>
+      <span style={{ color: "white", fontWeight: 900 }}>:</span>
+      <span style={{ background: "white", color: "#0135FB", fontWeight: 900, fontSize: "0.85rem", padding: "2px 6px", borderRadius: 6 }}>{pad(timeLeft.minutes)}</span>
+      <span style={{ color: "white", fontWeight: 900 }}>:</span>
+      <span style={{ background: "white", color: "#0135FB", fontWeight: 900, fontSize: "0.85rem", padding: "2px 6px", borderRadius: 6 }}>{pad(timeLeft.seconds)}</span>
+    </div>
+  );
+}
+
+function FreeDeliveryStrip({ config }: { config: any }) {
+  if (!config?.enabled) return null;
+  const heading = config.headingText ? `${config.headingText} ${config.minAmount || 199}` : `FREE DELIVERY ABOVE ₹ ${config.minAmount || 199}`;
+
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "14px 0" }}>
+      <div style={{
+        background: config.bgGradient || "linear-gradient(135deg, #FF6B00 0%, #FF3D00 50%, #E62E00 100%)",
+        borderRadius: 20, padding: "16px 20px", color: "white", width: "100%",
+        display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
+        boxShadow: "0 8px 24px rgba(255,61,0,0.28)", border: "1px solid rgba(255,255,255,0.25)",
+        position: "relative", overflow: "hidden"
+      }}>
+        {/* Glow accent */}
+        <div style={{ position: "absolute", top: "-50px", right: "-30px", width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.18)", filter: "blur(25px)", pointerEvents: "none" }} />
+
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
+          <span style={{ fontSize: "1.4rem" }}>🛵</span>
+          <div>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(0.95rem, 3.8vw, 1.15rem)", letterSpacing: "0.3px", textTransform: "uppercase", lineHeight: 1.2 }}>
+              {heading}
+            </div>
+            {config.subText && (
+              <div style={{ fontSize: "0.75rem", opacity: 0.9, marginTop: 2, fontWeight: 600 }}>
+                {config.subText}
+              </div>
+            )}
+          </div>
+        </div>
+        <div style={{
+          border: "2px dashed rgba(255,255,255,0.9)", borderRadius: 10, padding: "6px 14px",
+          fontSize: "0.85rem", fontWeight: 900, letterSpacing: "1px", background: "rgba(255,255,255,0.18)",
+          backdropFilter: "blur(6px)", flexShrink: 0
+        }}>
+          [{config.code || "FREEDEL"}]
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: any) {
+  if (!config?.enabled || !items || items.length === 0) return null;
+
+  // Filter admin selected items if available, or fallback to first 2 items
+  let dealItems = items.filter((i: any) => (config.itemIds || []).includes(i.id || i._id));
+  if (dealItems.length === 0) {
+    dealItems = items.slice(0, 2);
+  }
+
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "16px 0 24px" }}>
+      <div style={{
+        background: "linear-gradient(145deg, #0028D4 0%, #0135FB 55%, #1A4BFF 100%)",
+        borderRadius: 24, padding: "20px", color: "white", width: "100%",
+        boxShadow: "0 14px 36px rgba(1,53,251,0.28)", border: "1px solid rgba(255,255,255,0.15)",
+        position: "relative", overflow: "hidden"
+      }}>
+        {/* Glow ambient background */}
+        <div style={{ position: "absolute", top: -80, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.12)", filter: "blur(40px)", pointerEvents: "none" }} />
+
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "relative", zIndex: 2 }}>
+          <div>
+            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.15rem, 4vw, 1.4rem)", fontWeight: 900, letterSpacing: "-0.02em", margin: 0 }}>
+              {config.title || "Deal of the Day"}
+            </h2>
+            {config.subtitle && (
+              <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.85)", margin: "2px 0 0", fontWeight: 600 }}>{config.subtitle}</p>
+            )}
+          </div>
+          {config.showTimer !== false && <DealTimer />}
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 14, position: "relative", zIndex: 2 }}>
+          {dealItems.map((item: any) => {
+            const originalPrice = Math.round(item.price * 1.35);
+            const cartItem = cart.find((c: any) => c.item.id === item.id);
+            return (
+              <div key={item.id} style={{
+                background: "white", borderRadius: 18, padding: 14, color: "#0F172A",
+                display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
+                boxShadow: "0 4px 16px rgba(0,0,0,0.06)", position: "relative"
+              }}>
+                <div style={{ width: "100%", height: 115, position: "relative", marginBottom: 10, borderRadius: 12, overflow: "hidden" }}>
+                  <Image
+                    src={item.image || "https://res.cloudinary.com/dr4nfueet/image/upload/v1791312577/onndaway/menu/w8ggcbikrhw7nuvm2oic.jpg"}
+                    alt={item.name} fill style={{ objectFit: "cover" }}
+                  />
+                </div>
+                <h3 style={{ fontSize: "0.9rem", fontWeight: 800, marginBottom: 6, height: 36, overflow: "hidden", lineHeight: 1.25 }}>{item.name}</h3>
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+                  <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>₹{item.price}</span>
+                  <span style={{ fontSize: "0.78rem", color: "#94A3B8", textDecoration: "line-through" }}>₹{originalPrice}</span>
+                </div>
+                {cartItem ? (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#0135FB", color: "white", borderRadius: 10, padding: "4px 12px", width: "100%" }}>
+                    <button onClick={() => onUpdateQuantity(item.id, cartItem.quantity - 1)} style={{ background: "none", border: "none", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem" }}>-</button>
+                    <span style={{ fontWeight: 800, fontSize: "0.9rem" }}>{cartItem.quantity}</span>
+                    <button onClick={() => onUpdateQuantity(item.id, cartItem.quantity + 1)} style={{ background: "none", border: "none", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem" }}>+</button>
+                  </div>
+                ) : (
+                  <button onClick={() => onAdd(item)} style={{
+                    background: "#0135FB", color: "white", border: "none", borderRadius: 10,
+                    padding: "8px 0", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", width: "100%",
+                    boxShadow: "0 4px 12px rgba(1,53,251,0.3)"
+                  }}>
+                    ADD
+                  </button>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ComboPromoBanner({ config }: { config: any }) {
+  if (!config?.enabled) return null;
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "24px 0" }}>
+      <Link href={config.link || "/menu"} style={{ textDecoration: "none", display: "block" }}>
+        <div style={{
+          background: config.bgGradient || "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+          borderRadius: 22, padding: "20px 24px", color: "white", width: "100%",
+          display: "flex", alignItems: "center", justifyContent: "space-between", position: "relative", overflow: "hidden",
+          boxShadow: "0 10px 28px rgba(255,140,0,0.3)", border: "1px solid rgba(255,255,255,0.25)"
+        }}>
+          <div>
+            <div style={{ fontSize: "0.78rem", fontWeight: 900, letterSpacing: "1.2px", textTransform: "uppercase", opacity: 0.9 }}>
+              {config.subtitle || "COMBO SPECIAL"}
+            </div>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.2rem, 4.5vw, 1.6rem)", fontWeight: 900, textTransform: "uppercase", lineHeight: 1.15, margin: "6px 0" }}>
+              {config.title || "COFFEE + SANDWICH"}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: "1rem", fontWeight: 800 }}>
+              <span>Just ₹{config.priceText || "149"}</span>
+              {config.originalPriceText && (
+                <span style={{ fontSize: "0.82rem", opacity: 0.8, textDecoration: "line-through" }}>₹{config.originalPriceText}</span>
+              )}
+            </div>
+          </div>
+          <div style={{
+            width: 48, height: 48, borderRadius: "50%", background: "#0135FB",
+            display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontWeight: 900, fontSize: "1.3rem",
+            boxShadow: "0 6px 18px rgba(1,53,251,0.35)", flexShrink: 0
+          }}>
+            →
+          </div>
+        </div>
+      </Link>
+    </div>
+  );
+}
+
+function OrderAgainSection({ config, items, cart, onAdd, onUpdateQuantity }: any) {
+  if (!config?.enabled || !items || items.length === 0) return null;
+  const orderAgainItems = items.slice(0, 4);
+
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "24px 0" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div>
+          <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.15rem", fontWeight: 900, color: "#0F172A", margin: 0 }}>
+            {config.title || "Order again"}
+          </h2>
+          {config.subtitle && (
+            <p style={{ fontSize: "0.78rem", color: "#64748B", margin: "2px 0 0" }}>{config.subtitle}</p>
+          )}
+        </div>
+        <Link href="/orders" style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0135FB", textDecoration: "none" }}>
+          History →
+        </Link>
+      </div>
+      <div style={{ display: "flex", gap: 12, overflowX: "auto", paddingBottom: 6, scrollbarWidth: "none" }}>
+        {orderAgainItems.map((item: any) => {
+          const cartItem = cart.find((c: any) => c.item.id === item.id);
+          return (
+            <div key={item.id} style={{
+              background: "white", borderRadius: 16, padding: 12, width: 220, flexShrink: 0,
+              border: "1px solid #E2E8F0", display: "flex", alignItems: "center", gap: 12,
+              boxShadow: "0 4px 14px rgba(0,0,0,0.03)"
+            }}>
+              <div style={{ width: 54, height: 54, borderRadius: 12, background: "#0135FB", position: "relative", overflow: "hidden", flexShrink: 0 }}>
+                <Image src={item.image || "https://res.cloudinary.com/dr4nfueet/image/upload/v1791312577/onndaway/menu/w8ggcbikrhw7nuvm2oic.jpg"} alt={item.name} fill style={{ objectFit: "cover" }} />
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: "0.85rem", fontWeight: 800, color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {item.name}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#64748B", marginTop: 2, fontWeight: 600 }}>
+                  ₹{item.price}
+                </div>
+              </div>
+              {cartItem ? (
+                <span style={{ fontSize: "0.78rem", fontWeight: 800, color: "#0135FB" }}>{cartItem.quantity} in cart</span>
+              ) : (
+                <button onClick={() => onAdd(item)} style={{
+                  background: "#0135FB", color: "white", border: "none", borderRadius: 8,
+                  padding: "6px 14px", fontWeight: 800, fontSize: "0.78rem", cursor: "pointer", flexShrink: 0
+                }}>
+                  ADD
+                </button>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function BrowseMenuGrid({ config, onSelectCategory }: any) {
+  if (!config?.enabled) return null;
+  const blocks = [
+    { title: "Coffee", category: "coffee", bg: "#0135FB", textColor: "white" },
+    { title: "Flavoured Coffee", category: "coffee", bg: "#001B94", textColor: "white" },
+    { title: "Burgers & Sandwiches", category: "meals", bg: "#FF8F17", textColor: "white" },
+    { title: "Cold Beverages", category: "drinks", bg: "#E0E7FF", textColor: "#0135FB" },
+  ];
+
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "24px 0 36px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+        <div>
+          <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.15rem", fontWeight: 900, color: "#0F172A", margin: 0 }}>
+            {config.title || "Browse menu"}
+          </h2>
+          {config.subtitle && (
+            <p style={{ fontSize: "0.78rem", color: "#64748B", margin: "2px 0 0" }}>{config.subtitle}</p>
+          )}
+        </div>
+        <Link href="/menu" style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0135FB", textDecoration: "none" }}>
+          Full menu →
+        </Link>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+        {blocks.map((b) => (
+          <button
+            key={b.title}
+            onClick={() => onSelectCategory(b.category)}
+            style={{
+              background: b.bg, borderRadius: 18, height: 100, padding: 16,
+              border: "none", cursor: "pointer", textAlign: "left",
+              display: "flex", flexDirection: "column", justifyContent: "flex-end",
+              boxShadow: "0 6px 16px rgba(0,0,0,0.06)", transition: "transform 0.15s"
+            }}
+          >
+            <span style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.05rem", fontWeight: 900, color: b.textColor, lineHeight: 1.25 }}>
+              {b.title}
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function HomePageClient({ initialMenu = [], initialBanner = {}, initialHomeLayout = {} }: { initialMenu?: any[], initialBanner?: any, initialHomeLayout?: any }) {
   const [menuItems, setMenuItems] = useState<any[]>(initialMenu);
   const [categories, setCategories] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -105,6 +394,16 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
+
+  const [homeLayout, setHomeLayout] = useState({
+    categoryIconsBar: { enabled: true, ...(initialHomeLayout.categoryIconsBar || {}) },
+    freeDelivery: { enabled: true, minAmount: 199, code: "FREEDEL", ...(initialHomeLayout.freeDelivery || {}) },
+    dealOfTheDay: { enabled: true, title: "Deal of the Day", showTimer: true, ...(initialHomeLayout.dealOfTheDay || {}) },
+    bestsellers: { enabled: true, title: "Bestsellers", ...(initialHomeLayout.bestsellers || {}) },
+    comboPromo: { enabled: true, title: "COFFEE + SANDWICH", subtitle: "COMBO", priceText: "149", link: "/menu", ...(initialHomeLayout.comboPromo || {}) },
+    orderAgain: { enabled: true, title: "Order again", ...(initialHomeLayout.orderAgain || {}) },
+    browseMenu: { enabled: true, title: "Browse menu", ...(initialHomeLayout.browseMenu || {}) },
+  });
 
   useEffect(() => {
     // Only fetch if initialBanner wasn't provided or we want to re-fetch on mount
@@ -120,15 +419,45 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
 
   const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu(initialMenu);
   const availableItems = useMemo(() => (Array.isArray(rawMenuItems) ? rawMenuItems : []).filter((i: any) => i.available), [rawMenuItems]);
-  
+
+  // Split into food world and munchies world
+  const munchiesItems = useMemo(() => availableItems.filter((i: any) => i.world === "munchies"), [availableItems]);
+
   useEffect(() => {
     if (availableItems.length > 0) {
-      const sortedItems = [...availableItems].sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
+      // Only food items go into the main menu section
+      const foodOnly = availableItems.filter((i: any) => !i.world || i.world === "food");
+      const sortedItems = [...foodOnly].sort((a: any, b: any) => (a.sortOrder || 0) - (b.sortOrder || 0));
       setMenuItems(sortedItems);
       const cats = ["all", ...Array.from(new Set(sortedItems.map((i: any) => i.category as string)))];
       setCategories(cats);
     }
   }, [availableItems]);
+
+  // Munchies grouped by brand for homepage discovery
+  const munchiesByBrand = useMemo(() => {
+    const brands = Array.from(new Set(munchiesItems.map((i: any) => i.brand || "").filter(Boolean)));
+
+    if (brands.length > 0) {
+      const groups = brands.map(brand => ({
+        brand,
+        items: munchiesItems.filter((i: any) => i.brand === brand),
+      }));
+      // Add items without a brand to an "Other" section
+      const noBrandItems = munchiesItems.filter((i: any) => !i.brand);
+      if (noBrandItems.length > 0) {
+        groups.push({ brand: "Other", items: noBrandItems });
+      }
+      return groups.filter(g => g.items.length > 0);
+    }
+
+    // Fallback: group by category
+    const cats = Array.from(new Set(munchiesItems.map((i: any) => i.category || "").filter(Boolean)));
+    return cats.map(cat => ({
+      brand: cat.charAt(0).toUpperCase() + cat.slice(1),
+      items: munchiesItems.filter((i: any) => i.category === cat),
+    })).filter(g => g.items.length > 0);
+  }, [munchiesItems]);
 
   const bannerItems = useMemo(() => menuItems.filter(i => i.isBanner).map(i => ({
     id: `item-${i.id}`,
@@ -331,59 +660,48 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
       <Link href="/menu?world=munchies" style={{ textDecoration: "none", display: "block" }}>
         <div style={{
           background: "linear-gradient(110deg, #0028D4 0%, #0135FB 55%, #2A55FF 100%)",
-          padding: "0 20px",
+          padding: "0 16px",
           position: "relative",
           overflow: "hidden",
           cursor: "pointer",
         }}>
           <style>{`
-            .store-strip { display: flex; align-items: center; gap: 14px; height: 64px; max-width: 900px; margin: 0 auto; position: relative; z-index: 1; }
-            .store-strip-pills { display: flex; gap: 8px; }
-            .store-pill { display: flex; align-items: center; gap: 5px; background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.18); border-radius: 999px; padding: 4px 10px; font-size: 0.7rem; font-weight: 800; color: white; white-space: nowrap; letter-spacing: 0.3px; }
-            .store-strip-snacks { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: flex-end; gap: -8px; pointer-events: none; padding-right: 16px; }
+            .store-strip { display: flex; align-items: center; gap: 12px; height: 60px; max-width: 900px; margin: 0 auto; position: relative; z-index: 2; }
+            .store-strip-snacks { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: flex-end; gap: -8px; pointer-events: none; padding-right: 12px; z-index: 1; }
             .store-snack-img { height: 58px; transform: translateY(4px); filter: drop-shadow(0 -4px 8px rgba(0,0,0,0.25)); transition: transform 0.3s; }
-            @media (max-width: 480px) { .store-strip-pills .store-pill:nth-child(2) { display: none; } .store-snack-img { height: 46px; } }
+            @media (max-width: 480px) { .store-snack-img { height: 50px; } }
           `}</style>
 
           {/* Glow orb */}
-          <div style={{ position: "absolute", top: "-40px", right: "20%", width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.07)", filter: "blur(30px)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", top: "-40px", right: "20%", width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.07)", filter: "blur(30px)", pointerEvents: "none", zIndex: 0 }} />
 
-          <div className="store-strip">
-            {/* Icon */}
-            <div style={{ width: 36, height: 36, borderRadius: "50%", background: "rgba(255,255,255,0.15)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.1rem", flexShrink: 0 }}>
-              🛒
-            </div>
 
-            {/* Text */}
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ color: "white", fontWeight: 900, fontSize: "0.88rem", fontFamily: "'Outfit', sans-serif", lineHeight: 1.2, letterSpacing: "0.2px" }}>
-                Welcome to ONN DA WAY Store
-              </div>
-              <div style={{ color: "rgba(255,255,255,0.75)", fontSize: "0.72rem", fontWeight: 600, marginTop: 2 }}>
-                Your chips &amp; snacks are waiting 🍟
-              </div>
-            </div>
 
-            {/* Pills */}
-            <div className="store-strip-pills">
-              <div className="store-pill">🚀 FREE DELIVERY</div>
-              <div className="store-pill">✨ NEW ARRIVALS</div>
-            </div>
-
-            {/* Arrow */}
-            <div style={{ color: "white", flexShrink: 0, opacity: 0.9, marginLeft: 4 }}>
-              <ChevronRight size={20} />
-            </div>
-          </div>
-
-          {/* Floating snack pack emojis peeking from right */}
+          {/* Floating snack emojis */}
           <div className="store-strip-snacks">
-            <span className="store-snack-img" style={{ fontSize: "2.6rem", lineHeight: 1, transform: "rotate(-8deg) translateY(6px)" }}>🍿</span>
-            <span className="store-snack-img" style={{ fontSize: "2.2rem", lineHeight: 1, transform: "rotate(5deg) translateY(2px)", marginLeft: -4 }}>🧃</span>
-            <span className="store-snack-img" style={{ fontSize: "2.8rem", lineHeight: 1, transform: "rotate(-4deg) translateY(8px)", marginLeft: -8 }}>🍫</span>
+            <span className="store-snack-img" style={{ fontSize: "2.4rem", lineHeight: 1, transform: "rotate(-8deg) translateY(4px)" }}>🍿</span>
+            <span className="store-snack-img" style={{ fontSize: "2.2rem", lineHeight: 1, transform: "rotate(5deg) translateY(0px)", marginLeft: -8 }}>🧃</span>
+            <span className="store-snack-img" style={{ fontSize: "2.6rem", lineHeight: 1, transform: "rotate(-4deg) translateY(6px)", marginLeft: -12 }}>🍫</span>
           </div>
         </div>
       </Link>
+
+      {/* ─── TOP OFFERS (FREE DELIVERY & DEAL OF THE DAY) ─── */}
+      {!deferredSearch && selectedCategory === "all" && (
+        <div className="otw-container" style={{ marginTop: "12px", marginBottom: "8px" }}>
+          {/* 1. Free Delivery Banner Strip */}
+          <FreeDeliveryStrip config={homeLayout.freeDelivery} />
+
+          {/* 2. Deal of the Day Section */}
+          <DealOfTheDaySection
+            config={homeLayout.dealOfTheDay}
+            items={availableItems}
+            cart={cart}
+            onAdd={addToCart}
+            onUpdateQuantity={updateQuantity}
+          />
+        </div>
+      )}
 
       {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
       <div style={{
@@ -498,7 +816,7 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
                   ...PRIORITY.filter(c => allCats.includes(c)),
                   ...allCats.filter(c => !PRIORITY.includes(c)),
                 ];
-                return ordered.map(cat => {
+                return ordered.map((cat, index) => {
                   const catItems = fullMenuItems.filter(i => i.category === cat);
                   if (catItems.length === 0) return null;
                   return (
@@ -510,6 +828,7 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
                       cart={cart}
                       onAdd={addToCart}
                       onUpdateQuantity={updateQuantity}
+                      priority={index === 0}
                     />
                   );
                 });
@@ -557,6 +876,73 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {} }:
             )}
           </div>
 
+          {/* ── MUNCHIES SECTION (only when no search/filter active) ── */}
+          {!deferredSearch && selectedCategory === "all" && munchiesItems.length > 0 && (
+            <div style={{ marginTop: 48 }}>
+              {/* Section header */}
+              <div style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                marginBottom: 20, paddingTop: 20,
+                borderTop: "2px solid rgba(1,53,251,0.08)",
+              }}>
+                <div>
+                  <h2 style={{
+                    fontFamily: "'Outfit', sans-serif", fontSize: "1.1rem", fontWeight: 900,
+                    color: "#0F172A", textTransform: "uppercase", letterSpacing: "0.4px", marginBottom: 2,
+                  }}>
+                    🍿 Munchies &amp; Drinks
+                  </h2>
+                  <p style={{ fontSize: "0.78rem", color: "var(--text-muted)", margin: 0 }}>
+                    Chips, beverages &amp; late-night cravings
+                  </p>
+                </div>
+                <Link href="/menu?world=munchies" style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  fontSize: "0.8rem", fontWeight: 700, color: "var(--primary)",
+                  padding: "5px 12px", borderRadius: 8, background: "rgba(1,53,251,0.06)",
+                  textDecoration: "none",
+                }}>
+                  See All <ChevronRight size={14} />
+                </Link>
+              </div>
+
+              {/* Brand-grouped or category-grouped rows */}
+              {munchiesByBrand.map(({ brand, items }) => (
+                <HSliderSection
+                  key={brand}
+                  title={brand}
+                  emoji="🛒"
+                  items={items}
+                  cart={cart}
+                  onAdd={addToCart}
+                  onUpdateQuantity={updateQuantity}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* ─── BOTTOM PROMO & DISCOVERY SECTIONS ─── */}
+          {!deferredSearch && selectedCategory === "all" && (
+            <div style={{ marginTop: 36, display: "flex", flexDirection: "column", gap: 12 }}>
+              {/* Combo Promo Banner */}
+              <ComboPromoBanner config={homeLayout.comboPromo} />
+
+              {/* Order Again Section */}
+              <OrderAgainSection
+                config={homeLayout.orderAgain}
+                items={availableItems}
+                cart={cart}
+                onAdd={addToCart}
+                onUpdateQuantity={updateQuantity}
+              />
+
+              {/* Browse Menu Grid (At the very end) */}
+              <BrowseMenuGrid
+                config={homeLayout.browseMenu}
+                onSelectCategory={(cat: string) => setSelectedCategory(cat)}
+              />
+            </div>
+          )}
 
         </div>
       </section>

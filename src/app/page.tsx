@@ -1,3 +1,4 @@
+
 import HomePageClient from "./HomePageClient";
 import dbConnect from "@/lib/mongodb";
 import MenuItem from "@/models/MenuItem";
@@ -7,7 +8,7 @@ export const revalidate = 60; // Cache for 60 seconds
 
 export default async function Page() {
   await dbConnect();
-  
+
   // Fetch initial data
   const items = await MenuItem.find({ available: true }).sort({ category: 1, name: 1 }).lean();
   const initialMenu = JSON.parse(JSON.stringify(items.map((i: any) => ({ ...i, _id: i._id.toString(), id: i._id.toString() }))));
@@ -22,5 +23,7 @@ export default async function Page() {
     bentoSlides: settings.bentoSlides || []
   }));
 
-  return <HomePageClient initialMenu={initialMenu} initialBanner={initialBanner} />;
+  const initialHomeLayout = JSON.parse(JSON.stringify(settings.homeLayout || {}));
+
+  return <HomePageClient initialMenu={initialMenu} initialBanner={initialBanner} initialHomeLayout={initialHomeLayout} />;
 }

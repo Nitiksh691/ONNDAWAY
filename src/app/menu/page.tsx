@@ -1,5 +1,5 @@
 "use client";
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
@@ -130,7 +130,7 @@ function BrandRow({ brand, items, cart, onAdd, onUpdateQuantity, onViewAll }: {
   );
 }
 
-export default function MenuPage() {
+function MenuContent() {
   const searchParams = useSearchParams();
   const initialWorld = (searchParams.get("world") as World) || "food";
 
@@ -161,7 +161,7 @@ export default function MenuPage() {
             setBannerSlides(data.bannerSlides.filter((s: any) => s.active && s.image));
           }
         }
-      } catch {}
+      } catch { }
     };
     fetchBanner();
 
@@ -241,9 +241,25 @@ export default function MenuPage() {
   // Munchies: grouped by brand for "all" view
   const munchiesByBrand = useMemo(() => {
     const brands = Array.from(new Set(munchiesItems.map(i => i.brand || "").filter(Boolean)));
-    return brands.map(brand => ({
-      brand,
-      items: munchiesItems.filter(i => i.brand === brand),
+
+    if (brands.length > 0) {
+      const groups = brands.map(brand => ({
+        brand,
+        items: munchiesItems.filter(i => i.brand === brand),
+      }));
+      // Add items without a brand to an "Other" section
+      const noBrandItems = munchiesItems.filter(i => !i.brand);
+      if (noBrandItems.length > 0) {
+        groups.push({ brand: "Other", items: noBrandItems });
+      }
+      return groups.filter(g => g.items.length > 0);
+    }
+
+    // Fallback: group by category if no brands are defined at all
+    const cats = Array.from(new Set(munchiesItems.map(i => i.category || "").filter(Boolean)));
+    return cats.map(cat => ({
+      brand: cat.charAt(0).toUpperCase() + cat.slice(1),
+      items: munchiesItems.filter(i => i.category === cat),
     })).filter(g => g.items.length > 0);
   }, [munchiesItems]);
 
@@ -252,7 +268,8 @@ export default function MenuPage() {
 
   return (
     <>
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         .hscroll::-webkit-scrollbar { display: none; }
         .hsr-grid {
           display: grid;
@@ -335,23 +352,17 @@ export default function MenuPage() {
         @media (min-width: 769px) { .mobile-only-banner { display: none !important; } }
       ` }} />
 
-      {/* ─── BANNER SLIDER ─── */}
-      {bannerEnabled && bannerSlides.length > 0 ? (
-        <div className="mobile-only-banner">
-          <BannerSlider slides={bannerSlides} variant="menu" />
+      {/* ─── PAGE HEADER ─── */}
+      {/* <div className="otw-page-header">
+        <div className="otw-container">
+          <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "6px" }}>
+            {world === "food" ? "Our Menu" : "Munchies & More"}
+          </h1>
+          <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
+            {world === "food" ? "Fresh campus food, curated daily." : "Snacks, drinks & everyday cravings."}
+          </p>
         </div>
-      ) : (
-        <div className="otw-page-header">
-          <div className="otw-container">
-            <h1 style={{ fontSize: "1.8rem", fontWeight: 900, marginBottom: "6px" }}>
-              {world === "food" ? "Our Menu" : "Munchies & More"}
-            </h1>
-            <p style={{ opacity: 0.85, fontSize: "0.9rem" }}>
-              {world === "food" ? "Fresh campus food, curated daily." : "Snacks, drinks & everyday cravings."}
-            </p>
-          </div>
-        </div>
-      )}
+      </div> */}
 
       {/* ─── WORLD TOGGLE + CATEGORY FILTERS ─── */}
       <div style={{
@@ -572,5 +583,13 @@ export default function MenuPage() {
 
       <Footer />
     </>
+  );
+}
+
+export default function MenuPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: "60px 20px", textAlign: "center", color: "#64748B" }}>Loading menu...</div>}>
+      <MenuContent />
+    </Suspense>
   );
 }

@@ -18,6 +18,7 @@ interface FoodCardProps {
   cartItem?: any;
   onAdd?: (item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => void;
   onUpdateQuantity?: (cartItemId: string, qty: number) => void;
+  priority?: boolean;
 }
 
 /* ── Size Picker Bottom Sheet / Modal ── */
@@ -243,6 +244,7 @@ const FoodCard = ({
   cartItem,
   onAdd,
   onUpdateQuantity,
+  priority = false,
 }: FoodCardProps) => {
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
@@ -290,7 +292,7 @@ const FoodCard = ({
           {/* Image */}
           <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
             {!imgError ? (
-              <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+              <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} priority={priority} />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
@@ -398,6 +400,7 @@ const FoodCard = ({
                 onError={() => setImgError(true)}
                 onContextMenu={e => e.preventDefault()}
                 onDragStart={e => e.preventDefault()}
+                priority={priority}
               />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem" }}>
