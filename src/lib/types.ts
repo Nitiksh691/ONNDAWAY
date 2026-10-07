@@ -61,6 +61,13 @@ export interface MenuItem {
   price: number;
   image: string;
   category: string;
+  world?: "food" | "munchies";
+  brand?: string;
+  subcategory?: string;
+  unit?: string;
+  tags?: string[];
+  badges?: string[];
+  isDeal?: boolean;
   orderCount: number;
   available: boolean;
   isPopular?: boolean;
@@ -179,3 +186,25 @@ export const COLLEGES = [
 ];
 
 export const YEARS = ["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "PG / Masters", "PhD"];
+
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  banner?: string;
+  description?: string;
+  active: boolean;
+  sortOrder: number;
+}
+
+export interface StoreCategory {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string;
+  type: "food" | "store";
+  active: boolean;
+  sortOrder: number;
+  subcategories: string[];
+}

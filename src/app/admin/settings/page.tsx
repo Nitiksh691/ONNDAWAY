@@ -20,6 +20,41 @@ export default function AdminSettingsPage() {
   const [geoLng, setGeoLng] = useState<string>("77.2090");
   const [geoRadiusKm, setGeoRadiusKm] = useState<string>("1.0");
 
+  const [menuItemsList, setMenuItemsList] = useState<any[]>([]);
+
+  const [homeLayout, setHomeLayout] = useState({
+    categoryIconsBar: { enabled: true },
+    freeDelivery: {
+      enabled: true,
+      headingText: "FREE DELIVERY ABOVE ₹",
+      subText: "Use code at checkout",
+      minAmount: 199,
+      code: "FREEDEL",
+      bgGradient: "linear-gradient(135deg, #FF7E00 0%, #FF3D00 100%)",
+      bgImage: "",
+    },
+    dealOfTheDay: {
+      enabled: true,
+      title: "Deal of the Day",
+      subtitle: "Handpicked mega discounts ending soon",
+      showTimer: true,
+      endTime: "23:59:59",
+      itemIds: [] as string[],
+    },
+    comboPromo: {
+      enabled: true,
+      subtitle: "COMBO SPECIAL",
+      title: "COFFEE + SANDWICH",
+      priceText: "149",
+      originalPriceText: "249",
+      link: "/menu",
+      bgGradient: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)",
+      image: "",
+    },
+    orderAgain: { enabled: true, title: "Order again", subtitle: "Your recent favorites" },
+    browseMenu: { enabled: true, title: "Browse menu", subtitle: "Explore all categories" },
+  });
+
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   
@@ -28,6 +63,13 @@ export default function AdminSettingsPage() {
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
 
   useEffect(() => {
+    fetch("/api/menu")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setMenuItemsList(data);
+      })
+      .catch(() => {});
+
     fetch("/api/settings", {
       headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
     })
@@ -48,6 +90,7 @@ export default function AdminSettingsPage() {
           if (data.geoLat !== undefined) setGeoLat(data.geoLat);
           if (data.geoLng !== undefined) setGeoLng(data.geoLng);
           if (data.geoRadiusKm !== undefined) setGeoRadiusKm(data.geoRadiusKm);
+          if (data.homeLayout) setHomeLayout(prev => ({ ...prev, ...data.homeLayout }));
         }
         setLoading(false);
       })
@@ -73,6 +116,7 @@ export default function AdminSettingsPage() {
       geoLat,
       geoLng,
       geoRadiusKm,
+      homeLayout,
     };
     
     // Only show confirmation if enabling disruptive modes
@@ -304,6 +348,294 @@ export default function AdminSettingsPage() {
               <a href="https://maps.google.com" target="_blank" rel="noreferrer" style={{ fontSize: "0.82rem", color: "#0135FB", fontWeight: 600, textDecoration: "none" }}>📍 Find your college coordinates on Google Maps →</a>
             </div>
           )}
+        </div>
+
+        {/* Server-Driven Homepage Layout (SDUI) Controls */}
+        <div className="otw-card" style={{ padding: "32px", gridColumn: "1 / -1" }}>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
+            <span style={{ fontSize: "1.3rem" }}>🎨</span> Homepage SDUI Sections (Flipkart-style dynamic controls)
+          </h3>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "24px" }}>
+            Toggle homepage sections on or off and customize banner text, discount thresholds, codes, and promotional blocks without redeploying code.
+          </p>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+            {/* 1. Free Delivery Banner Strip */}
+            <div style={{ padding: "16px", background: "#FFF7ED", borderRadius: "12px", border: "1px solid #FFEDD5" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ color: "#C2410C" }}>1. Free Delivery Banner Strip</strong>
+                  <span style={{ fontSize: "0.78rem", color: "#9A3412", display: "block" }}>Top orange offer strip</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.freeDelivery?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    freeDelivery: { ...prev.freeDelivery, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Heading / Title</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.freeDelivery?.headingText ?? "FREE DELIVERY ABOVE ₹"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      freeDelivery: { ...prev.freeDelivery, headingText: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Min Amount (₹)</label>
+                    <input
+                      type="number"
+                      className="otw-input"
+                      style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                      value={homeLayout.freeDelivery?.minAmount ?? 199}
+                      onChange={e => setHomeLayout(prev => ({
+                        ...prev,
+                        freeDelivery: { ...prev.freeDelivery, minAmount: Number(e.target.value) }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Promo Code</label>
+                    <input
+                      type="text"
+                      className="otw-input"
+                      style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                      value={homeLayout.freeDelivery?.code ?? "FREEDEL"}
+                      onChange={e => setHomeLayout(prev => ({
+                        ...prev,
+                        freeDelivery: { ...prev.freeDelivery, code: e.target.value }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Deal of the Day */}
+            <div style={{ padding: "16px", background: "#EFF6FF", borderRadius: "12px", border: "1px solid #DBEAFE" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ color: "#1D4ED8" }}>2. Deal of the Day Block</strong>
+                  <span style={{ fontSize: "0.78rem", color: "#1E40AF", display: "block" }}>Blue timer card section</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.dealOfTheDay?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    dealOfTheDay: { ...prev.dealOfTheDay, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Show Countdown Timer</label>
+                  <input
+                    type="checkbox"
+                    checked={homeLayout.dealOfTheDay?.showTimer ?? true}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      dealOfTheDay: { ...prev.dealOfTheDay, showTimer: e.target.checked }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Section Title / Heading</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.dealOfTheDay?.title ?? "Deal of the Day"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      dealOfTheDay: { ...prev.dealOfTheDay, title: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Select Products for Deal of the Day</label>
+                  <div style={{ maxHeight: 130, overflowY: "auto", border: "1px solid #CBD5E1", borderRadius: 8, padding: 8, background: "white", marginTop: 4 }}>
+                    {menuItemsList.length === 0 ? (
+                      <span style={{ fontSize: "0.78rem", color: "#94A3B8" }}>Loading menu items...</span>
+                    ) : (
+                      menuItemsList.map((item: any) => {
+                        const id = item.id || item._id;
+                        const isSelected = (homeLayout.dealOfTheDay?.itemIds || []).includes(id);
+                        return (
+                          <label key={id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "4px 0", fontSize: "0.78rem", cursor: "pointer" }}>
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const current = homeLayout.dealOfTheDay?.itemIds || [];
+                                const next = e.target.checked ? [...current, id] : current.filter((x: string) => x !== id);
+                                setHomeLayout(prev => ({
+                                  ...prev,
+                                  dealOfTheDay: { ...prev.dealOfTheDay, itemIds: next }
+                                }));
+                              }}
+                            />
+                            <span>{item.name} (₹{item.price})</span>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Combo Promo */}
+            <div style={{ padding: "16px", background: "#FFF7ED", borderRadius: "12px", border: "1px solid #FFEDD5" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ color: "#C2410C" }}>3. Combo Offer Banner</strong>
+                  <span style={{ fontSize: "0.78rem", color: "#9A3412", display: "block" }}>Orange combo highlight card</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.comboPromo?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    comboPromo: { ...prev.comboPromo, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Badge Subtitle</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.comboPromo?.subtitle ?? "COMBO SPECIAL"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      comboPromo: { ...prev.comboPromo, subtitle: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Title / Heading</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.comboPromo?.title ?? "COFFEE + SANDWICH"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      comboPromo: { ...prev.comboPromo, title: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px" }}>
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Offer Price (₹)</label>
+                    <input
+                      type="text"
+                      className="otw-input"
+                      style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                      value={homeLayout.comboPromo?.priceText ?? "149"}
+                      onChange={e => setHomeLayout(prev => ({
+                        ...prev,
+                        comboPromo: { ...prev.comboPromo, priceText: e.target.value }
+                      }))}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Original Price (₹)</label>
+                    <input
+                      type="text"
+                      className="otw-input"
+                      style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                      value={homeLayout.comboPromo?.originalPriceText ?? "249"}
+                      onChange={e => setHomeLayout(prev => ({
+                        ...prev,
+                        comboPromo: { ...prev.comboPromo, originalPriceText: e.target.value }
+                      }))}
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Order Again */}
+            <div style={{ padding: "16px", background: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ display: "block" }}>4. Order Again Section</strong>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Shows past ordered items for quick re-order</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.orderAgain?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    orderAgain: { ...prev.orderAgain, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Section Heading</label>
+                <input
+                  type="text"
+                  className="otw-input"
+                  style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                  value={homeLayout.orderAgain?.title ?? "Order again"}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    orderAgain: { ...prev.orderAgain, title: e.target.value }
+                  }))}
+                />
+              </div>
+            </div>
+
+            {/* 5. Browse Menu */}
+            <div style={{ padding: "16px", background: "#F8FAFC", borderRadius: "12px", border: "1px solid #E2E8F0" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ display: "block" }}>5. Browse Menu Grid</strong>
+                  <span style={{ fontSize: "0.78rem", color: "var(--text-muted)" }}>Visual 2x2 color tiles for quick navigation</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.browseMenu?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    browseMenu: { ...prev.browseMenu, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div>
+                <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Section Heading</label>
+                <input
+                  type="text"
+                  className="otw-input"
+                  style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                  value={homeLayout.browseMenu?.title ?? "Browse menu"}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    browseMenu: { ...prev.browseMenu, title: e.target.value }
+                  }))}
+                />
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 

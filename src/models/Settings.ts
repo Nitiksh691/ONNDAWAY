@@ -39,6 +39,50 @@ const SettingsSchema = new Schema({
   codEnabled: { type: Boolean, default: false },
   // Pause new orders (heavy traffic)
   ordersPaused: { type: Boolean, default: false },
+
+  // Server-Driven UI (SDUI) Homepage Layout Config
+  homeLayout: {
+    categoryIconsBar: {
+      enabled: { type: Boolean, default: true },
+    },
+    freeDelivery: {
+      enabled: { type: Boolean, default: true },
+      headingText: { type: String, default: "FREE DELIVERY ABOVE ₹" },
+      subText: { type: String, default: "Use code at checkout" },
+      minAmount: { type: Number, default: 199 },
+      code: { type: String, default: "FREEDEL" },
+      bgGradient: { type: String, default: "linear-gradient(135deg, #FF7E00 0%, #FF3D00 100%)" },
+      bgImage: { type: String, default: "" },
+    },
+    dealOfTheDay: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, default: "Deal of the Day" },
+      subtitle: { type: String, default: "Handpicked mega discounts ending soon" },
+      showTimer: { type: Boolean, default: true },
+      endTime: { type: String, default: "23:59:59" },
+      itemIds: [{ type: String }],
+    },
+    comboPromo: {
+      enabled: { type: Boolean, default: true },
+      subtitle: { type: String, default: "COMBO SPECIAL" },
+      title: { type: String, default: "COFFEE + SANDWICH" },
+      priceText: { type: String, default: "149" },
+      originalPriceText: { type: String, default: "249" },
+      link: { type: String, default: "/menu" },
+      bgGradient: { type: String, default: "linear-gradient(135deg, #FF9800 0%, #F57C00 100%)" },
+      image: { type: String, default: "" },
+    },
+    orderAgain: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, default: "Order again" },
+      subtitle: { type: String, default: "Your recent favorites" },
+    },
+    browseMenu: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, default: "Browse menu" },
+      subtitle: { type: String, default: "Explore all categories" },
+    },
+  },
   updatedAt: { type: Date, default: Date.now },
 });
 

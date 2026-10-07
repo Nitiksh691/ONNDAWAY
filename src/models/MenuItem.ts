@@ -6,6 +6,18 @@ const MenuItemSchema = new Schema({
   price:         { type: Number, required: true },
   image:         { type: String, required: true },
   category:      { type: String, required: true },
+  
+  // ── World (which tab this item belongs to) ──
+  world:         { type: String, enum: ["food", "munchies"], default: "food" },
+  
+  // ── Grocery / Store Extensions ──
+  brand:         { type: String, default: "" },
+  subcategory:   { type: String, default: "" },
+  unit:          { type: String, default: "" },
+  tags:          { type: [String], default: [] },
+  badges:        { type: [String], default: [] },
+  isDeal:        { type: Boolean, default: false },
+  
   orderCount:    { type: Number, default: 0 },
   available:     { type: Boolean, default: true },
   stock:         { type: Number, default: null },
@@ -43,6 +55,8 @@ const MenuItemSchema = new Schema({
 MenuItemSchema.index({ category: 1, available: 1 });
 // Popular/recommended item sorting
 MenuItemSchema.index({ orderCount: -1 });
+MenuItemSchema.index({ brand: 1, available: 1 });
+MenuItemSchema.index({ world: 1, available: 1 });
 
 export default models.MenuItem || model("MenuItem", MenuItemSchema);
 

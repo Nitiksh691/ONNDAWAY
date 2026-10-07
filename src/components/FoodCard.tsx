@@ -18,6 +18,7 @@ interface FoodCardProps {
   cartItem?: any;
   onAdd?: (item: MenuItem, specialInstructions?: string, selectedCustomizations?: SelectedCustomization[], unitPrice?: number) => void;
   onUpdateQuantity?: (cartItemId: string, qty: number) => void;
+  priority?: boolean;
 }
 
 /* ── Size Picker Bottom Sheet / Modal ── */
@@ -243,6 +244,7 @@ const FoodCard = ({
   cartItem,
   onAdd,
   onUpdateQuantity,
+  priority = false,
 }: FoodCardProps) => {
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
@@ -290,7 +292,7 @@ const FoodCard = ({
           {/* Image */}
           <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
             {!imgError ? (
-              <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+              <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} priority={priority} />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
@@ -398,6 +400,7 @@ const FoodCard = ({
                 onError={() => setImgError(true)}
                 onContextMenu={e => e.preventDefault()}
                 onDragStart={e => e.preventDefault()}
+                priority={priority}
               />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem" }}>
@@ -483,10 +486,27 @@ const FoodCard = ({
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
             marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? "4px" : "0px"
           }}>
+            {item.brand ? <span style={{ fontWeight: 800, color: "#0F172A" }}>{item.brand} </span> : null}
             {item.name}
           </div>
 
-          {item.section && (
+          {item.unit && (
+            <div style={{ fontSize: "0.75rem", color: "#64748B", marginBottom: 6 }}>
+              {item.unit}
+            </div>
+          )}
+
+          {item.badges && item.badges.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
+              {item.badges.map(b => (
+                <span key={b} style={{ background: "#ECFDF5", color: "#059669", fontSize: "0.6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>
+                  {b}
+                </span>
+              ))}
+            </div>
+          )}
+
+          {item.section && !item.badges?.length && (
             <div style={{ marginBottom: 8, display: "flex", overflow: "hidden" }}>
               <span style={{ background: "rgba(1, 53, 251, 0.08)", color: "var(--primary)", fontSize: "0.65rem", fontWeight: 700, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
                 {item.section}
