@@ -32,6 +32,7 @@ export default function AdminSettingsPage() {
       code: "FREEDEL",
       bgGradient: "linear-gradient(135deg, #FF7E00 0%, #FF3D00 100%)",
       bgImage: "",
+      bannerImage: "",
     },
     dealOfTheDay: {
       enabled: true,
@@ -39,6 +40,11 @@ export default function AdminSettingsPage() {
       subtitle: "Handpicked mega discounts ending soon",
       showTimer: true,
       endTime: "23:59:59",
+      timerHours: 2,
+      timerMinutes: 14,
+      timerSeconds: 36,
+      bannerImage: "",
+      dealPrice: "",
       itemIds: [] as string[],
     },
     comboPromo: {
@@ -379,6 +385,20 @@ export default function AdminSettingsPage() {
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                 <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Image URL (Cloudinary)</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    placeholder="https://res.cloudinary.com/..."
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.freeDelivery?.bannerImage ?? ""}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      freeDelivery: { ...prev.freeDelivery, bannerImage: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Heading / Title</label>
                   <input
                     type="text"
@@ -440,6 +460,20 @@ export default function AdminSettingsPage() {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Custom Banner Image URL (Cloudinary)</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    placeholder="https://res.cloudinary.com/..."
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.dealOfTheDay?.bannerImage ?? ""}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      dealOfTheDay: { ...prev.dealOfTheDay, bannerImage: e.target.value }
+                    }))}
+                  />
+                </div>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Show Countdown Timer</label>
                   <input
@@ -451,6 +485,22 @@ export default function AdminSettingsPage() {
                     }))}
                   />
                 </div>
+                {homeLayout.dealOfTheDay?.showTimer && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "10px" }}>
+                    <div>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Hours</label>
+                      <input type="number" className="otw-input" style={{ padding: "6px 10px", fontSize: "0.85rem" }} value={homeLayout.dealOfTheDay?.timerHours ?? 2} onChange={e => setHomeLayout(prev => ({ ...prev, dealOfTheDay: { ...prev.dealOfTheDay, timerHours: Number(e.target.value) } }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Mins</label>
+                      <input type="number" className="otw-input" style={{ padding: "6px 10px", fontSize: "0.85rem" }} value={homeLayout.dealOfTheDay?.timerMinutes ?? 14} onChange={e => setHomeLayout(prev => ({ ...prev, dealOfTheDay: { ...prev.dealOfTheDay, timerMinutes: Number(e.target.value) } }))} />
+                    </div>
+                    <div>
+                      <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Secs</label>
+                      <input type="number" className="otw-input" style={{ padding: "6px 10px", fontSize: "0.85rem" }} value={homeLayout.dealOfTheDay?.timerSeconds ?? 36} onChange={e => setHomeLayout(prev => ({ ...prev, dealOfTheDay: { ...prev.dealOfTheDay, timerSeconds: Number(e.target.value) } }))} />
+                    </div>
+                  </div>
+                )}
                 <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Section Title / Heading</label>
                   <input
@@ -461,6 +511,20 @@ export default function AdminSettingsPage() {
                     onChange={e => setHomeLayout(prev => ({
                       ...prev,
                       dealOfTheDay: { ...prev.dealOfTheDay, title: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Custom Deal Price (Optional)</label>
+                  <input
+                    type="number"
+                    className="otw-input"
+                    placeholder="Leave empty for original price"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.dealOfTheDay?.dealPrice ?? ""}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      dealOfTheDay: { ...prev.dealOfTheDay, dealPrice: e.target.value ? Number(e.target.value) : undefined }
                     }))}
                   />
                 </div>

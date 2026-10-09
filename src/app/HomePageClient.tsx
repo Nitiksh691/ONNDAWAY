@@ -11,6 +11,7 @@ import AuthModal from "@/components/AuthModal";
 import { LocationModal, useDeliveryLocation } from "@/components/LocationModal";
 import BannerSlider from "@/components/BannerSlider";
 import { useMenu } from "@/hooks/useMenu";
+import WalkingLoader from "@/components/WalkingLoader";
 
 type LayoutMode = "grid" | "list";
 
@@ -95,19 +96,23 @@ function HSliderSection({
 }
 
 /* ─── SDUI Components (Flipkart-style SDUI sections) ─── */
-function DealTimer() {
-  const [timeLeft, setTimeLeft] = useState({ hours: 2, minutes: 14, seconds: 36 });
+function DealTimer({ hours = 2, minutes = 14, seconds = 36, onExpire }: { hours?: number, minutes?: number, seconds?: number, onExpire?: () => void }) {
+  const [timeLeft, setTimeLeft] = useState({ hours, minutes, seconds });
+  
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
         if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
         if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        return { hours: 2, minutes: 0, seconds: 0 };
+        
+        clearInterval(timer);
+        if (onExpire) onExpire();
+        return { hours: 0, minutes: 0, seconds: 0 };
       });
     }, 1000);
     return () => clearInterval(timer);
-  }, []);
+  }, [onExpire]);
 
   const pad = (n: number) => n.toString().padStart(2, "0");
   return (
@@ -128,7 +133,7 @@ function FreeDeliveryStrip({ config }: { config: any }) {
   return (
     <div style={{ width: "100%", padding: "0 12px", margin: "14px 0" }}>
       <div style={{
-        background: config.bgGradient || "linear-gradient(135deg, #FF6B00 0%, #FF3D00 50%, #E62E00 100%)",
+        background: config.bannerImage ? `url(${config.bannerImage}) center/cover no-repeat` : (config.bgGradient || "linear-gradient(135deg, #FF6B00 0%, #FF3D00 50%, #E62E00 100%)"),
         borderRadius: 20, padding: "16px 20px", color: "white", width: "100%",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         boxShadow: "0 8px 24px rgba(255,61,0,0.28)", border: "1px solid rgba(255,255,255,0.25)",
@@ -163,46 +168,61 @@ function FreeDeliveryStrip({ config }: { config: any }) {
 }
 
 function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: any) {
-  if (!config?.enabled || !items || items.length === 0) return null;
+  const [expired, setExpired] = useState(false);
+
+  if (!config?.enabled || !items || items.length === 0 || expired) return null;
 
   // Filter admin selected items if available, or fallback to first 2 items
   let dealItems = items.filter((i: any) => (config.itemIds || []).includes(i.id || i._id));
   if (dealItems.length === 0) {
-    dealItems = items.slice(0, 2);
+    dealItems = items.slice(0, 4); // Fallback to 4 items for horizontal slider
   }
 
   return (
     <div style={{ width: "100%", padding: "0 12px", margin: "16px 0 24px" }}>
       <div style={{
-        background: "linear-gradient(145deg, #0028D4 0%, #0135FB 55%, #1A4BFF 100%)",
+        background: config.bannerImage ? `url(${config.bannerImage}) center/cover no-repeat` : "linear-gradient(145deg, #0028D4 0%, #0135FB 55%, #1A4BFF 100%)",
         borderRadius: 24, padding: "20px", color: "white", width: "100%",
         boxShadow: "0 14px 36px rgba(1,53,251,0.28)", border: "1px solid rgba(255,255,255,0.15)",
         position: "relative", overflow: "hidden"
       }}>
         {/* Glow ambient background */}
-        <div style={{ position: "absolute", top: -80, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.12)", filter: "blur(40px)", pointerEvents: "none" }} />
+        {!config.bannerImage && <div style={{ position: "absolute", top: -80, right: -60, width: 220, height: 220, borderRadius: "50%", background: "rgba(255,255,255,0.12)", filter: "blur(40px)", pointerEvents: "none" }} />}
 
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18, position: "relative", zIndex: 2 }}>
           <div>
-            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.15rem, 4vw, 1.4rem)", fontWeight: 900, letterSpacing: "-0.02em", margin: 0 }}>
+            <h2 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.15rem, 4vw, 1.4rem)", fontWeight: 900, letterSpacing: "-0.02em", margin: 0, color: "white", textShadow: config.bannerImage ? "0 2px 4px rgba(0,0,0,0.5)" : "none" }}>
               {config.title || "Deal of the Day"}
             </h2>
             {config.subtitle && (
-              <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.85)", margin: "2px 0 0", fontWeight: 600 }}>{config.subtitle}</p>
+              <p style={{ fontSize: "0.78rem", color: "rgba(255,255,255,0.9)", margin: "2px 0 0", fontWeight: 600, textShadow: config.bannerImage ? "0 1px 2px rgba(0,0,0,0.5)" : "none" }}>{config.subtitle}</p>
             )}
           </div>
-          {config.showTimer !== false && <DealTimer />}
+          {config.showTimer !== false && (
+            <DealTimer 
+              hours={config.timerHours ?? 2} 
+              minutes={config.timerMinutes ?? 14} 
+              seconds={config.timerSeconds ?? 36}
+              onExpire={() => setExpired(true)} 
+            />
+          )}
         </div>
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))", gap: 14, position: "relative", zIndex: 2 }}>
+        <div style={{ 
+          display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10, 
+          WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none",
+          position: "relative", zIndex: 2 
+        }}>
           {dealItems.map((item: any) => {
-            const originalPrice = Math.round(item.price * 1.35);
+            const dealPrice = config.dealPrice || item.price;
+            const originalPrice = Math.round(dealPrice * 1.35);
             const cartItem = cart.find((c: any) => c.item.id === item.id);
             return (
               <div key={item.id} style={{
                 background: "white", borderRadius: 18, padding: 14, color: "#0F172A",
                 display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.06)", position: "relative"
+                boxShadow: "0 4px 16px rgba(0,0,0,0.06)", position: "relative",
+                flexShrink: 0, width: 140
               }}>
                 <div style={{ width: "100%", height: 115, position: "relative", marginBottom: 10, borderRadius: 12, overflow: "hidden" }}>
                   <Image
@@ -212,7 +232,7 @@ function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: a
                 </div>
                 <h3 style={{ fontSize: "0.9rem", fontWeight: 800, marginBottom: 6, height: 36, overflow: "hidden", lineHeight: 1.25 }}>{item.name}</h3>
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-                  <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>₹{item.price}</span>
+                  <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>₹{dealPrice}</span>
                   <span style={{ fontSize: "0.78rem", color: "#94A3B8", textDecoration: "line-through" }}>₹{originalPrice}</span>
                 </div>
                 {cartItem ? (
@@ -222,7 +242,7 @@ function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: a
                     <button onClick={() => onUpdateQuantity(item.id, cartItem.quantity + 1)} style={{ background: "none", border: "none", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem" }}>+</button>
                   </div>
                 ) : (
-                  <button onClick={() => onAdd(item)} style={{
+                  <button onClick={() => onAdd({ ...item, price: dealPrice })} style={{
                     background: "#0135FB", color: "white", border: "none", borderRadius: 10,
                     padding: "8px 0", fontWeight: 800, fontSize: "0.85rem", cursor: "pointer", width: "100%",
                     boxShadow: "0 4px 12px rgba(1,53,251,0.3)"
@@ -381,6 +401,7 @@ function BrowseMenuGrid({ config, onSelectCategory }: any) {
 }
 
 export default function HomePageClient({ initialMenu = [], initialBanner = {}, initialHomeLayout = {} }: { initialMenu?: any[], initialBanner?: any, initialHomeLayout?: any }) {
+  const [showSplash, setShowSplash] = useState(true);
   const [menuItems, setMenuItems] = useState<any[]>(initialMenu);
   const [categories, setCategories] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -397,8 +418,8 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
 
   const [homeLayout, setHomeLayout] = useState({
     categoryIconsBar: { enabled: true, ...(initialHomeLayout.categoryIconsBar || {}) },
-    freeDelivery: { enabled: true, minAmount: 199, code: "FREEDEL", ...(initialHomeLayout.freeDelivery || {}) },
-    dealOfTheDay: { enabled: true, title: "Deal of the Day", showTimer: true, ...(initialHomeLayout.dealOfTheDay || {}) },
+    freeDelivery: { enabled: true, minAmount: 199, code: "FREEDEL", bannerImage: "", ...(initialHomeLayout.freeDelivery || {}) },
+    dealOfTheDay: { enabled: true, title: "Deal of the Day", showTimer: true, timerHours: 2, timerMinutes: 14, bannerImage: "", dealPrice: undefined, ...(initialHomeLayout.dealOfTheDay || {}) },
     bestsellers: { enabled: true, title: "Bestsellers", ...(initialHomeLayout.bestsellers || {}) },
     comboPromo: { enabled: true, title: "COFFEE + SANDWICH", subtitle: "COMBO", priceText: "149", link: "/menu", ...(initialHomeLayout.comboPromo || {}) },
     orderAgain: { enabled: true, title: "Order again", ...(initialHomeLayout.orderAgain || {}) },
@@ -406,15 +427,16 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
   });
 
   useEffect(() => {
-    // Only fetch if initialBanner wasn't provided or we want to re-fetch on mount
-    // But since we want speed, we'll rely on the SSR initialBanner.
-    // If needed, we could fetch here to get the absolute latest.
+    // Hide splash screen after 2.5 seconds
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+    }, 2500);
 
     const params = new URLSearchParams(window.location.search);
     const cat = params.get("category");
     if (cat) setSelectedCategory(cat);
 
-    // Menu fetch replaced by useMenu
+    return () => clearTimeout(timer);
   }, []);
 
   const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu(initialMenu);
@@ -490,6 +512,27 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
 
   return (
     <>
+      {showSplash && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999, background: "#0135FB",
+          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+          animation: "fadeOut 0.5s ease-out 2s forwards"
+        }}>
+          <style>{`
+            @keyframes pulseScale {
+              0%, 100% { transform: scale(1); }
+              50% { transform: scale(1.1); }
+            }
+            @keyframes fadeOut {
+              to { opacity: 0; visibility: hidden; pointer-events: none; }
+            }
+          `}</style>
+          <div style={{ animation: "pulseScale 1.5s infinite ease-in-out", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
+            <WalkingLoader size={80} color="white" />
+          </div>
+        </div>
+      )}
+
       <OnboardingModal onLoginClick={() => setShowAuthModal(true)} />
       {showAuthModal && (
         <AuthModal

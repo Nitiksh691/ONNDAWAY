@@ -12,8 +12,11 @@ const UserSchema = new Schema(
     phone:         { type: String, default: "" },
     gender:        { type: String, enum: ["boy", "girl", ""], default: "" },
     role:          { type: String, enum: ["user", "admin", "delivery"], default: "user" },
-    lastLoginAt:   { type: Date, default: null }, // updated on each successful login
-    createdAt:     { type: Date, default: Date.now },
+    lastLoginAt:           { type: Date, default: null }, // updated on each successful login
+    createdAt:             { type: Date, default: Date.now },
+    pushSubscription:      { type: Schema.Types.Mixed, default: null }, // for web-push
+    lastCartUpdate:        { type: Date, default: null }, // to track abandoned carts
+    abandonedCartNotified: { type: Boolean, default: false }, // to prevent spamming
   }
 );
 
