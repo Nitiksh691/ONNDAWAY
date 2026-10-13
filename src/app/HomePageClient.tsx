@@ -259,6 +259,57 @@ function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: a
   );
 }
 
+function MunchiesBanner({ config }: { config: any }) {
+  if (!config?.enabled) return null;
+  const hasBgImage = Boolean(config.bannerImage);
+  return (
+    <div style={{ width: "100%", padding: "0 12px", margin: "16px 0 24px" }}>
+      <Link href={config.link || "/menu?world=munchies"} style={{ textDecoration: "none", display: "block" }}>
+        <div style={{
+          background: hasBgImage
+            ? `url(${config.bannerImage}) center/cover no-repeat`
+            : "linear-gradient(135deg, #1A1A2E 0%, #16213E 50%, #0F3460 100%)",
+          borderRadius: 22, padding: "24px 20px", color: "white", width: "100%",
+          position: "relative", overflow: "hidden", minHeight: 120,
+          boxShadow: "0 12px 32px rgba(0,0,0,0.22)", border: "1px solid rgba(255,255,255,0.1)",
+          display: "flex", alignItems: "center", justifyContent: "space-between",
+        }}>
+          {/* Subtle glow when no image */}
+          {!hasBgImage && (
+            <>
+              <div style={{ position: "absolute", top: -40, left: -20, width: 180, height: 180, borderRadius: "50%", background: "rgba(255,200,0,0.08)", filter: "blur(40px)", pointerEvents: "none" }} />
+              <div style={{ position: "absolute", bottom: -30, right: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,100,0,0.1)", filter: "blur(30px)", pointerEvents: "none" }} />
+            </>
+          )}
+          {/* Overlay for readability when bg image is set */}
+          {hasBgImage && (
+            <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.38)", borderRadius: 22 }} />
+          )}
+          <div style={{ position: "relative", zIndex: 2 }}>
+            <div style={{ fontSize: "0.75rem", fontWeight: 900, letterSpacing: "1.2px", textTransform: "uppercase", opacity: 0.8, marginBottom: 6 }}>
+              🍿 {config.subtitle || "Chips, drinks & instant cravings"}
+            </div>
+            <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.3rem, 4.5vw, 1.7rem)", fontWeight: 900, lineHeight: 1.15, textShadow: hasBgImage ? "0 2px 6px rgba(0,0,0,0.6)" : "none" }}>
+              {config.title || "Munchies & Snacks"}
+            </div>
+            <div style={{ marginTop: 10, display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)", borderRadius: 999, padding: "5px 14px", fontSize: "0.8rem", fontWeight: 800, border: "1px solid rgba(255,255,255,0.25)" }}>
+              Shop Now →
+            </div>
+          </div>
+          {/* Floating snack emojis on the right (shown when no custom image) */}
+          {!hasBgImage && (
+            <div style={{ position: "relative", zIndex: 2, fontSize: "2.5rem", display: "flex", gap: 4, flexShrink: 0 }}>
+              <span style={{ transform: "rotate(-10deg) translateY(4px)" }}>🍿</span>
+              <span style={{ transform: "rotate(6deg)" }}>🧃</span>
+              <span style={{ transform: "rotate(-4deg) translateY(6px)" }}>🍫</span>
+            </div>
+          )}
+        </div>
+      </Link>
+    </div>
+  );
+}
+
 function ComboPromoBanner({ config }: { config: any }) {
   if (!config?.enabled) return null;
   return (
@@ -419,7 +470,8 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
   const [homeLayout, setHomeLayout] = useState({
     categoryIconsBar: { enabled: true, ...(initialHomeLayout.categoryIconsBar || {}) },
     freeDelivery: { enabled: true, minAmount: 199, code: "FREEDEL", bannerImage: "", ...(initialHomeLayout.freeDelivery || {}) },
-    dealOfTheDay: { enabled: true, title: "Deal of the Day", showTimer: true, timerHours: 2, timerMinutes: 14, bannerImage: "", dealPrice: undefined, ...(initialHomeLayout.dealOfTheDay || {}) },
+    dealOfTheDay: { enabled: true, title: "Deal of the Day", showTimer: true, timerHours: 2, timerMinutes: 14, bannerImage: "", dealPrice: "", ...(initialHomeLayout.dealOfTheDay || {}) },
+    munchiesBanner: { enabled: true, title: "Munchies & Snacks", subtitle: "Chips, drinks & instant cravings", bannerImage: "", link: "/menu?world=munchies", ...(initialHomeLayout.munchiesBanner || {}) },
     bestsellers: { enabled: true, title: "Bestsellers", ...(initialHomeLayout.bestsellers || {}) },
     comboPromo: { enabled: true, title: "COFFEE + SANDWICH", subtitle: "COMBO", priceText: "149", link: "/menu", ...(initialHomeLayout.comboPromo || {}) },
     orderAgain: { enabled: true, title: "Order again", ...(initialHomeLayout.orderAgain || {}) },
@@ -743,6 +795,9 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
             onAdd={addToCart}
             onUpdateQuantity={updateQuantity}
           />
+
+          {/* 3. Munchies Snacks Banner */}
+          <MunchiesBanner config={homeLayout.munchiesBanner} />
         </div>
       )}
 

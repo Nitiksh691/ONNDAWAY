@@ -47,6 +47,13 @@ export default function AdminSettingsPage() {
       dealPrice: "",
       itemIds: [] as string[],
     },
+    munchiesBanner: {
+      enabled: true,
+      title: "Munchies & Snacks",
+      subtitle: "Chips, drinks & instant cravings",
+      bannerImage: "",
+      link: "/menu?world=munchies",
+    },
     comboPromo: {
       enabled: true,
       subtitle: "COMBO SPECIAL",
@@ -524,7 +531,7 @@ export default function AdminSettingsPage() {
                     value={homeLayout.dealOfTheDay?.dealPrice ?? ""}
                     onChange={e => setHomeLayout(prev => ({
                       ...prev,
-                      dealOfTheDay: { ...prev.dealOfTheDay, dealPrice: e.target.value ? Number(e.target.value) : undefined }
+                      dealOfTheDay: { ...prev.dealOfTheDay, dealPrice: e.target.value }
                     }))}
                   />
                 </div>
@@ -561,7 +568,82 @@ export default function AdminSettingsPage() {
               </div>
             </div>
 
-            {/* 3. Combo Promo */}
+            {/* 3. Munchies Snacks Banner */}
+            <div style={{ padding: "16px", background: "#FFF3E0", borderRadius: "12px", border: "1px solid #FFE0B2" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                <div>
+                  <strong style={{ color: "#E65100" }}>3. Munchies Snacks Banner</strong>
+                  <span style={{ fontSize: "0.78rem", color: "#BF360C", display: "block" }}>🍿 Clickable banner → opens Munchies page</span>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={homeLayout.munchiesBanner?.enabled ?? true}
+                  onChange={e => setHomeLayout(prev => ({
+                    ...prev,
+                    munchiesBanner: { ...prev.munchiesBanner, enabled: e.target.checked }
+                  }))}
+                  style={{ width: 18, height: 18, cursor: "pointer" }}
+                />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Image / GIF URL (Cloudinary)</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    placeholder="https://res.cloudinary.com/... (.jpg / .gif / .webp)"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.munchiesBanner?.bannerImage ?? ""}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      munchiesBanner: { ...prev.munchiesBanner, bannerImage: e.target.value }
+                    }))}
+                  />
+                  <p style={{ fontSize: "0.72rem", color: "#9A3412", marginTop: 4 }}>💡 Recommended: 1200×400px. GIF/WebP animations are supported!</p>
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Title</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.munchiesBanner?.title ?? "Munchies & Snacks"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      munchiesBanner: { ...prev.munchiesBanner, title: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Subtitle</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.munchiesBanner?.subtitle ?? "Chips, drinks & instant cravings"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      munchiesBanner: { ...prev.munchiesBanner, subtitle: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Click Destination URL</label>
+                  <input
+                    type="text"
+                    className="otw-input"
+                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
+                    value={homeLayout.munchiesBanner?.link ?? "/menu?world=munchies"}
+                    onChange={e => setHomeLayout(prev => ({
+                      ...prev,
+                      munchiesBanner: { ...prev.munchiesBanner, link: e.target.value }
+                    }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Combo Promo */}
             <div style={{ padding: "16px", background: "#FFF7ED", borderRadius: "12px", border: "1px solid #FFEDD5" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
                 <div>

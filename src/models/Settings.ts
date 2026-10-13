@@ -53,6 +53,7 @@ const SettingsSchema = new Schema({
       code: { type: String, default: "FREEDEL" },
       bgGradient: { type: String, default: "linear-gradient(135deg, #FF7E00 0%, #FF3D00 100%)" },
       bgImage: { type: String, default: "" },
+      bannerImage: { type: String, default: "" },
     },
     dealOfTheDay: {
       enabled: { type: Boolean, default: true },
@@ -60,7 +61,19 @@ const SettingsSchema = new Schema({
       subtitle: { type: String, default: "Handpicked mega discounts ending soon" },
       showTimer: { type: Boolean, default: true },
       endTime: { type: String, default: "23:59:59" },
+      timerHours: { type: Number, default: 2 },
+      timerMinutes: { type: Number, default: 14 },
+      timerSeconds: { type: Number, default: 36 },
+      bannerImage: { type: String, default: "" },
+      dealPrice: { type: String, default: "" },
       itemIds: [{ type: String }],
+    },
+    munchiesBanner: {
+      enabled: { type: Boolean, default: true },
+      title: { type: String, default: "Munchies & Snacks" },
+      subtitle: { type: String, default: "Chips, drinks & instant cravings" },
+      bannerImage: { type: String, default: "" },
+      link: { type: String, default: "/menu?world=munchies" },
     },
     comboPromo: {
       enabled: { type: Boolean, default: true },
