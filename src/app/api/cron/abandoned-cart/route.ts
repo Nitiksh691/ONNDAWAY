@@ -1,13 +1,7 @@
 import { NextResponse } from "next/server";
-import mongoose from "mongoose";
+import dbConnect from "@/lib/mongodb";
 import User from "@/models/User";
 import { sendPushNotification } from "@/lib/push";
-
-// Ensure DB is connected
-const connectDB = async () => {
-  if (mongoose.connection.readyState >= 1) return;
-  await mongoose.connect(process.env.MONGODB_URI as string);
-};
 
 export async function GET(req: Request) {
   try {
@@ -20,7 +14,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    await connectDB();
+    await dbConnect();
 
     const thirtyMinutesAgo = new Date(Date.now() - 30 * 60 * 1000);
     const twoHoursAgo = new Date(Date.now() - 2 * 60 * 60 * 1000); // Stop bugging them after 2 hours
