@@ -370,26 +370,27 @@ const FoodCard = ({
         onClick={go}
         style={{
           background: "#fff",
-          borderRadius: 20,
+          borderRadius: compact ? 12 : 20,
           display: "flex",
           flexDirection: "column",
           height: "100%",
           cursor: "pointer",
           position: "relative",
           border: "1px solid rgba(0,0,0,0.07)",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
+          boxShadow: compact ? "0 2px 6px rgba(0,0,0,0.04)" : "0 2px 12px rgba(0,0,0,0.06)",
+          overflow: "hidden",
         }}
       >
-        {/* Image Area */}
+        {/* Image Area (Vertically Squeezed) */}
         <div style={{
           position: "relative",
-          aspectRatio: "4 / 5",
+          aspectRatio: compact ? "1.25 / 1" : "4 / 5",
           background: bg,
-          borderRadius: "20px 20px 0 0",
+          borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0",
           borderBottom: "1px solid rgba(0,0,0,0.04)",
           flexShrink: 0
         }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: "20px 20px 0 0", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0", overflow: "hidden" }}>
             {!imgError ? (
               <Image
                 src={item.image}
@@ -403,41 +404,45 @@ const FoodCard = ({
                 priority={priority}
               />
             ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "2.5rem" }}>
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: compact ? "1.6rem" : "2.5rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
               </div>
             )}
           </div>
 
           {item.isPopular && (
-            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: "0.55rem", fontWeight: 800, padding: "4px 6px", borderRadius: "12px 0 8px 0", textTransform: "uppercase" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: compact ? "0.5rem" : "0.55rem", fontWeight: 800, padding: compact ? "2px 5px" : "4px 6px", borderRadius: compact ? "8px 0 6px 0" : "12px 0 8px 0", textTransform: "uppercase" }}>
               Bestseller
             </div>
           )}
           {item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: compact ? "0.75rem" : "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
               Launching<br/>Soon
             </div>
           )}
           {!item.available && !item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "20px 20px 0 0", color: "#fff", fontSize: "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0", color: "#fff", fontSize: compact ? "0.75rem" : "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
               NOT<br/>AVAILABLE
             </div>
           )}
 
-          {/* ADD Button (Floating) */}
-          <div style={{ position: "absolute", bottom: -12, right: 12, zIndex: 10 }} onClick={e => e.stopPropagation()}>
+          {/* ADD Button (Inside image corner when compact to save vertical space) */}
+          <div style={{ position: "absolute", bottom: compact ? 4 : -12, right: compact ? 4 : 12, zIndex: 10 }} onClick={e => e.stopPropagation()}>
             {(cartItem && !item.isLaunchingSoon) ? (
-              <div style={{ display: "flex", alignItems: "center", background: "var(--primary)", color: "#fff", borderRadius: 8, height: 32, padding: "0 4px", boxShadow: "0 2px 6px rgba(1,53,251,0.3)" }}>
+              <div style={{
+                display: "flex", alignItems: "center", background: "var(--primary)", color: "#fff",
+                borderRadius: compact ? 6 : 8, height: compact ? 24 : 32, padding: "0 2px",
+                boxShadow: "0 2px 6px rgba(1,53,251,0.35)"
+              }}>
                 <button
                   onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
-                  style={{ width: 26, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
-                ><Minus size={14}/></button>
-                <span style={{ fontWeight: 800, fontSize: "0.85rem", minWidth: 20, textAlign: "center" }}>{cartItem.quantity}</span>
+                  style={{ width: compact ? 18 : 26, height: compact ? 22 : 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+                ><Minus size={compact ? 10 : 14}/></button>
+                <span style={{ fontWeight: 800, fontSize: compact ? "0.74rem" : "0.85rem", minWidth: compact ? 12 : 20, textAlign: "center" }}>{cartItem.quantity}</span>
                 <button
                   onClick={triggerAdd}
-                  style={{ width: 26, height: 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
-                ><Plus size={14}/></button>
+                  style={{ width: compact ? 18 : 26, height: compact ? 22 : 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+                ><Plus size={compact ? 10 : 14}/></button>
               </div>
             ) : (
               <button
@@ -446,57 +451,64 @@ const FoodCard = ({
                 style={{
                   background: "#fff",
                   color: (item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#94A3B8",
-                  border: `1px solid ${(item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#E2E8F0"}`,
-                  borderRadius: 8, height: 32,
-                  padding: (item.available && !item.isLaunchingSoon) ? "0 18px" : "0 12px",
+                  border: `1.5px solid ${(item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#E2E8F0"}`,
+                  borderRadius: compact ? 6 : 8, height: compact ? 24 : 32,
+                  padding: compact ? "0 6px" : ((item.available && !item.isLaunchingSoon) ? "0 18px" : "0 12px"),
                   fontWeight: 900,
-                  fontSize: (item.available && !item.isLaunchingSoon) ? "0.85rem" : "0.75rem",
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-                  cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed"
+                  fontSize: compact ? "0.72rem" : ((item.available && !item.isLaunchingSoon) ? "0.85rem" : "0.75rem"),
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
+                  cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed",
+                  display: "flex", alignItems: "center", justifyContent: "center", gap: 2,
                 }}
               >
-                {item.isLaunchingSoon ? "LAUNCHING" : (item.available ? "ADD" : "NO STOCK")}
+                {item.isLaunchingSoon ? (compact ? "SOON" : "LAUNCHING") : (item.available ? (compact ? <Plus size={12} strokeWidth={3} /> : "ADD") : (compact ? "OFF" : "NO STOCK"))}
               </button>
             )}
           </div>
         </div>
 
-        {/* Card Body */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: "20px 12px 14px 12px" }}>
-          {/* Price Row */}
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <div style={{ background: "var(--primary)", color: "#fff", fontWeight: 800, fontSize: "0.8rem", padding: "2px 6px", borderRadius: 6 }}>
+        {/* Card Body (Tight Squeezed Padding) */}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: compact ? "6px 6px 8px 6px" : "20px 12px 14px 12px" }}>
+          {/* Price Row (Blue theme) */}
+          <div style={{ display: "flex", alignItems: "center", gap: compact ? 4 : 6, marginBottom: compact ? 2 : 4, flexWrap: "wrap" }}>
+            <div style={{ background: "var(--primary)", color: "#fff", fontWeight: 800, fontSize: compact ? "0.72rem" : "0.8rem", padding: compact ? "1px 5px" : "2px 6px", borderRadius: 4 }}>
               ₹{item.price}
             </div>
             {item.originalPrice && item.originalPrice > item.price && (
-              <div style={{ color: "#94A3B8", fontSize: "0.75rem", textDecoration: "line-through", fontWeight: 600 }}>
+              <div style={{ color: "#94A3B8", fontSize: compact ? "0.66rem" : "0.75rem", textDecoration: "line-through", fontWeight: 600 }}>
                 ₹{item.originalPrice}
+              </div>
+            )}
+            {compact && item.originalPrice && item.originalPrice > item.price && (
+              <div style={{ color: "var(--primary)", fontSize: "0.62rem", fontWeight: 800 }}>
+                ₹{item.originalPrice - item.price} OFF
               </div>
             )}
           </div>
 
-          {item.originalPrice && item.originalPrice > item.price && (
+          {!compact && item.originalPrice && item.originalPrice > item.price && (
             <div style={{ color: "var(--primary)", fontSize: "0.65rem", fontWeight: 800, marginBottom: 6 }}>
               ₹{item.originalPrice - item.price} OFF
             </div>
           )}
 
           <div style={{
-            fontSize: "0.85rem", fontWeight: 700, color: "#0F172A", lineHeight: 1.3, marginBottom: 4,
+            fontSize: compact ? "0.74rem" : "0.85rem", fontWeight: 700, color: "#0F172A", lineHeight: 1.2, marginBottom: compact ? 2 : 4,
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
-            marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? "4px" : "0px"
+            height: compact ? 28 : undefined,
+            marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? (compact ? "0px" : "4px") : "0px"
           }}>
             {item.brand ? <span style={{ fontWeight: 800, color: "#0F172A" }}>{item.brand} </span> : null}
             {item.name}
           </div>
 
           {item.unit && (
-            <div style={{ fontSize: "0.75rem", color: "#64748B", marginBottom: 6 }}>
+            <div style={{ fontSize: compact ? "0.64rem" : "0.75rem", color: "#64748B", fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
               {item.unit}
             </div>
           )}
 
-          {item.badges && item.badges.length > 0 && (
+          {!compact && item.badges && item.badges.length > 0 && (
             <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 8 }}>
               {item.badges.map(b => (
                 <span key={b} style={{ background: "#ECFDF5", color: "#059669", fontSize: "0.6rem", fontWeight: 800, padding: "2px 6px", borderRadius: 4, textTransform: "uppercase" }}>
@@ -506,7 +518,7 @@ const FoodCard = ({
             </div>
           )}
 
-          {item.section && !item.badges?.length && (
+          {!compact && item.section && !item.badges?.length && (
             <div style={{ marginBottom: 8, display: "flex", overflow: "hidden" }}>
               <span style={{ background: "rgba(1, 53, 251, 0.08)", color: "var(--primary)", fontSize: "0.65rem", fontWeight: 700, padding: "2px 6px", borderRadius: 4, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>
                 {item.section}
@@ -514,7 +526,7 @@ const FoodCard = ({
             </div>
           )}
 
-          {item.isRecommended && (
+          {!compact && item.isRecommended && (
             <div style={{ marginTop: "auto", display: "flex", alignItems: "center" }}>
               <span style={{ display: "inline-flex", alignItems: "center", gap: 3, background: "#ECFDF5", color: "#059669", fontSize: "0.6rem", fontWeight: 800, padding: "2px 7px", borderRadius: 999, border: "1px solid #6EE7B7", textTransform: "uppercase", letterSpacing: "0.3px" }}>
                 🎯 Recommended

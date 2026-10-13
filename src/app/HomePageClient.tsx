@@ -276,19 +276,33 @@ function MunchiesSection({
   const hasBgImage = Boolean(config.bannerImage);
 
   return (
-    <div style={{ width: "100%", padding: "0 12px", margin: "16px 0 24px" }}>
-      {/* ── Header card ── */}
+    <div className="munchies-banner-wrap" style={{ width: "100%", margin: "16px 0 22px" }}>
+      <style>{`
+        .munchies-banner-wrap {
+          margin-left: 0;
+          margin-right: 0;
+        }
+        @media (max-width: 640px) {
+          .munchies-banner-wrap {
+            width: calc(100% + 20px) !important;
+            margin-left: -10px !important;
+            margin-right: -10px !important;
+          }
+        }
+      `}</style>
+
+      {/* ── Header card (Refined Midnight & Indigo) ── */}
       <div style={{
         background: hasBgImage
           ? `url(${config.bannerImage}) center/cover no-repeat`
-          : "linear-gradient(135deg, #0F172A 0%, #1E293B 60%, #1A3050 100%)",
-        borderRadius: "22px 22px 0 0",
-        padding: "18px 20px 20px",
+          : "linear-gradient(135deg, #080E24 0%, #0F1D4A 55%, #1B3175 100%)",
+        borderRadius: "18px 18px 0 0",
+        padding: "12px 18px",
         color: "white",
         position: "relative",
         overflow: "hidden",
-        boxShadow: "0 4px 0 rgba(0,0,0,0.15)",
-        border: "1px solid rgba(255,255,255,0.08)",
+        boxShadow: "0 4px 16px rgba(15,29,74,0.18)",
+        border: "1px solid rgba(255,255,255,0.12)",
         borderBottom: "none",
         display: "flex",
         alignItems: "center",
@@ -297,127 +311,65 @@ function MunchiesSection({
         {/* ambient glows */}
         {!hasBgImage && (
           <>
-            <div style={{ position: "absolute", top: -30, left: -10, width: 160, height: 160, borderRadius: "50%", background: "rgba(255,200,0,0.07)", filter: "blur(35px)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -20, right: 40, width: 120, height: 120, borderRadius: "50%", background: "rgba(255,100,0,0.09)", filter: "blur(28px)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", top: -30, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,180,0,0.1)", filter: "blur(30px)", pointerEvents: "none" }} />
+            <div style={{ position: "absolute", bottom: -25, right: 30, width: 120, height: 120, borderRadius: "50%", background: "rgba(1,53,251,0.25)", filter: "blur(25px)", pointerEvents: "none" }} />
           </>
         )}
-        {hasBgImage && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", borderRadius: "22px 22px 0 0" }} />}
+        {hasBgImage && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", borderRadius: "18px 18px 0 0" }} />}
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontSize: "0.7rem", fontWeight: 900, letterSpacing: "1.5px", textTransform: "uppercase", opacity: 0.75, marginBottom: 4 }}>
-            🍿 {config.subtitle || "Chips, drinks & instant cravings"}
+          <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase", opacity: 0.85, marginBottom: 2 }}>
+            🍿 {config.subtitle || "Instant Cravings"}
           </div>
-          <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.25rem, 4.5vw, 1.6rem)", fontWeight: 900, lineHeight: 1.15 }}>
+          <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.1rem, 3.8vw, 1.35rem)", fontWeight: 900, lineHeight: 1.15, textShadow: "0 2px 6px rgba(0,0,0,0.25)" }}>
             {config.title || "Munchies & Snacks"}
           </div>
         </div>
 
         <Link href={config.link || "/menu?world=munchies"} style={{
           position: "relative", zIndex: 2, flexShrink: 0,
-          background: "rgba(255,255,255,0.15)", backdropFilter: "blur(8px)",
-          borderRadius: 999, padding: "6px 14px",
-          fontSize: "0.75rem", fontWeight: 800, color: "white", textDecoration: "none",
-          border: "1px solid rgba(255,255,255,0.25)", whiteSpace: "nowrap",
-          display: "flex", alignItems: "center", gap: 4,
+          background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
+          borderRadius: 999, padding: "5px 14px",
+          fontSize: "0.72rem", fontWeight: 800, color: "white", textDecoration: "none",
+          border: "1px solid rgba(255,255,255,0.3)", whiteSpace: "nowrap",
+          display: "flex", alignItems: "center", gap: 3,
+          boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
         }}>
           See All <ChevronRight size={12} />
         </Link>
       </div>
 
-      {/* ── Product slider ── */}
+      {/* ── Product slider (Squeezed Square Cards, Width 126px) ── */}
       <div style={{
-        background: "#F8FAFC",
-        border: "1px solid rgba(0,0,0,0.07)",
+        background: "#FFFFFF",
+        border: "1px solid #E2E8F0",
         borderTop: "none",
-        borderRadius: "0 0 22px 22px",
-        padding: "16px 16px 14px",
-        boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+        borderRadius: "0 0 18px 18px",
+        padding: "10px 10px 12px 10px",
+        boxShadow: "0 8px 24px rgba(0,0,0,0.04)",
       }}>
         {items.length === 0 ? (
-          <div style={{ textAlign: "center", padding: "20px 0", color: "#94A3B8", fontSize: "0.85rem", fontWeight: 600 }}>
+          <div style={{ textAlign: "center", padding: "18px 0", color: "#64748B", fontSize: "0.82rem", fontWeight: 600 }}>
             🛍️ No munchies available right now
           </div>
         ) : (
           <div style={{
-            display: "flex", gap: 12, overflowX: "auto",
+            display: "flex", gap: 10, overflowX: "auto",
             paddingBottom: 4, WebkitOverflowScrolling: "touch",
             scrollbarWidth: "none", msOverflowStyle: "none",
           }}>
-            {items.map((item: any) => {
-              const cartItem = cart.find((c: any) => c.item.id === item.id);
-              return (
-                <div key={item.id} style={{
-                  flexShrink: 0, width: 130,
-                  background: "white", borderRadius: 16,
-                  boxShadow: "0 2px 10px rgba(0,0,0,0.06)",
-                  border: "1px solid rgba(0,0,0,0.05)",
-                  display: "flex", flexDirection: "column", alignItems: "center",
-                  padding: "10px 10px 12px", textAlign: "center",
-                  overflow: "hidden",
-                }}>
-                  {/* image */}
-                  <div style={{ width: "100%", height: 100, position: "relative", borderRadius: 10, overflow: "hidden", marginBottom: 8, background: "#f1f5f9" }}>
-                    <Image
-                      src={item.image || "https://res.cloudinary.com/dr4nfueet/image/upload/v1791312577/onndaway/menu/w8ggcbikrhw7nuvm2oic.jpg"}
-                      alt={item.name}
-                      fill
-                      sizes="130px"
-                      style={{ objectFit: "cover" }}
-                    />
-                    {/* badge */}
-                    {(item.isPopular || item.badges?.length > 0) && (
-                      <div style={{ position: "absolute", top: 5, left: 5, background: "#FF6B00", color: "white", fontSize: "0.58rem", fontWeight: 900, borderRadius: 6, padding: "2px 6px", letterSpacing: "0.5px", textTransform: "uppercase" }}>
-                        {item.badges?.[0] || "Popular"}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* name */}
-                  <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#0F172A", lineHeight: 1.25, marginBottom: 4, minHeight: 32, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
-                    {item.name}
-                  </div>
-
-                  {/* price */}
-                  <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 8 }}>
-                    <span style={{ fontWeight: 900, fontSize: "0.92rem", color: "#0F172A" }}>₹{item.price}</span>
-                    {item.originalPrice && item.originalPrice > item.price && (
-                      <span style={{ fontSize: "0.7rem", color: "#94A3B8", textDecoration: "line-through" }}>₹{item.originalPrice}</span>
-                    )}
-                  </div>
-
-                  {/* ADD / stepper */}
-                  {cartItem ? (
-                    <div style={{
-                      display: "flex", alignItems: "center", justifyContent: "space-between",
-                      background: "#0F172A", color: "white",
-                      borderRadius: 10, padding: "4px 10px", width: "100%",
-                    }}>
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, cartItem.quantity - 1)}
-                        style={{ background: "none", border: "none", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem", padding: 0, lineHeight: 1 }}
-                      >−</button>
-                      <span style={{ fontWeight: 800, fontSize: "0.88rem" }}>{cartItem.quantity}</span>
-                      <button
-                        onClick={() => onUpdateQuantity(item.id, cartItem.quantity + 1)}
-                        style={{ background: "none", border: "none", color: "white", fontWeight: 900, cursor: "pointer", fontSize: "1.1rem", padding: 0, lineHeight: 1 }}
-                      >+</button>
-                    </div>
-                  ) : (
-                    <button
-                      onClick={() => onAdd(item)}
-                      style={{
-                        width: "100%", background: "#0F172A", color: "white",
-                        border: "none", borderRadius: 10, padding: "7px 0",
-                        fontWeight: 800, fontSize: "0.78rem", cursor: "pointer",
-                        letterSpacing: "0.5px",
-                      }}
-                    >
-                      + ADD
-                    </button>
-                  )}
-                </div>
-              );
-            })}
+            {items.map((item: any) => (
+              <div key={item.id} style={{ flexShrink: 0, width: 126 }}>
+                <FoodCard
+                  item={item}
+                  compact={true}
+                  layout="vertical"
+                  cartItem={cart.find((c: any) => c.item.id === item.id)}
+                  onAdd={onAdd}
+                  onUpdateQuantity={onUpdateQuantity}
+                />
+              </div>
+            ))}
           </div>
         )}
       </div>

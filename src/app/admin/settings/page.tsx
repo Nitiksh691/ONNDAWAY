@@ -1,8 +1,121 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { Save, AlertTriangle, Info, Clock, Phone, MapPin } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+
+function ImageUploadField({
+  label,
+  value,
+  onChange,
+  placeholder = "https://res.cloudinary.com/...",
+  recommendedText,
+}: {
+  label: string;
+  value: string;
+  onChange: (url: string) => void;
+  placeholder?: string;
+  recommendedText?: string;
+}) {
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploading(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-admin-token": sessionStorage.getItem("otw_admin_token") || "",
+            },
+            body: JSON.stringify({ image: reader.result }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            onChange(data.url);
+            toast.success("Image uploaded to Cloudinary!");
+          } else {
+            toast.error(data.error || "Failed to upload image");
+          }
+        } catch {
+          toast.error("Error uploading image");
+        } finally {
+          setUploading(false);
+        }
+      };
+    } catch {
+      toast.error("Error reading file");
+      setUploading(false);
+    }
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+        <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>{label}</label>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            style={{ fontSize: "0.7rem", color: "#EF4444", background: "none", border: "none", cursor: "pointer", fontWeight: 700 }}
+          >
+            ✕ Remove
+          </button>
+        )}
+      </div>
+
+      {value && (
+        <div style={{ position: "relative", width: "100%", height: 90, borderRadius: 10, overflow: "hidden", marginBottom: 8, border: "1px solid #CBD5E1", background: "#F1F5F9" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={value} alt="Preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+        </div>
+      )}
+
+      <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="image/*"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+        <button
+          type="button"
+          disabled={uploading}
+          onClick={() => fileInputRef.current?.click()}
+          style={{
+            background: "#0135FB", color: "white", border: "none", borderRadius: 8,
+            padding: "8px 12px", fontSize: "0.78rem", fontWeight: 800, cursor: uploading ? "wait" : "pointer",
+            display: "flex", alignItems: "center", gap: 5, flexShrink: 0
+          }}
+        >
+          {uploading ? "Uploading..." : "📷 Upload Image"}
+        </button>
+        <input
+          type="text"
+          className="otw-input"
+          placeholder={placeholder}
+          style={{ padding: "6px 10px", fontSize: "0.82rem", flex: 1 }}
+          value={value}
+          onChange={e => onChange(e.target.value)}
+        />
+      </div>
+      {recommendedText && (
+        <p style={{ fontSize: "0.7rem", color: "#64748B", marginTop: 4, margin: "4px 0 0" }}>
+          💡 {recommendedText}
+        </p>
+      )}
+    </div>
+  );
+}
 
 export default function AdminSettingsPage() {
   const [deliveryFee, setDeliveryFee] = useState<number>(20);
@@ -391,20 +504,15 @@ export default function AdminSettingsPage() {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div>
-                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Image URL (Cloudinary)</label>
-                  <input
-                    type="text"
-                    className="otw-input"
-                    placeholder="https://res.cloudinary.com/..."
-                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
-                    value={homeLayout.freeDelivery?.bannerImage ?? ""}
-                    onChange={e => setHomeLayout(prev => ({
-                      ...prev,
-                      freeDelivery: { ...prev.freeDelivery, bannerImage: e.target.value }
-                    }))}
-                  />
-                </div>
+                <ImageUploadField
+                  label="Banner Image (Cloudinary or Device Upload)"
+                  value={homeLayout.freeDelivery?.bannerImage ?? ""}
+                  onChange={url => setHomeLayout(prev => ({
+                    ...prev,
+                    freeDelivery: { ...prev.freeDelivery, bannerImage: url }
+                  }))}
+                  recommendedText="Upload image or GIF banner. Replaces default orange gradient."
+                />
                 <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Heading / Title</label>
                   <input
@@ -467,20 +575,15 @@ export default function AdminSettingsPage() {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div>
-                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Custom Banner Image URL (Cloudinary)</label>
-                  <input
-                    type="text"
-                    className="otw-input"
-                    placeholder="https://res.cloudinary.com/..."
-                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
-                    value={homeLayout.dealOfTheDay?.bannerImage ?? ""}
-                    onChange={e => setHomeLayout(prev => ({
-                      ...prev,
-                      dealOfTheDay: { ...prev.dealOfTheDay, bannerImage: e.target.value }
-                    }))}
-                  />
-                </div>
+                <ImageUploadField
+                  label="Custom Banner Image (Cloudinary or Device Upload)"
+                  value={homeLayout.dealOfTheDay?.bannerImage ?? ""}
+                  onChange={url => setHomeLayout(prev => ({
+                    ...prev,
+                    dealOfTheDay: { ...prev.dealOfTheDay, bannerImage: url }
+                  }))}
+                  recommendedText="Upload image for Deal of the Day card background."
+                />
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Show Countdown Timer</label>
                   <input
@@ -586,21 +689,15 @@ export default function AdminSettingsPage() {
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                <div>
-                  <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Banner Image / GIF URL (Cloudinary)</label>
-                  <input
-                    type="text"
-                    className="otw-input"
-                    placeholder="https://res.cloudinary.com/... (.jpg / .gif / .webp)"
-                    style={{ padding: "6px 10px", fontSize: "0.85rem" }}
-                    value={homeLayout.munchiesBanner?.bannerImage ?? ""}
-                    onChange={e => setHomeLayout(prev => ({
-                      ...prev,
-                      munchiesBanner: { ...prev.munchiesBanner, bannerImage: e.target.value }
-                    }))}
-                  />
-                  <p style={{ fontSize: "0.72rem", color: "#9A3412", marginTop: 4 }}>💡 Recommended: 1200×400px. GIF/WebP animations are supported!</p>
-                </div>
+                <ImageUploadField
+                  label="Banner Image / GIF (Cloudinary or Device Upload)"
+                  value={homeLayout.munchiesBanner?.bannerImage ?? ""}
+                  onChange={url => setHomeLayout(prev => ({
+                    ...prev,
+                    munchiesBanner: { ...prev.munchiesBanner, bannerImage: url }
+                  }))}
+                  recommendedText="Recommended: 1200×400px. Upload image/GIF or paste Cloudinary URL."
+                />
                 <div>
                   <label style={{ fontSize: "0.75rem", fontWeight: 700 }}>Title</label>
                   <input
