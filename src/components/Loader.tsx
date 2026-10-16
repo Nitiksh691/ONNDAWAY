@@ -29,11 +29,12 @@ export default function Loader() {
       flexDirection: "column",
       animation: !exiting ? "none" : "fadeOut 0.4s ease forwards",
     }}>
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes fadeOut {
           to { opacity: 0; visibility: hidden; }
         }
-      `}}/>
+      `}} />
       <WalkingLoader size={80} color="#FFFFFF" />
     </div>
   );

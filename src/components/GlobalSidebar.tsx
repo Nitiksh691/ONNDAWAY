@@ -70,7 +70,7 @@ export default function GlobalSidebar() {
     window.location.reload();
   };
 
-  if (pathname.startsWith("/delivery") || pathname.startsWith("/admin")) return null;
+  if (pathname.startsWith("/delivery") || pathname.startsWith("/admin") || pathname.startsWith("/vendor")) return null;
 
   return (
     <>

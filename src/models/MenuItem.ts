@@ -29,6 +29,14 @@ const MenuItemSchema = new Schema({
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
   sortOrder:     { type: Number, default: 0 },
+
+  // ── Vendor / Consignment ──
+  /** Set true when item belongs to an external vendor (not owned by us) */
+  isConsignment: { type: Boolean, default: false },
+  /** Reference to the Vendor document */
+  vendorId:      { type: Schema.Types.ObjectId, ref: "Vendor", default: null },
+  /** Cached vendor display name for fast reads */
+  vendorName:    { type: String, default: "" },
   customizationCategories: [{
     name:     { type: String, required: true },
     required: { type: Boolean, default: false },

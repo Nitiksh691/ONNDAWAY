@@ -21,41 +21,25 @@ import {
   Bell,
   Store,
   ClipboardList,
+  Volume2,
+  VolumeX,
+  BellRing,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { STORAGE_KEYS } from "@/lib/constants";
 import AdminBottomNav from "@/components/AdminBottomNav";
-
-function playAlarmBeep() {
-  try {
-    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    const playTone = (freq: number, start: number, duration: number) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.frequency.value = freq;
-      osc.type = "sine";
-      gain.gain.setValueAtTime(0.5, ctx.currentTime + start);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
-      osc.start(ctx.currentTime + start);
-      osc.stop(ctx.currentTime + start + duration);
-    };
-    playTone(880, 0,    0.18);
-    playTone(1100, 0.22, 0.18);
-    playTone(1320, 0.44, 0.28);
-    playTone(880, 0.85,  0.18);
-    playTone(1100, 1.07, 0.18);
-    playTone(1320, 1.29, 0.28);
-    const audio = new Audio("https://actions.google.com/sounds/v1/alarms/digital_watch_alarm_long.ogg");
-    audio.play().catch(() => {});
-  } catch (e) {}
-}
+import {
+  playAdminOrderSound,
+  unlockAudio,
+  requestNotificationPermission,
+  triggerBrowserNotification,
+} from "@/lib/orderSounds";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { href: "/admin/analytics", label: "Analytics", icon: <LayoutDashboard size={18} /> },
   { href: "/admin/menu", label: "Menu Management", icon: <Coffee size={18} /> },
+  { href: "/admin/vendors", label: "Vendors & Consignment", icon: <Store size={18} /> },
   { href: "/admin/orders", label: "Live Orders", icon: <ShoppingBag size={18} /> },
   { href: "/admin/customers", label: "App Customers", icon: <Users size={18} /> },
   { href: "/admin/interns", label: "Interns", icon: <ClipboardList size={18} /> },
@@ -357,7 +341,72 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const [showPasscodeModal, setShowPasscodeModal] = useState(false);
   const [pendingCount, setPendingCount] = useState(0);
   const [adminStats, setAdminStats] = useState<any>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [notifGranted, setNotifGranted] = useState(false);
   const prevPendingRef = useRef(0);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem("admin_sound_enabled");
+      if (stored !== null) setSoundEnabled(stored === "true");
+    } catch {}
+
+    if (typeof window !== "undefined" && "Notification" in window) {
+      setNotifGranted(Notification.permission === "granted");
+    }
+  }, []);
+
+  const toggleSound = () => {
+    const next = !soundEnabled;
+    setSoundEnabled(next);
+    try {
+      localStorage.setItem("admin_sound_enabled", String(next));
+    } catch {}
+    if (next) {
+      unlockAudio();
+      playAdminOrderSound();
+      toast.success("Admin order sound alerts ON! 🔊");
+    } else {
+      toast("Admin sound alerts muted 🔇");
+    }
+  };
+
+  const handleTestSound = () => {
+    unlockAudio();
+    playAdminOrderSound();
+    toast.success("🔔 Admin alarm chime tested! (Audio unlocked on this device)");
+  };
+
+  const handleEnableNotifications = async () => {
+    const ok = await requestNotificationPermission();
+    setNotifGranted(ok);
+    if (ok) {
+      toast.success("Admin push notifications enabled! 🔔");
+      triggerBrowserNotification("ONN DA WAY Admin Alerts Active! 🍕", {
+        body: "You will receive alerts when new orders arrive.",
+      });
+    } else {
+      toast.error("Notification permission not granted");
+    }
+  };
+
+  const notifyNewOrders = useCallback((unconfirmed: number) => {
+    if (unconfirmed > prevPendingRef.current) {
+      if (soundEnabled) {
+        playAdminOrderSound();
+      }
+      toast.success(
+        `🚨 ${unconfirmed} NEW ORDER${unconfirmed > 1 ? "S" : ""} WAITING FOR CONFIRMATION!`,
+        { id: "admin-order-alert", duration: 8000, icon: "🔔" }
+      );
+      triggerBrowserNotification("ONN DA WAY - New Order! 🍕", {
+        body: `${unconfirmed} new order${unconfirmed > 1 ? "s" : ""} waiting for confirmation! Click to view.`,
+        tag: "admin-order-alert",
+      });
+    }
+    prevPendingRef.current = unconfirmed;
+    setPendingCount(unconfirmed);
+  }, [soundEnabled]);
 
   useEffect(() => {
     const token = typeof window !== "undefined" ? sessionStorage.getItem("otw_admin_token") : null;
@@ -392,14 +441,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       })
       .then(data => {
         if (data && data.summary) {
-           setAdminStats({
-              orders: data.summary.totalOrders,
-              revenue: data.summary.totalRevenue,
-              users: data.summary.uniqueUsers
-           });
+          setAdminStats({
+            orders: data.summary.totalOrders,
+            revenue: data.summary.totalRevenue,
+            users: data.summary.uniqueUsers
+          });
         }
       })
-      .catch(() => {});
+      .catch(() => { });
 
     const fetchPendingCount = async () => {
       try {
@@ -409,15 +458,13 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed").length;
-          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
-          prevPendingRef.current = unconfirmed;
-          setPendingCount(unconfirmed);
+          notifyNewOrders(unconfirmed);
         }
-      } catch (e) {}
+      } catch (e) { }
     };
 
     fetchPendingCount();
-  }, [authorized]);
+  }, [authorized, notifyNewOrders]);
 
   // SSE with automatic polling fallback for pending order badge
   useSSEWithFallback(
@@ -430,21 +477,17 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         if (res.ok) {
           const data = await res.json();
           const unconfirmed = data.filter((o: any) => o.status === "placed").length;
-          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
-          prevPendingRef.current = unconfirmed;
-          setPendingCount(unconfirmed);
+          notifyNewOrders(unconfirmed);
         }
-      } catch (e) {}
-    }, [authorized]),
+      } catch (e) { }
+    }, [authorized, notifyNewOrders]),
     {
       onMessage: useCallback((data: any) => {
         if (data.type === "orders_update") {
           const unconfirmed = data.count;
-          if (unconfirmed > prevPendingRef.current) playAlarmBeep();
-          prevPendingRef.current = unconfirmed;
-          setPendingCount(unconfirmed);
+          notifyNewOrders(unconfirmed);
         }
-      }, []),
+      }, [notifyNewOrders]),
       pollIntervalMs: 8000,
     }
   );
@@ -557,16 +600,16 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
         {/* Sidebar Stats Summary */}
         {!sidebarCollapsed && adminStats && (
-           <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", gap: "12px", justifyContent: "space-between" }}>
-              <div style={{ textAlign: "center" }}>
-                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>ORDERS</div>
-                 <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>{adminStats.orders}</div>
-              </div>
-              <div style={{ textAlign: "center", borderLeft: "1px solid #e2e8f0", paddingLeft: "12px" }}>
-                 <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>REVENUE</div>
-                 <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#10b981" }}>₹{adminStats.revenue}</div>
-              </div>
-           </div>
+          <div style={{ padding: "16px 20px", borderBottom: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", gap: "12px", justifyContent: "space-between" }}>
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>ORDERS</div>
+              <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#0f172a" }}>{adminStats.orders}</div>
+            </div>
+            <div style={{ textAlign: "center", borderLeft: "1px solid #e2e8f0", paddingLeft: "12px" }}>
+              <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#94a3b8", letterSpacing: "1px" }}>REVENUE</div>
+              <div style={{ fontSize: "1.1rem", fontWeight: 900, color: "#10b981" }}>₹{adminStats.revenue}</div>
+            </div>
+          </div>
         )}
 
         <div
@@ -650,6 +693,72 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       {/* Main Content */}
       <div style={{ flex: 1, display: "flex", flexDirection: "column", overflowY: "auto", position: "relative" }} className="admin-main">
+        {/* Sound & Notification Bar for Admin */}
+        <div style={{
+          background: "#0F172A",
+          color: "#FFFFFF",
+          padding: "8px 16px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 8,
+          fontSize: "0.8rem",
+          zIndex: 20,
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <button
+              onClick={toggleSound}
+              style={{
+                display: "flex", alignItems: "center", gap: 5,
+                background: soundEnabled ? "rgba(16, 185, 129, 0.2)" : "rgba(255,255,255,0.1)",
+                border: soundEnabled ? "1px solid #10B981" : "1px solid rgba(255,255,255,0.2)",
+                color: soundEnabled ? "#34D399" : "#94A3B8",
+                padding: "4px 10px", borderRadius: 8,
+                fontSize: "0.75rem", fontWeight: 800, cursor: "pointer",
+              }}
+            >
+              {soundEnabled ? <Volume2 size={13} color="#34D399" /> : <VolumeX size={13} color="#94A3B8" />}
+              Sound {soundEnabled ? "ON" : "OFF"}
+            </button>
+
+            <button
+              onClick={handleTestSound}
+              style={{
+                display: "flex", alignItems: "center", gap: 4,
+                background: "rgba(255,255,255,0.1)",
+                border: "1px solid rgba(255,255,255,0.2)",
+                color: "#FFFFFF",
+                padding: "4px 10px", borderRadius: 8,
+                fontSize: "0.75rem", fontWeight: 700, cursor: "pointer",
+              }}
+              title="Test alarm sound and unlock audio on this device"
+            >
+              <BellRing size={12} color="#60A5FA" /> Test Alarm
+            </button>
+          </div>
+
+          <div>
+            {!notifGranted ? (
+              <button
+                onClick={handleEnableNotifications}
+                style={{
+                  display: "flex", alignItems: "center", gap: 4,
+                  background: "#2563EB", border: "none", color: "#FFFFFF",
+                  padding: "4px 12px", borderRadius: 8,
+                  fontSize: "0.75rem", fontWeight: 800, cursor: "pointer",
+                }}
+              >
+                <Bell size={12} /> Enable Mobile Notifications
+              </button>
+            ) : (
+              <span style={{ color: "#34D399", fontSize: "0.75rem", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>
+                ✅ Push Notifications Active
+              </span>
+            )}
+          </div>
+        </div>
+
         {pendingCount > 0 && (
           <div style={{
             background: "linear-gradient(135deg, #DC2626, #B91C1C)",
@@ -671,7 +780,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div className="admin-content-pad">
           <div style={{ maxWidth: "1200px", margin: "0 auto", width: "100%" }}>{children}</div>
         </div>
-        
+
         {/* New Flowing/Attached Admin Bottom Nav */}
         <AdminBottomNav />
       </div>

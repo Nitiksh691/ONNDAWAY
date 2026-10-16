@@ -67,7 +67,7 @@ function HScrollRow({ items, label, emoji, viewAllCategory, layout, cart, onAdd,
         )}
       </div>
       <div className="hsr-grid">
-        {items.slice(0, 6).map(item => (
+        {items.map(item => (
           <div key={item.id}>
             <FoodCard
               item={item}
@@ -114,7 +114,7 @@ function BrandRow({ brand, items, cart, onAdd, onUpdateQuantity, onViewAll }: {
         )}
       </div>
       <div className="hsr-grid">
-        {items.slice(0, 4).map(item => (
+        {items.map(item => (
           <div key={item.id}>
             <FoodCard
               item={item}
@@ -271,14 +271,23 @@ function MenuContent() {
       <style dangerouslySetInnerHTML={{
         __html: `
         .hscroll::-webkit-scrollbar { display: none; }
+        /* ── Horizontal scroll strip ── */
         .hsr-grid {
-          display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          display: flex;
           gap: 12px;
+          overflow-x: auto;
+          padding-bottom: 8px;
+          -webkit-overflow-scrolling: touch;
+          scrollbar-width: none;
+          ms-overflow-style: none;
+        }
+        .hsr-grid::-webkit-scrollbar { display: none; }
+        .hsr-grid > div {
+          flex-shrink: 0;
+          width: 150px;
         }
         @media (min-width: 640px) {
-          .hsr-grid { display: flex; flex-wrap: wrap; gap: 14px; }
-          .hsr-grid > div { flex: 0 0 185px; max-width: 185px; }
+          .hsr-grid > div { width: 175px; }
         }
         .food-grid-filtered {
           display: grid;

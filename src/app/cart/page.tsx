@@ -25,6 +25,8 @@ export default function CartPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(20);
+  const [minOrderValue, setMinOrderValue] = useState(0);
+  const [minGroceryOrderValue, setMinGroceryOrderValue] = useState(0);
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
   const [codEnabled, setCodEnabled] = useState(false);
   const [paymentFailures, setPaymentFailures] = useState(0);
@@ -120,6 +122,8 @@ export default function CartPage() {
           if (data.deliveryFee !== undefined) setDeliveryFee(data.deliveryFee);
           if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
           if (data.codEnabled !== undefined) setCodEnabled(data.codEnabled);
+          if (data.minOrderValue !== undefined) setMinOrderValue(data.minOrderValue);
+          if (data.minGroceryOrderValue !== undefined) setMinGroceryOrderValue(data.minGroceryOrderValue);
         }
       })
       .catch(err => console.error("Failed to load settings:", err));
@@ -147,7 +151,29 @@ export default function CartPage() {
     return diffHours > 0 && diffHours <= 3;
   };
 
-  const canPlace = cart.length > 0 && location.trim().length > 0 && isPhoneValid && name.trim().length > 0 && isTimeValid();
+  // Check minimum overall order value
+  const isMinOrderMet = minOrderValue <= 0 || cartTotal >= minOrderValue;
+  const minOrderShortfall = minOrderValue > 0 && cartTotal < minOrderValue
+    ? minOrderValue - cartTotal
+    : 0;
+  const minOrderPct = minOrderValue > 0 ? Math.min(100, Math.round((cartTotal / minOrderValue) * 100)) : 100;
+
+  // Check minimum grocery order value (exempts coffee & mojito)
+  const groceryItems = cart.filter(c => {
+    const cat = (c.item?.category || "").toLowerCase();
+    const itemName = (c.item?.name || "").toLowerCase();
+    const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
+    return !isExempt;
+  });
+
+  const grocerySubtotal = groceryItems.reduce((acc, c) => acc + (c.unitPrice ?? c.item?.price ?? 0) * c.quantity, 0);
+  const hasGroceryItems = groceryItems.length > 0;
+  const isGroceryMinMet = minGroceryOrderValue <= 0 || !hasGroceryItems || grocerySubtotal >= minGroceryOrderValue;
+  const groceryShortfall = minGroceryOrderValue > 0 && hasGroceryItems && grocerySubtotal < minGroceryOrderValue
+    ? minGroceryOrderValue - grocerySubtotal
+    : 0;
+
+  const canPlace = cart.length > 0 && location.trim().length > 0 && isPhoneValid && name.trim().length > 0 && isTimeValid() && isGroceryMinMet && isMinOrderMet;
 
   const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase();
@@ -704,6 +730,191 @@ export default function CartPage() {
                 <span style={{ color: "#0135FB" }}>₹{grandTotal.toFixed(2)}</span>
               </div>
             </div>
+
+            {/* ── MINIMUM ORDER AMOUNT FOR DELIVERY (ANIMATED PROGRESS & SIGN) ── */}
+            {minOrderValue > 0 && (
+              <div style={{ marginTop: "16px" }}>
+                {!isMinOrderMet ? (
+                  <div style={{
+                    background: "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)",
+                    border: "2px solid #2563EB",
+                    borderRadius: 16,
+                    padding: "16px 18px",
+                    boxShadow: "0 6px 20px rgba(37, 99, 235, 0.16)",
+                    position: "relative",
+                    overflow: "hidden"
+                  }}>
+                    <style>{`
+                      @keyframes pulseBar {
+                        0%, 100% { opacity: 1; }
+                        50% { opacity: 0.82; }
+                      }
+                      @keyframes bounceScooter {
+                        0%, 100% { transform: translateY(0); }
+                        50% { transform: translateY(-3px); }
+                      }
+                    `}</style>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <span style={{ fontSize: "1.4rem", display: "inline-block", animation: "bounceScooter 1.4s ease-in-out infinite" }}>🛵</span>
+                        <div>
+                          <div style={{ fontWeight: 900, fontSize: "0.92rem", color: "#1E3A8A", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+                            Min. Order for Delivery: ₹{minOrderValue}
+                          </div>
+                          <div style={{ fontSize: "0.78rem", color: "#1D4ED8", fontWeight: 700 }}>
+                            Current cart: ₹{cartTotal.toFixed(0)} of ₹{minOrderValue}
+                          </div>
+                        </div>
+                      </div>
+                      <span style={{
+                        background: "#1D4ED8", color: "#FFFFFF",
+                        padding: "3px 10px", borderRadius: 999,
+                        fontWeight: 900, fontSize: "0.78rem"
+                      }}>
+                        {minOrderPct}%
+                      </span>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div style={{ width: "100%", height: 10, background: "rgba(37, 99, 235, 0.18)", borderRadius: 999, overflow: "hidden", margin: "10px 0 8px" }}>
+                      <div style={{
+                        width: `${minOrderPct}%`,
+                        height: "100%",
+                        background: "linear-gradient(90deg, #3B82F6, #1D4ED8)",
+                        borderRadius: 999,
+                        transition: "width 0.4s ease-in-out",
+                        boxShadow: "0 0 10px rgba(37, 99, 235, 0.6)",
+                        animation: "pulseBar 2s infinite ease-in-out"
+                      }} />
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 8 }}>
+                      <span style={{ fontSize: "0.82rem", color: "#1E40AF", fontWeight: 800 }}>
+                        ⚡ Add ₹{minOrderShortfall.toFixed(0)} more to complete order
+                      </span>
+                      <Link href="/menu" style={{
+                        fontSize: "0.78rem", fontWeight: 800, color: "#FFFFFF",
+                        background: "#0135FB", padding: "6px 14px", borderRadius: 8,
+                        textDecoration: "none", boxShadow: "0 2px 8px rgba(1,53,251,0.3)"
+                      }}>
+                        + Add Items →
+                      </Link>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: "#F0FDF4",
+                    border: "1.5px solid #86EFAC",
+                    borderRadius: 14,
+                    padding: "12px 16px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 10,
+                    color: "#166534",
+                    fontSize: "0.85rem",
+                    fontWeight: 800,
+                    boxShadow: "0 2px 8px rgba(34,197,94,0.12)"
+                  }}>
+                    <CheckCircle size={20} color="#16A34A" />
+                    <div>
+                      <div>Minimum order requirement met (₹{cartTotal.toFixed(0)} / ₹{minOrderValue})!</div>
+                      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#15803D" }}>Ready for campus delivery.</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* ── MINIMUM GROCERY ORDER PROGRESS & ANIMATION ── */}
+            {minGroceryOrderValue > 0 && hasGroceryItems && (
+              <div style={{ marginTop: "16px" }}>
+                {!isGroceryMinMet ? (
+                  <div style={{
+                    background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
+                    border: "1.5px solid #FCD34D",
+                    borderRadius: 14,
+                    padding: "14px 16px",
+                    boxShadow: "0 4px 14px rgba(245,158,11,0.12)",
+                  }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                        <span style={{ fontSize: "1.1rem" }}>🛒</span>
+                        <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#92400E" }}>
+                          Min. Grocery Order: ₹{minGroceryOrderValue}
+                        </span>
+                      </div>
+                      <span style={{ fontWeight: 900, fontSize: "0.82rem", color: "#B45309" }}>
+                        ₹{grocerySubtotal.toFixed(0)} / ₹{minGroceryOrderValue}
+                      </span>
+                    </div>
+
+                    {/* Animated Progress Bar */}
+                    <div style={{ width: "100%", height: 8, background: "#FDE68A", borderRadius: 999, overflow: "hidden" }}>
+                      <div style={{
+                        width: `${Math.min(100, (grocerySubtotal / minGroceryOrderValue) * 100)}%`,
+                        height: "100%",
+                        background: "linear-gradient(90deg, #F59E0B, #EA580C)",
+                        borderRadius: 999,
+                        transition: "width 0.4s ease-in-out",
+                      }} />
+                    </div>
+
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
+                      <span style={{ fontSize: "0.78rem", color: "#B45309", fontWeight: 700 }}>
+                        ⚡ Add ₹{groceryShortfall.toFixed(0)} more groceries to order
+                      </span>
+                      <Link href="/menu?world=munchies" style={{ fontSize: "0.78rem", fontWeight: 800, color: "#0135FB", textDecoration: "underline" }}>
+                        + Browse items →
+                      </Link>
+                    </div>
+                    <div style={{ fontSize: "0.68rem", color: "#78350F", marginTop: 4, opacity: 0.85 }}>
+                      ☕ Coffee &amp; Mojitos are exempt and do not have any minimum order limit.
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{
+                    background: "#F0FDF4",
+                    border: "1.5px solid #BBF7D0",
+                    borderRadius: 14,
+                    padding: "10px 14px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                    color: "#166534",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                  }}>
+                    <CheckCircle size={17} color="#22C55E" />
+                    <span>Grocery minimum order reached (₹{grocerySubtotal.toFixed(0)} / ₹{minGroceryOrderValue})! Ready for checkout.</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Minimum order requirement warning notice above payment buttons */}
+            {(!isMinOrderMet || !isGroceryMinMet) && (
+              <div style={{
+                marginTop: "16px",
+                padding: "12px 14px",
+                borderRadius: 12,
+                background: "#FEF2F2",
+                border: "1.5px solid #FCA5A5",
+                color: "#991B1B",
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+              }}>
+                <span style={{ fontSize: "1.1rem" }}>🚫</span>
+                <span>
+                  {!isMinOrderMet
+                    ? `Payment is disabled: Minimum order value is ₹${minOrderValue}. Please add ₹${minOrderShortfall.toFixed(0)} more to proceed.`
+                    : `Payment is disabled: Minimum grocery order value is ₹${minGroceryOrderValue}. Please add ₹${groceryShortfall.toFixed(0)} more.`
+                  }
+                </span>
+              </div>
+            )}
 
             {/* ── PRIMARY: Razorpay Online Payment ── */}
             <div style={{ marginTop: "20px" }}>

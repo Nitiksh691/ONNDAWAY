@@ -4,8 +4,8 @@
   "description": "Smart Campus Food Delivery",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#01235F",
-  "theme_color": "#01235F",
+  "background_color": "#0135FB",
+  "theme_color": "#0135FB",
   "icons": [
     {
       "src": "/icon-192x192.png",

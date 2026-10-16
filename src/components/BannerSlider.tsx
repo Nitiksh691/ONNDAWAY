@@ -96,7 +96,7 @@ export default function BannerSlider({
   const [currentSlide, setCurrentSlide] = useState(0);
   const sliderRef = useRef<HTMLDivElement>(null);
   const autoplayRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  
+
   // Touch swipe
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
@@ -318,47 +318,47 @@ export default function BannerSlider({
           {/* Banner content */}
           <div className="home-banner-content hbs-content-overlay visible">
             {currentSlideData?.text && (
-                <h3 className="home-banner-title">{currentSlideData.text}</h3>
-              )}
-              {currentSlideData?.subText && (
-                <p className="home-banner-sub">{currentSlideData.subText}</p>
-              )}
-              {currentSlideData?.link && (
-                <Link href={currentSlideData.link} className="home-banner-cta">
-                  ORDER NOW <ArrowRight size={16} />
-                </Link>
-              )}
+              <h3 className="home-banner-title">{currentSlideData.text}</h3>
+            )}
+            {currentSlideData?.subText && (
+              <p className="home-banner-sub">{currentSlideData.subText}</p>
+            )}
+            {currentSlideData?.link && (
+              <Link href={currentSlideData.link} className="home-banner-cta">
+                ORDER NOW <ArrowRight size={16} />
+              </Link>
+            )}
+          </div>
+
+          {/* Desktop arrow controls */}
+          {slides.length > 1 && (
+            <>
+              <button onClick={() => goToSlide((currentSlide - 1 + slides.length) % slides.length)}
+                aria-label="Previous slide" className="desktop-only"
+                style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3, width: 40, height: 40, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}>
+                <ChevronLeft size={20} />
+              </button>
+              <button onClick={() => goToSlide((currentSlide + 1) % slides.length)}
+                aria-label="Next slide" className="desktop-only"
+                style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3, width: 40, height: 40, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
+                onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}>
+                <ChevronRight size={20} />
+              </button>
+            </>
+          )}
+
+          {/* Dot indicators */}
+          {slides.length > 1 && (
+            <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 5, display: "flex", gap: "6px" }}>
+              {slides.map((_, idx) => (
+                <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
+                  style={{ width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none", background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.3s ease", padding: 0 }} />
+              ))}
             </div>
-
-            {/* Desktop arrow controls */}
-            {slides.length > 1 && (
-              <>
-                <button onClick={() => goToSlide((currentSlide - 1 + slides.length) % slides.length)}
-                  aria-label="Previous slide" className="desktop-only"
-                  style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3, width: 40, height: 40, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}>
-                  <ChevronLeft size={20} />
-                </button>
-                <button onClick={() => goToSlide((currentSlide + 1) % slides.length)}
-                  aria-label="Next slide" className="desktop-only"
-                  style={{ position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)", zIndex: 3, width: 40, height: 40, borderRadius: "50%", border: "none", background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", transition: "background 0.2s" }}
-                  onMouseEnter={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.8)")}
-                  onMouseLeave={(e) => (e.currentTarget.style.background = "rgba(0,0,0,0.5)")}>
-                  <ChevronRight size={20} />
-                </button>
-              </>
-            )}
-
-            {/* Dot indicators */}
-            {slides.length > 1 && (
-              <div style={{ position: "absolute", bottom: 14, left: "50%", transform: "translateX(-50%)", zIndex: 5, display: "flex", gap: "6px" }}>
-                {slides.map((_, idx) => (
-                  <button key={idx} onClick={() => goToSlide(idx)} aria-label={`Slide ${idx + 1}`}
-                    style={{ width: idx === currentSlide ? 24 : 8, height: 8, borderRadius: "99px", border: "none", background: idx === currentSlide ? "#fff" : "rgba(255,255,255,0.4)", cursor: "pointer", transition: "all 0.3s ease", padding: 0 }} />
-                ))}
-              </div>
-            )}
+          )}
         </div>
       </div>
     </div>

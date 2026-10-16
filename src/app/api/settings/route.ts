@@ -41,6 +41,9 @@ const _POST = async (req: NextRequest) => {
       onlinePaymentEnabled,
       codEnabled,
       ordersPaused,
+      heroSectionEnabled,
+      minOrderValue,
+      minGroceryOrderValue,
       homeLayout,
     } = body;
 
@@ -57,11 +60,14 @@ const _POST = async (req: NextRequest) => {
       if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
       if (codEnabled !== undefined) settings.codEnabled = codEnabled;
       if (ordersPaused !== undefined) settings.ordersPaused = ordersPaused;
+      if (heroSectionEnabled !== undefined) settings.heroSectionEnabled = heroSectionEnabled;
+      if (minOrderValue !== undefined) settings.minOrderValue = minOrderValue;
+      if (minGroceryOrderValue !== undefined) settings.minGroceryOrderValue = minGroceryOrderValue;
       if (homeLayout !== undefined) settings.homeLayout = homeLayout;
       settings.updatedAt = new Date();
       await settings.save();
     } else {
-      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode, onlinePaymentEnabled, codEnabled, ordersPaused, homeLayout });
+      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode, onlinePaymentEnabled, codEnabled, ordersPaused, heroSectionEnabled, minOrderValue, minGroceryOrderValue, homeLayout });
     }
     // Bust both caches so all clients get fresh data immediately
     appCache.invalidate(CACHE_KEYS.SETTINGS);

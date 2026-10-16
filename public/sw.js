@@ -1,4 +1,4 @@
-const CACHE_NAME = "onndaway-v3";
+const CACHE_NAME = "onndaway-v4";
 
 // Only cache truly static, versioned assets — NEVER HTML pages
 const STATIC_ASSETS = [

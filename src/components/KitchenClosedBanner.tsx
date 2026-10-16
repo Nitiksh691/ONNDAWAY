@@ -16,8 +16,8 @@ export default function KitchenClosedBanner() {
   // Hide for admins
   if (profile?.role === "admin") return null;
   if (!status.closed && !status.paused) return null;
-  // Don't show in admin paths or delivery paths
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  // Don't show in admin paths, delivery paths, or vendor paths
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/vendor")) return null;
 
   return (
     <div style={{

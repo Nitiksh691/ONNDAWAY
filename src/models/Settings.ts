@@ -40,6 +40,15 @@ const SettingsSchema = new Schema({
   // Pause new orders (heavy traffic)
   ordersPaused: { type: Boolean, default: false },
 
+  // ── Homepage Hero Section toggle ──
+  heroSectionEnabled: { type: Boolean, default: true },
+
+  // ── Minimum order value for delivery (overall cart) ──
+  minOrderValue: { type: Number, default: 0 },
+
+  // ── Minimum order value for groceries (exempts coffee/mojitos) ──
+  minGroceryOrderValue: { type: Number, default: 0 },
+
   // Server-Driven UI (SDUI) Homepage Layout Config
   homeLayout: {
     categoryIconsBar: {

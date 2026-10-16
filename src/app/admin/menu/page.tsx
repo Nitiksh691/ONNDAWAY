@@ -19,8 +19,9 @@ export default function AdminMenuPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+  const [vendorsList, setVendorsList] = useState<any[]>([]);
 
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", world: "food", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [] });
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", world: "food", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [], isConsignment: false, vendorId: null, vendorName: "" });
   const [uploadingImage, setUploadingImage] = useState(false);
 
 
@@ -40,6 +41,12 @@ export default function AdminMenuPage() {
 
   useEffect(() => {
     fetchMenu();
+    fetch("/api/vendors")
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) setVendorsList(data);
+      })
+      .catch(() => {});
   }, []);
 
   const handleOpenEdit = (item: MenuItem | null) => {
@@ -48,7 +55,13 @@ export default function AdminMenuPage() {
       setForm(item);
     } else {
       setEditingItem(null);
-      setForm({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: adminWorld === "munchies" ? "munchies" : "coffee", world: adminWorld, available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [] });
+      setForm({
+        name: "", description: "", price: 0, originalPrice: 0, section: "",
+        category: adminWorld === "munchies" ? "munchies" : "coffee", world: adminWorld,
+        available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false,
+        image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [],
+        isConsignment: false, vendorId: null, vendorName: "",
+      });
     }
     setDialogOpen(true);
   };
@@ -232,6 +245,11 @@ export default function AdminMenuPage() {
                               🎇 BANNER
                             </span>
                           )}
+                          {item.isConsignment && (
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", background: "#EFF6FF", border: "1px solid #BFDBFE", color: "#1D4ED8", fontSize: "0.68rem", fontWeight: 800, padding: "2px 7px", borderRadius: "999px", letterSpacing: "0.3px" }}>
+                              🏪 {item.vendorName || "Partner"}
+                            </span>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -318,6 +336,47 @@ export default function AdminMenuPage() {
                       </button>
                     ))}
                   </div>
+                </div>
+
+                {/* ── Vendor / Consignment Partner Selection ── */}
+                <div style={{ background: "#F0FDF4", border: "1.5px solid #BBF7D0", borderRadius: 12, padding: "14px 16px" }}>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: "0.85rem", fontWeight: 800, color: "#166534", marginBottom: 8 }}>
+                    🏪 Item Owner / Consignment Partner
+                  </label>
+                  <select
+                    value={form.vendorId || ""}
+                    onChange={e => {
+                      const vId = e.target.value;
+                      if (!vId) {
+                        setForm({ ...form, isConsignment: false, vendorId: null, vendorName: "" });
+                      } else {
+                        const vendor = vendorsList.find(v => v._id === vId);
+                        setForm({
+                          ...form,
+                          isConsignment: true,
+                          vendorId: vId,
+                          vendorName: vendor ? (vendor.businessName || vendor.name) : "",
+                        });
+                      }
+                    }}
+                    style={{
+                      width: "100%", padding: "11px 14px", borderRadius: 8,
+                      border: "1.5px solid #86EFAC", background: "white",
+                      fontSize: "0.9rem", fontWeight: 700, color: "#0F172A", outline: "none",
+                    }}
+                  >
+                    <option value="">🏠 Our Own / In-House Item (ONN DA WAY)</option>
+                    {vendorsList.map(v => (
+                      <option key={v._id} value={v._id}>
+                        🏪 {v.name} {v.businessName ? `(${v.businessName})` : ""} · {v.revenueSharePct}% Share
+                      </option>
+                    ))}
+                  </select>
+                  <p style={{ fontSize: "0.74rem", color: "#15803D", margin: "6px 0 0" }}>
+                    {form.isConsignment
+                      ? `This product belongs to ${form.vendorName || "an external partner"}. Its sales will be tracked separately in the Vendor Portal.`
+                      : "Standard in-house product. Revenue is retained 100% by ONN DA WAY."}
+                  </p>
                 </div>
 
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>

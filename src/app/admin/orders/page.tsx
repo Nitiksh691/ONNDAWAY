@@ -162,7 +162,7 @@ export default function AdminOrdersPage() {
           }
         }
       }, [mutateOrders, autoPrintEnabled]),
-      pollIntervalMs: 15000
+      pollIntervalMs: 6000
     }
   );
 

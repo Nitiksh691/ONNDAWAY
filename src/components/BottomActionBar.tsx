@@ -16,7 +16,17 @@ export default function BottomActionBar() {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [minOrderValue, setMinOrderValue] = useState(0);
   const drawerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    fetch("/api/settings")
+      .then(r => r.json())
+      .then(d => {
+        if (d && d.minOrderValue !== undefined) setMinOrderValue(d.minOrderValue);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -87,7 +97,7 @@ export default function BottomActionBar() {
     return () => document.removeEventListener("mousedown", handle);
   }, [drawerOpen]);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/vendor")) return null;
   if (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) return null;
   if (pathname.startsWith("/track/")) return null;
 
@@ -364,8 +374,27 @@ export default function BottomActionBar() {
       </div>
 
       {/* Bottom bar */}
-      <div className="bottom-action-bar">
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: "12px" }}>
+      <div className="bottom-action-bar" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
+        {minOrderValue > 0 && cartTotal < minOrderValue && (
+          <div style={{
+            background: "linear-gradient(90deg, #FEF3C7, #FDE68A)",
+            color: "#92400E",
+            padding: "5px 14px",
+            fontSize: "0.74rem",
+            fontWeight: 800,
+            textAlign: "center",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            gap: 6,
+            borderBottom: "1px solid rgba(0,0,0,0.06)",
+            width: "100%",
+          }}>
+            <span style={{ fontSize: "0.95rem" }}>🛵</span>
+            <span>Add <strong>₹{(minOrderValue - cartTotal).toFixed(0)}</strong> more to reach min. order (₹{minOrderValue})</span>
+          </div>
+        )}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: "12px", padding: "10px 16px" }}>
 
           {/* Left side — click to open drawer */}
           <button

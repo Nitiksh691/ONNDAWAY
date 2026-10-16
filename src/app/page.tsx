@@ -23,7 +23,11 @@ export default async function Page() {
     bentoSlides: settings.bentoSlides || []
   }));
 
-  const initialHomeLayout = JSON.parse(JSON.stringify(settings.homeLayout || {}));
+  const initialHomeLayout = JSON.parse(JSON.stringify({
+    ...(settings.homeLayout || {}),
+    heroSectionEnabled: settings.heroSectionEnabled ?? true,
+    minGroceryOrderValue: settings.minGroceryOrderValue ?? 0,
+  }));
 
   return <HomePageClient initialMenu={initialMenu} initialBanner={initialBanner} initialHomeLayout={initialHomeLayout} />;
 }

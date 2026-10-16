@@ -98,14 +98,14 @@ function HSliderSection({
 /* ─── SDUI Components (Flipkart-style SDUI sections) ─── */
 function DealTimer({ hours = 2, minutes = 14, seconds = 36, onExpire }: { hours?: number, minutes?: number, seconds?: number, onExpire?: () => void }) {
   const [timeLeft, setTimeLeft] = useState({ hours, minutes, seconds });
-  
+
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeLeft(prev => {
         if (prev.seconds > 0) return { ...prev, seconds: prev.seconds - 1 };
         if (prev.minutes > 0) return { ...prev, minutes: 59, seconds: 59 };
         if (prev.hours > 0) return { hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        
+
         clearInterval(timer);
         if (onExpire) onExpire();
         return { hours: 0, minutes: 0, seconds: 0 };
@@ -199,19 +199,19 @@ function DealOfTheDaySection({ config, items, cart, onAdd, onUpdateQuantity }: a
             )}
           </div>
           {config.showTimer !== false && (
-            <DealTimer 
-              hours={config.timerHours ?? 2} 
-              minutes={config.timerMinutes ?? 14} 
+            <DealTimer
+              hours={config.timerHours ?? 2}
+              minutes={config.timerMinutes ?? 14}
               seconds={config.timerSeconds ?? 36}
-              onExpire={() => setExpired(true)} 
+              onExpire={() => setExpired(true)}
             />
           )}
         </div>
 
-        <div style={{ 
-          display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10, 
+        <div style={{
+          display: "flex", gap: 14, overflowX: "auto", paddingBottom: 10,
           WebkitOverflowScrolling: "touch", scrollbarWidth: "none", msOverflowStyle: "none",
-          position: "relative", zIndex: 2 
+          position: "relative", zIndex: 2
         }}>
           {dealItems.map((item: any) => {
             const dealPrice = config.dealPrice || item.price;
@@ -519,7 +519,6 @@ function BrowseMenuGrid({ config, onSelectCategory }: any) {
 }
 
 export default function HomePageClient({ initialMenu = [], initialBanner = {}, initialHomeLayout = {} }: { initialMenu?: any[], initialBanner?: any, initialHomeLayout?: any }) {
-  const [showSplash, setShowSplash] = useState(true);
   const [menuItems, setMenuItems] = useState<any[]>(initialMenu);
   const [categories, setCategories] = useState<string[]>(["all"]);
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -533,6 +532,7 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
   const { location, saveLocation } = useDeliveryLocation();
   const [locationOpen, setLocationOpen] = useState(false);
   const [layoutMode, setLayoutMode] = useState<LayoutMode>("grid");
+  const [heroSectionEnabled, setHeroSectionEnabled] = useState<boolean>(initialHomeLayout?.heroSectionEnabled ?? true);
 
   const [homeLayout, setHomeLayout] = useState({
     categoryIconsBar: { enabled: true, ...(initialHomeLayout.categoryIconsBar || {}) },
@@ -546,16 +546,9 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
   });
 
   useEffect(() => {
-    // Hide splash screen after 2.5 seconds
-    const timer = setTimeout(() => {
-      setShowSplash(false);
-    }, 2500);
-
     const params = new URLSearchParams(window.location.search);
     const cat = params.get("category");
     if (cat) setSelectedCategory(cat);
-
-    return () => clearTimeout(timer);
   }, []);
 
   const { menuItems: rawMenuItems, isLoading: loadingMenu } = useMenu(initialMenu);
@@ -631,27 +624,6 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
 
   return (
     <>
-      {showSplash && (
-        <div style={{
-          position: "fixed", inset: 0, zIndex: 99999, background: "#0135FB",
-          display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-          animation: "fadeOut 0.5s ease-out 2s forwards"
-        }}>
-          <style>{`
-            @keyframes pulseScale {
-              0%, 100% { transform: scale(1); }
-              50% { transform: scale(1.1); }
-            }
-            @keyframes fadeOut {
-              to { opacity: 0; visibility: hidden; pointer-events: none; }
-            }
-          `}</style>
-          <div style={{ animation: "pulseScale 1.5s infinite ease-in-out", textAlign: "center", display: "flex", flexDirection: "column", alignItems: "center" }}>
-            <WalkingLoader size={80} color="white" />
-          </div>
-        </div>
-      )}
-
       <OnboardingModal onLoginClick={() => setShowAuthModal(true)} />
       {showAuthModal && (
         <AuthModal
@@ -780,73 +752,289 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
         <BannerSlider bentoSlides={bentoSlides} variant="bento" />
       )}
 
-      {/* ─── HERO (only when NO banners) ─── */}
-      {!hasBanner && (
-        <section style={{ background: "linear-gradient(135deg, #0028D4 0%, #0135FB 50%, #2A55FF 100%)", padding: "56px 24px 48px", color: "white", position: "relative", overflow: "hidden" }}>
-          {/* Floating food emoji particles */}
-          <div style={{ position: "absolute", inset: 0, pointerEvents: "none", overflow: "hidden" }}>
-            <span className="hero-emoji-1" style={{ position: "absolute", top: "12%", left: "8%", fontSize: "2.5rem", opacity: 0.18 }}>🍔</span>
-            <span className="hero-emoji-2" style={{ position: "absolute", top: "20%", right: "12%", fontSize: "2rem", opacity: 0.15 }}>🍕</span>
-            <span className="hero-emoji-3" style={{ position: "absolute", bottom: "20%", left: "15%", fontSize: "1.8rem", opacity: 0.12 }}>🥤</span>
-            <span className="hero-emoji-4" style={{ position: "absolute", bottom: "30%", right: "8%", fontSize: "2.2rem", opacity: 0.14 }}>☕</span>
-            <span className="hero-emoji-5" style={{ position: "absolute", top: "50%", left: "40%", fontSize: "1.5rem", opacity: 0.1 }}>🍟</span>
-            {/* Big blur circles */}
-            <div style={{ position: "absolute", width: 350, height: 350, borderRadius: "50%", background: "rgba(255,255,255,0.05)", top: -100, right: -80, filter: "blur(40px)" }} />
-            <div style={{ position: "absolute", width: 250, height: 250, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -60, left: "5%", filter: "blur(30px)" }} />
+      {/* ─── COMPACT BLUE HERO WITH EMBEDDED SEARCH & CATEGORIES ─── */}
+      {heroSectionEnabled ? (
+        <section style={{
+          background: "linear-gradient(135deg, #0028D4 0%, #0135FB 55%, #1D4ED8 100%)",
+          padding: "16px 16px 14px",
+          color: "white",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 4px 20px rgba(1,53,251,0.22)",
+        }}>
+          {/* Subtle background glow effect & walking person watermark */}
+          <div style={{ position: "absolute", width: 280, height: 280, borderRadius: "50%", background: "rgba(255,255,255,0.06)", top: -80, right: -40, filter: "blur(40px)", pointerEvents: "none" }} />
+          <div style={{ position: "absolute", width: 200, height: 200, borderRadius: "50%", background: "rgba(255,255,255,0.04)", bottom: -60, left: -30, filter: "blur(30px)", pointerEvents: "none" }} />
+          <div style={{
+            position: "absolute",
+            right: -12,
+            top: 6,
+            opacity: 0.13,
+            pointerEvents: "none",
+            zIndex: 1,
+            transform: "rotate(4deg)",
+          }}>
+            <WalkingLoader size={165} color="#FFFFFF" />
           </div>
-          <div className="otw-container" style={{ display: "flex", flexDirection: "column", alignItems: "center", textAlign: "center", position: "relative", zIndex: 1 }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "6px 16px", borderRadius: 999, background: "rgba(255,255,255,0.12)", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.2)", marginBottom: 20, fontSize: "0.8rem", fontWeight: 800, letterSpacing: "1px", textTransform: "uppercase" }}>
-              🛵 Campus Food Delivery
+
+          <div className="otw-container" style={{ position: "relative", zIndex: 2, padding: "0" }}>
+            {/* Top row: Campus badge & orders shortcut */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 10,
+              gap: 8,
+              position: "relative",
+              zIndex: 2,
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ fontSize: "1.05rem" }}>⚡</span>
+                <span style={{
+                  background: "rgba(255,255,255,0.2)",
+                  border: "1px solid rgba(255,255,255,0.32)",
+                  borderRadius: 999,
+                  padding: "3px 10px",
+                  fontSize: "0.7rem",
+                  fontWeight: 800,
+                  color: "#FFFFFF",
+                  letterSpacing: "0.4px",
+                  textTransform: "uppercase",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5
+                }}>
+                  <span>Campus Express</span> • <span>🛵 In Minutes</span>
+                </span>
+              </div>
+              <Link
+                href="/orders"
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 5,
+                  padding: "5px 13px",
+                  borderRadius: 999,
+                  background: "rgba(255,255,255,0.2)",
+                  border: "1px solid rgba(255,255,255,0.34)",
+                  color: "#FFFFFF",
+                  fontSize: "0.76rem",
+                  fontWeight: 800,
+                  textDecoration: "none",
+                  backdropFilter: "blur(6px)",
+                  transition: "background 0.15s",
+                }}
+              >
+                📦 Orders
+              </Link>
             </div>
-            <h1 style={{ fontFamily: "'Outfit', sans-serif", color: "white", fontWeight: 900, fontSize: "clamp(2.6rem, 7vw, 4.8rem)", lineHeight: 1, textTransform: "uppercase", marginBottom: "16px", letterSpacing: "-0.03em" }}>
-              LIFE BEGINS <br /> AFTER <span style={{ background: "linear-gradient(135deg, #93C5FD, #BAE6FD)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>FLAVOR</span>.
-            </h1>
-            <p style={{ color: "white", fontSize: "1.05rem", maxWidth: "480px", opacity: 0.88, marginBottom: "32px", fontWeight: 500, lineHeight: 1.65 }}>
-              Curated meals, snacks &amp; beverages — delivered to your campus spot in minutes.
-            </p>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", justifyContent: "center" }}>
-              <a href="/menu" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", borderRadius: 999, background: "white", color: "var(--primary)", fontWeight: 900, fontSize: "0.92rem", textDecoration: "none", boxShadow: "0 8px 24px rgba(0,0,0,0.18)", transition: "all 0.2s", textTransform: "uppercase", letterSpacing: "0.5px" }}>🍽️ Browse Menu</a>
-              <a href="/orders" style={{ display: "inline-flex", alignItems: "center", gap: 8, padding: "13px 28px", borderRadius: 999, background: "rgba(255,255,255,0.12)", color: "white", fontWeight: 800, fontSize: "0.92rem", textDecoration: "none", backdropFilter: "blur(10px)", border: "1px solid rgba(255,255,255,0.25)", transition: "all 0.2s", textTransform: "uppercase", letterSpacing: "0.5px" }}>📦 My Orders</a>
+
+            {/* Big Headline */}
+            <div style={{ marginBottom: 12, position: "relative", zIndex: 2 }}>
+              <h1 style={{
+                fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+                fontSize: "clamp(2rem, 7.5vw, 2.85rem)",
+                fontWeight: 900,
+                color: "#FFFFFF",
+                lineHeight: 1.02,
+                letterSpacing: "-0.04em",
+                margin: 0,
+                textShadow: "0 2px 12px rgba(0,0,0,0.18)",
+              }}>
+                Onn da way,<br />always.
+              </h1>
+            </div>
+
+            {/* Search Input + View Toggle Row inside blue region */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", zIndex: 2 }}>
+              <div style={{ position: "relative", flex: 1 }}>
+                <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#64748B", pointerEvents: "none" }} />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  placeholder="Search meals, snacks, coffee..."
+                  style={{
+                    width: "100%",
+                    padding: "10px 36px 10px 38px",
+                    borderRadius: 12,
+                    border: "none",
+                    fontSize: "0.88rem",
+                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                    fontWeight: 600,
+                    outline: "none",
+                    background: "#FFFFFF",
+                    color: "#0F172A",
+                    boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+                    boxSizing: "border-box",
+                  }}
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    style={{
+                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                      background: "#E2E8F0", border: "none", borderRadius: 999,
+                      width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
+                      cursor: "pointer", fontSize: "0.7rem", color: "#475569", fontWeight: 900
+                    }}
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+
+              {/* Grid / List Layout toggle */}
+              <div style={{
+                display: "flex", gap: 2,
+                background: "rgba(255,255,255,0.18)",
+                backdropFilter: "blur(8px)",
+                padding: "3px",
+                borderRadius: 10,
+                border: "1px solid rgba(255,255,255,0.28)",
+                flexShrink: 0
+              }}>
+                <button
+                  title="Grid view"
+                  onClick={() => setLayoutMode("grid")}
+                  style={{
+                    width: 32, height: 30, borderRadius: 8, border: "none",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", transition: "all 0.15s",
+                    background: layoutMode === "grid" ? "#FFFFFF" : "transparent",
+                    color: layoutMode === "grid" ? "#0135FB" : "#FFFFFF",
+                    boxShadow: layoutMode === "grid" ? "0 2px 6px rgba(0,0,0,0.15)" : "none"
+                  }}
+                >
+                  <LayoutGrid size={15} />
+                </button>
+                <button
+                  title="List view"
+                  onClick={() => setLayoutMode("list")}
+                  style={{
+                    width: 32, height: 30, borderRadius: 8, border: "none",
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", transition: "all 0.15s",
+                    background: layoutMode === "list" ? "#FFFFFF" : "transparent",
+                    color: layoutMode === "list" ? "#0135FB" : "#FFFFFF",
+                    boxShadow: layoutMode === "list" ? "0 2px 6px rgba(0,0,0,0.15)" : "none"
+                  }}
+                >
+                  <List size={15} />
+                </button>
+              </div>
+            </div>
+
+            {/* Category Pills horizontally scrollable inside blue region */}
+            <div style={{
+              display: "flex",
+              gap: 8,
+              overflowX: "auto",
+              padding: "10px 0 2px",
+              scrollbarWidth: "none",
+              WebkitOverflowScrolling: "touch",
+              position: "relative",
+              zIndex: 2,
+            }}>
+              {categories.map(cat => {
+                const isActive = selectedCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 6,
+                      padding: isActive ? "7px 16px" : "7px 15px",
+                      borderRadius: 999,
+                      border: isActive
+                        ? "1.5px solid #FFFFFF"
+                        : "1.5px solid rgba(255,255,255,0.42)",
+                      background: isActive
+                        ? "#FFFFFF"
+                        : "rgba(255,255,255,0.08)",
+                      color: isActive ? "#0135FB" : "#FFFFFF",
+                      fontSize: "0.82rem",
+                      fontWeight: isActive ? 800 : 600,
+                      fontFamily: "'Plus Jakarta Sans', system-ui, -apple-system, sans-serif",
+                      cursor: "pointer",
+                      whiteSpace: "nowrap",
+                      flexShrink: 0,
+                      backdropFilter: "blur(6px)",
+                      boxShadow: isActive
+                        ? "0 4px 14px rgba(0,0,0,0.18)"
+                        : "0 1px 4px rgba(0,0,0,0.05)",
+                      transform: isActive ? "scale(1.02)" : "scale(1)",
+                      transition: "all 0.18s cubic-bezier(0.16, 1, 0.3, 1)",
+                      textTransform: "capitalize",
+                    }}
+                  >
+                    <span style={{ fontSize: "0.95rem" }}>{CAT_EMOJI[cat] || "📦"}</span>
+                    <span>{cat === "all" ? "All" : cat}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
         </section>
-      )}
-
-      {/* ─── MARQUEE ─── */}
-      <div className="marquee">
-        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
-        <span>🍔 FRESH MEALS ⚡ FAST DELIVERY 🍕 HOT FOOD ⚡ BURGERS &amp; SANDWICHES 🥤 COLD BEVERAGES ⚡ ROHINI DELIVERY 🛵 ORDER NOW ⚡ ONN DA WAY 🍔</span>
-      </div>
-
-      {/* ─── STORE WELCOME STRIP (compact, inline) ─── */}
-      <Link href="/menu?world=munchies" style={{ textDecoration: "none", display: "block" }}>
+      ) : (
+        /* Fallback sticky toolbar when hero section is disabled in admin settings */
         <div style={{
-          background: "linear-gradient(110deg, #0028D4 0%, #0135FB 55%, #2A55FF 100%)",
-          padding: "0 16px",
-          position: "relative",
-          overflow: "hidden",
-          cursor: "pointer",
+          background: "rgba(255,255,255,0.97)",
+          backdropFilter: "blur(12px)",
+          borderBottom: "1px solid #e5e7eb",
+          position: "sticky", top: 60, zIndex: 41, padding: "12px 0",
         }}>
-          <style>{`
-            .store-strip { display: flex; align-items: center; gap: 12px; height: 60px; max-width: 900px; margin: 0 auto; position: relative; z-index: 2; }
-            .store-strip-snacks { position: absolute; right: 0; top: 0; height: 100%; display: flex; align-items: flex-end; gap: -8px; pointer-events: none; padding-right: 12px; z-index: 1; }
-            .store-snack-img { height: 58px; transform: translateY(4px); filter: drop-shadow(0 -4px 8px rgba(0,0,0,0.25)); transition: transform 0.3s; }
-            @media (max-width: 480px) { .store-snack-img { height: 50px; } }
-          `}</style>
-
-          {/* Glow orb */}
-          <div style={{ position: "absolute", top: "-40px", right: "20%", width: 160, height: 160, borderRadius: "50%", background: "rgba(255,255,255,0.07)", filter: "blur(30px)", pointerEvents: "none", zIndex: 0 }} />
-
-
-
-          {/* Floating snack emojis */}
-          <div className="store-strip-snacks">
-            <span className="store-snack-img" style={{ fontSize: "2.4rem", lineHeight: 1, transform: "rotate(-8deg) translateY(4px)" }}>🍿</span>
-            <span className="store-snack-img" style={{ fontSize: "2.2rem", lineHeight: 1, transform: "rotate(5deg) translateY(0px)", marginLeft: -8 }}>🧃</span>
-            <span className="store-snack-img" style={{ fontSize: "2.6rem", lineHeight: 1, transform: "rotate(-4deg) translateY(6px)", marginLeft: -12 }}>🍫</span>
+          <div className="otw-container hn-toolbar">
+            <div className="hn-search-wrap">
+              <Search size={17} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search meals, snacks..."
+                className="hn-search-input"
+              />
+            </div>
+            <div className="hn-pills-wrap">
+              {categories.map(cat => (
+                <button
+                  key={cat}
+                  className={`cat-btn${selectedCategory === cat ? " active" : ""}`}
+                  onClick={() => setSelectedCategory(cat)}
+                >
+                  {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
+                </button>
+              ))}
+            </div>
+            <div className="hn-layout-toggle">
+              <button
+                title="Grid view"
+                className={`hn-toggle-btn${layoutMode === "grid" ? " active" : ""}`}
+                onClick={() => setLayoutMode("grid")}
+              >
+                <LayoutGrid size={16} />
+              </button>
+              <button
+                title="List view"
+                className={`hn-toggle-btn${layoutMode === "list" ? " active" : ""}`}
+                onClick={() => setLayoutMode("list")}
+              >
+                <List size={16} />
+              </button>
+            </div>
           </div>
         </div>
-      </Link>
+      )}
+
+      {/* ─── BANNER SLIDER (Compact, directly under hero) ─── */}
+      {hasBanner && bannerMode === "single" && (
+        <BannerSlider slides={combinedBannerSlides} variant="menu" />
+      )}
+      {hasBanner && bannerMode === "bento" && (
+        <BannerSlider bentoSlides={bentoSlides} variant="bento" />
+      )}
 
       {/* ─── TOP OFFERS (FREE DELIVERY & DEAL OF THE DAY) ─── */}
       {!deferredSearch && selectedCategory === "all" && (
@@ -873,60 +1061,6 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
           />
         </div>
       )}
-
-      {/* ─── UNIFIED SEARCH & CATEGORY + LAYOUT TOGGLE BAR ─── */}
-      <div style={{
-        background: "rgba(255,255,255,0.97)",
-        backdropFilter: "blur(12px)",
-        borderBottom: "1px solid #e5e7eb",
-        position: "sticky", top: 60, zIndex: 41, padding: "12px 0",
-      }}>
-        <div className="otw-container hn-toolbar">
-
-          {/* Search */}
-          <div className="hn-search-wrap">
-            <Search size={17} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#9ca3af", pointerEvents: "none" }} />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Search meals, snacks..."
-              className="hn-search-input"
-            />
-          </div>
-
-          {/* Category Pills */}
-          <div className="hn-pills-wrap">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                className={`cat-btn${selectedCategory === cat ? " active" : ""}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {CAT_EMOJI[cat] || "📦"} {cat === "all" ? "All" : cat}
-              </button>
-            ))}
-          </div>
-
-          {/* Grid / List Toggle */}
-          <div className="hn-layout-toggle">
-            <button
-              title="Grid view"
-              className={`hn-toggle-btn${layoutMode === "grid" ? " active" : ""}`}
-              onClick={() => setLayoutMode("grid")}
-            >
-              <LayoutGrid size={16} />
-            </button>
-            <button
-              title="List view"
-              className={`hn-toggle-btn${layoutMode === "list" ? " active" : ""}`}
-              onClick={() => setLayoutMode("list")}
-            >
-              <List size={16} />
-            </button>
-          </div>
-        </div>
-      </div>
 
       {/* ─── MENU CONTENT ─── */}
       <section style={{ padding: "24px 0 120px", background: "var(--bg-cream)", minHeight: "60vh" }}>

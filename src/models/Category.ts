@@ -5,7 +5,7 @@ const CategorySchema = new Schema({
   slug: { type: String, required: true, unique: true },
   image: { type: String, default: "" },
   // "food" = existing cafe stuff, "store" = new grocery expansion
-  type: { type: String, enum: ["food", "store"], default: "store" }, 
+  type: { type: String, enum: ["food", "store"], default: "store" },
   active: { type: Boolean, default: true },
   sortOrder: { type: Number, default: 0 },
   subcategories: { type: [String], default: [] },

@@ -102,7 +102,50 @@ const _POST = async (req: NextRequest) => {
     // Override cartItem with server-calculated price
     cartItem.unitPrice = unitPrice;
     cartItem.item.price = dbItem.price;
+
+    // Attach vendor & consignment information
+    if (dbItem.vendorId) {
+      const vId = dbItem.vendorId.toString();
+      cartItem.vendorId = vId;
+      cartItem.item.vendorId = vId;
+      cartItem.item.vendorName = dbItem.vendorName || "";
+      cartItem.item.isConsignment = !!dbItem.isConsignment;
+    }
+
     serverTotal += unitPrice * cartItem.quantity;
+  }
+
+  // Validate minGroceryOrderValue
+  const minGrocery = settings?.minGroceryOrderValue || 0;
+  if (minGrocery > 0) {
+    let grocerySubtotal = 0;
+    let hasGrocery = false;
+    for (const cartItem of normalizedItems) {
+      const dbItem = dbItems.find((d: any) => d._id.toString() === cartItem.item.id);
+      if (!dbItem) continue;
+      const cat = (dbItem.category || "").toLowerCase();
+      const itemName = (dbItem.name || "").toLowerCase();
+      const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
+      if (!isExempt) {
+        hasGrocery = true;
+        grocerySubtotal += (cartItem.unitPrice || dbItem.price) * cartItem.quantity;
+      }
+    }
+    if (hasGrocery && grocerySubtotal < minGrocery) {
+      return NextResponse.json(
+        { error: `Minimum order value for grocery items is ₹${minGrocery}. Add ₹${(minGrocery - grocerySubtotal).toFixed(0)} more groceries to place your order.` },
+        { status: 400 }
+      );
+    }
+  }
+
+  // Enforce overall minimum order value
+  const minOrder = settings?.minOrderValue || 0;
+  if (minOrder > 0 && serverTotal < minOrder) {
+    return NextResponse.json(
+      { error: `Minimum order amount for delivery is ₹${minOrder}. Please add ₹${(minOrder - serverTotal).toFixed(0)} more to place your order.` },
+      { status: 400 }
+    );
   }
 
   let subtotal = serverTotal;

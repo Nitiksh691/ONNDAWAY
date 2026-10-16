@@ -115,7 +115,7 @@ export default function MusicPlayer() {
 
   if (!isMounted) return null;
   if (isDismissed) return null;
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/vendor")) return null;
 
   const track = TRACKS[currentIdx];
   const isCartPage = pathname === "/cart";

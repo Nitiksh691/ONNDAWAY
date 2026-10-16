@@ -38,7 +38,7 @@ export default function Navbar() {
     setPrevCount(cartCount);
   }, [cartCount, mounted]);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/store")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/store") || pathname.startsWith("/vendor")) return null;
 
   const handleLogout = async () => {
     localStorage.removeItem("otw_user_id");

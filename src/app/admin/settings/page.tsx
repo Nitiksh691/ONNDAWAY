@@ -132,6 +132,9 @@ export default function AdminSettingsPage() {
   const [geoLat, setGeoLat] = useState<string>("28.6139"); // default: New Delhi
   const [geoLng, setGeoLng] = useState<string>("77.2090");
   const [geoRadiusKm, setGeoRadiusKm] = useState<string>("1.0");
+  const [heroSectionEnabled, setHeroSectionEnabled] = useState<boolean>(true);
+  const [minOrderValue, setMinOrderValue] = useState<number>(0);
+  const [minGroceryOrderValue, setMinGroceryOrderValue] = useState<number>(0);
 
   const [menuItemsList, setMenuItemsList] = useState<any[]>([]);
 
@@ -216,6 +219,9 @@ export default function AdminSettingsPage() {
           if (data.geoLat !== undefined) setGeoLat(data.geoLat);
           if (data.geoLng !== undefined) setGeoLng(data.geoLng);
           if (data.geoRadiusKm !== undefined) setGeoRadiusKm(data.geoRadiusKm);
+          if (data.heroSectionEnabled !== undefined) setHeroSectionEnabled(data.heroSectionEnabled);
+          if (data.minOrderValue !== undefined) setMinOrderValue(data.minOrderValue);
+          if (data.minGroceryOrderValue !== undefined) setMinGroceryOrderValue(data.minGroceryOrderValue);
           if (data.homeLayout) setHomeLayout(prev => ({ ...prev, ...data.homeLayout }));
         }
         setLoading(false);
@@ -242,6 +248,9 @@ export default function AdminSettingsPage() {
       geoLat,
       geoLng,
       geoRadiusKm,
+      heroSectionEnabled,
+      minOrderValue,
+      minGroceryOrderValue,
       homeLayout,
     };
     
@@ -307,6 +316,40 @@ export default function AdminSettingsPage() {
             />
             <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginTop: "8px" }}>
               Set to 0 to completely remove the delivery fee. This fee will be dynamically applied to all new orders.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: "24px", padding: "16px", background: "#EFF6FF", borderRadius: "12px", border: "1.5px solid #BFDBFE" }}>
+            <label className="otw-label" style={{ display: "block", marginBottom: "6px", fontWeight: 800, color: "#1E40AF" }}>
+              ⚡ Minimum Order Amount for Delivery (₹)
+            </label>
+            <input 
+              type="number" 
+              className="otw-input" 
+              value={minOrderValue} 
+              onChange={e => setMinOrderValue(Number(e.target.value))} 
+              min="0"
+              style={{ maxWidth: "200px" }}
+            />
+            <p style={{ fontSize: "0.82rem", color: "#1D4ED8", marginTop: "8px", margin: "8px 0 0" }}>
+              Minimum overall cart subtotal required to place an order. If cart is below this amount, payment is <strong>disabled</strong> and customers see an animated progress bar urging them to add items. Set to 0 to allow any order amount.
+            </p>
+          </div>
+
+          <div style={{ marginBottom: "24px", padding: "16px", background: "#F0FDF4", borderRadius: "12px", border: "1px solid #BBF7D0" }}>
+            <label className="otw-label" style={{ display: "block", marginBottom: "6px", fontWeight: 800, color: "#166534" }}>
+              🛒 Minimum Grocery Order Value (₹)
+            </label>
+            <input 
+              type="number" 
+              className="otw-input" 
+              value={minGroceryOrderValue} 
+              onChange={e => setMinGroceryOrderValue(Number(e.target.value))} 
+              min="0"
+              style={{ maxWidth: "200px" }}
+            />
+            <p style={{ fontSize: "0.82rem", color: "#15803D", marginTop: "8px", margin: "8px 0 0" }}>
+              Minimum subtotal required specifically for grocery / munchies items. <strong>Coffee and mojito/beverages are completely exempt</strong> from this limit. Set to 0 to disable.
             </p>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: onlinePaymentEnabled ? "#F0FDF4" : "#FEF2F2", borderRadius: "12px", border: onlinePaymentEnabled ? "1px solid #BBF7D0" : "1px solid #FCA5A5", marginBottom: "12px" }}>
@@ -486,6 +529,30 @@ export default function AdminSettingsPage() {
           </p>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))", gap: "20px" }}>
+            {/* 0. Homepage Hero Section (Turn ON / OFF) */}
+            <div style={{ padding: "16px", background: heroSectionEnabled ? "#EEF2FF" : "#F8FAFC", borderRadius: "12px", border: heroSectionEnabled ? "2px solid #818CF8" : "1px solid #CBD5E1", gridColumn: "1 / -1" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                <div>
+                  <strong style={{ color: heroSectionEnabled ? "#3730A3" : "#475569", fontSize: "1.05rem", display: "flex", alignItems: "center", gap: 6 }}>
+                    🚀 Homepage Hero Section ({heroSectionEnabled ? "VISIBLE / ON" : "HIDDEN / OFF"})
+                  </strong>
+                  <span style={{ fontSize: "0.82rem", color: heroSectionEnabled ? "#4F46E5" : "#64748B", display: "block", marginTop: 2 }}>
+                    {heroSectionEnabled ? "✅ Active — shows the full hero headline, tagline & delivery action buttons" : "⏸️ Disabled — hero section is hidden so the homepage immediately opens with your quick commerce categories & products"}
+                  </span>
+                </div>
+                <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+                  <div style={{ position: "relative" }}>
+                    <input type="checkbox" checked={heroSectionEnabled} onChange={e => setHeroSectionEnabled(e.target.checked)} style={{ position: "absolute", width: 0, height: 0, opacity: 0 }} />
+                    <div style={{ width: 50, height: 28, background: heroSectionEnabled ? "#0135FB" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                    <div style={{ position: "absolute", left: heroSectionEnabled ? 24 : 3, top: 3, width: 22, height: 22, background: "white", borderRadius: "50%", transition: "0.3s", boxShadow: "0 2px 5px rgba(0,0,0,0.2)" }}></div>
+                  </div>
+                </label>
+              </div>
+              <p style={{ fontSize: "0.78rem", color: "#64748B", margin: 0 }}>
+                Control whether customers see the top &quot;LIFE BEGINS AFTER FLAVOR&quot; hero banner when visiting the homepage.
+              </p>
+            </div>
+
             {/* 1. Free Delivery Banner Strip */}
             <div style={{ padding: "16px", background: "#FFF7ED", borderRadius: "12px", border: "1px solid #FFEDD5" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>

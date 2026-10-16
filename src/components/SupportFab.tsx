@@ -37,7 +37,7 @@ export default function SupportFab() {
     };
   }, []);
 
-  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery")) return null;
+  if (pathname.startsWith("/admin") || pathname.startsWith("/delivery") || pathname.startsWith("/vendor")) return null;
   if (pathname.startsWith("/track/")) return null;
   if (hasActiveOrder) return null;
 

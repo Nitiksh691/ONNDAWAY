@@ -81,6 +81,9 @@ export interface MenuItem {
   details?: { label: string; value: string }[];
   sizes?: { name: string; price: number }[];
   hasTallSize?: boolean;
+  isConsignment?: boolean;
+  vendorId?: string | null;
+  vendorName?: string;
   createdAt?: string;
 }
 
@@ -93,6 +96,9 @@ export interface CartItem {
   unitPrice?: number;
   /** Full readable summary: customizations + special notes (stored on orders). */
   lineDetails?: string;
+  vendorId?: string | null;
+  vendorPacked?: boolean;
+  vendorPackedAt?: string | Date | null;
 }
 
 export type OrderStatus = "payment_pending" | "placed" | "preparing" | "out_for_delivery" | "delivered" | "cancelled";
@@ -108,6 +114,7 @@ export interface Order {
   latitude?: number | null;
   longitude?: number | null;
   total: number;
+  vendorPackedAt?: string | Date | null;
   couponCode?: string;
   discount?: number;
   status: OrderStatus;

@@ -47,7 +47,8 @@ const _POST = async (req: NextRequest) => {
       name, description, price, originalPrice, image, category, 
       isPopular, isRecommended, section, isBanner, hasTallSize, 
       details, sizes, sortOrder, available, customizationCategories,
-      brand, subcategory, unit, tags, badges, isDeal, world
+      brand, subcategory, unit, tags, badges, isDeal, world,
+      isConsignment, vendorId, vendorName
     } = body;
 
     if (!name || !price || !category) {
@@ -78,6 +79,9 @@ const _POST = async (req: NextRequest) => {
       details:       details       || [],
       sizes:         sizes         || [],
       customizationCategories: customizationCategories || [],
+      isConsignment: !!isConsignment,
+      vendorId:      vendorId      || null,
+      vendorName:    vendorName    || "",
     });
 
     // Bust cache so next GET reflects the new item

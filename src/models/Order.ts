@@ -12,6 +12,9 @@ const CartItemSchema = new Schema(
       image:       { type: String },
       category:    { type: String },
       description: { type: String },
+      vendorId:    { type: String, default: null },
+      vendorName:  { type: String, default: null },
+      isConsignment: { type: Boolean, default: false },
     },
     quantity:             { type: Number, required: true, min: 1, default: 1 },
     specialInstructions:  { type: String, default: "" },
@@ -25,6 +28,9 @@ const CartItemSchema = new Schema(
       }],
       default: [],
     },
+    vendorId:       { type: String, default: null },
+    vendorPacked:   { type: Boolean, default: false },
+    vendorPackedAt: { type: Date, default: null },
   },
   { _id: false } // no extra _id per cart item — saves space
 );
@@ -56,6 +62,7 @@ const OrderSchema = new Schema(
     deliveryPersonId:   { type: String, default: null },
     deliveryPersonName: { type: String, default: null },
     deliveryOtp:        { type: String, default: null },
+    vendorPackedAt:     { type: Date, default: null },
     messages:           {
       type: [{ sender: String, text: String, timestamp: { type: Date, default: Date.now } }],
       default: [],
