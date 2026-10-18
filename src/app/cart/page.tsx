@@ -11,6 +11,79 @@ import toast from "react-hot-toast";
 import Link from "next/link";
 import RazorpayButton from "@/components/RazorpayButton";
 
+
+function CartItemThumbnail({ item, quantity }: { item: any; quantity: number }) {
+  const [imgErr, setImgErr] = useState(false);
+  const cat = (item.category || "").toLowerCase();
+  const name = (item.name || "").toLowerCase();
+  const isCoffee = cat.includes("coffee") || name.includes("coffee") || name.includes("latte") || name.includes("cappuccino") || name.includes("mocha");
+  const isDrink = cat.includes("drink") || cat.includes("mojito") || name.includes("mojito") || name.includes("tea");
+  const isSnack = cat.includes("munchies") || cat.includes("snack") || name.includes("lays") || name.includes("chips") || name.includes("biscuit");
+  const isFood = cat.includes("meal") || cat.includes("burger") || cat.includes("sandwich") || name.includes("burger");
+
+  const fallbackEmoji = isCoffee ? "☕" : isDrink ? "🥤" : isSnack ? "🍿" : isFood ? "🥪" : "🍽️";
+  const fallbackBg = isCoffee
+    ? "linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%)"
+    : isDrink
+    ? "linear-gradient(135deg, #ECFEFF 0%, #CFFAFE 100%)"
+    : isSnack
+    ? "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)"
+    : "linear-gradient(135deg, #F8FAFC 0%, #E2E8F0 100%)";
+
+  return (
+    <div style={{
+      width: 74, height: 74, borderRadius: 14,
+      background: fallbackBg,
+      position: "relative", overflow: "hidden", flexShrink: 0,
+      border: "1.5px solid rgba(1, 53, 251, 0.08)",
+      boxShadow: "0 2px 8px rgba(15,23,42,0.06)",
+      display: "flex", alignItems: "center", justifyContent: "center"
+    }}>
+      {item.image && !imgErr ? (
+        <Image
+          src={item.image}
+          alt={item.name}
+          fill
+          style={{ objectFit: "cover" }}
+          sizes="74px"
+          onError={() => setImgErr(true)}
+        />
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 2 }}>
+          <span style={{ fontSize: "1.8rem", lineHeight: 1 }}>{fallbackEmoji}</span>
+          <span style={{ fontSize: "0.55rem", fontWeight: 800, color: "#475569", textTransform: "uppercase", letterSpacing: "0.3px" }}>
+            {item.category?.slice(0, 7) || "Food"}
+          </span>
+        </div>
+      )}
+
+      {/* Veg indicator dot */}
+      <div style={{
+        position: "absolute", top: 4, left: 4,
+        width: 12, height: 12, borderRadius: 3,
+        border: "1.5px solid #16A34A", background: "rgba(255,255,255,0.95)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        zIndex: 2, boxShadow: "0 1px 3px rgba(0,0,0,0.15)"
+      }}>
+        <div style={{ width: 5, height: 5, borderRadius: "50%", background: "#16A34A" }} />
+      </div>
+
+      {/* Quantity badge if > 1 */}
+      {quantity > 1 && (
+        <div style={{
+          position: "absolute", bottom: 4, right: 4,
+          background: "#0135FB", color: "#fff",
+          fontSize: "0.62rem", fontWeight: 900,
+          padding: "1px 5px", borderRadius: 6,
+          zIndex: 2, boxShadow: "0 2px 4px rgba(1,53,251,0.4)"
+        }}>
+          {quantity}x
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function CartPage() {
   const { user, profile, cart, updateQuantity, removeFromCart, clearCart, cartTotal, syncProfile } = useApp();
   const router = useRouter();
@@ -158,7 +231,14 @@ export default function CartPage() {
     : 0;
   const minOrderPct = minOrderValue > 0 ? Math.min(100, Math.round((cartTotal / minOrderValue) * 100)) : 100;
 
-  // Check minimum grocery order value (exempts coffee & mojito)
+  // Check if cart contains any coffee or mojito
+  const hasCoffeeOrMojito = cart.some(c => {
+    const cat = (c.item?.category || "").toLowerCase();
+    const itemName = (c.item?.name || "").toLowerCase();
+    return cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
+  });
+
+  // Check minimum grocery order value (exempt if coffee or mojito in cart)
   const groceryItems = cart.filter(c => {
     const cat = (c.item?.category || "").toLowerCase();
     const itemName = (c.item?.name || "").toLowerCase();
@@ -168,8 +248,9 @@ export default function CartPage() {
 
   const grocerySubtotal = groceryItems.reduce((acc, c) => acc + (c.unitPrice ?? c.item?.price ?? 0) * c.quantity, 0);
   const hasGroceryItems = groceryItems.length > 0;
-  const isGroceryMinMet = minGroceryOrderValue <= 0 || !hasGroceryItems || grocerySubtotal >= minGroceryOrderValue;
-  const groceryShortfall = minGroceryOrderValue > 0 && hasGroceryItems && grocerySubtotal < minGroceryOrderValue
+  // If cart has any coffee or mojito, NO minimum grocery order limit applies!
+  const isGroceryMinMet = hasCoffeeOrMojito || minGroceryOrderValue <= 0 || !hasGroceryItems || grocerySubtotal >= minGroceryOrderValue;
+  const groceryShortfall = !hasCoffeeOrMojito && minGroceryOrderValue > 0 && hasGroceryItems && grocerySubtotal < minGroceryOrderValue
     ? minGroceryOrderValue - grocerySubtotal
     : 0;
 
@@ -449,10 +530,8 @@ export default function CartPage() {
                   key={c.cartItemId ?? `cart-${c.item.id}-${idx}`}
                   style={{ display: "flex", gap: "12px", alignItems: "flex-start", padding: "14px 0", borderBottom: idx < cart.length - 1 ? "1px solid #f9fafb" : "none" }}
                 >
-                  {/* Product image */}
-                  <div style={{ width: 68, height: 68, borderRadius: "10px", background: "#f3f4f6", position: "relative", overflow: "hidden", flexShrink: 0 }}>
-                    <Image src={c.item.image} alt={c.item.name} fill style={{ objectFit: "cover" }} sizes="68px" />
-                  </div>
+                  {/* Clever Product image */}
+                  <CartItemThumbnail item={c.item} quantity={c.quantity} />
 
                   {/* Details + controls (flex column keeps everything in-bounds) */}
                   <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", minHeight: "68px" }}>
@@ -543,7 +622,12 @@ export default function CartPage() {
 
               <div style={{ gridColumn: "1 / -1" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "7px" }}>
-                  <label style={{ ...labelStyle, marginBottom: 0 }}>Exact Campus Location</label>
+                  <div>
+                    <label style={{ ...labelStyle, marginBottom: 2 }}>📍 Delivery Location (Campus Spot or Custom Address)</label>
+                    <div style={{ fontSize: "0.74rem", color: "#64748B", fontWeight: 500 }}>
+                      Pick a campus landmark or write any custom hostel room / lab.
+                    </div>
+                  </div>
                   <button type="button" onClick={() => {
                     if (navigator.geolocation) {
                       setIsGpsLoading(true);
@@ -593,7 +677,7 @@ export default function CartPage() {
                     type="text"
                     style={inputStyle}
                     className="otw-cart-input"
-                    placeholder="e.g. Civil Dept, Admin Block, Boys Hostel..."
+                    placeholder="Type custom location (e.g. Room 204 VHB, Mech Lab) or pick below..."
                     value={location}
                     onChange={e => handleLocationChange(e.target.value)}
                     onFocus={() => {
@@ -606,6 +690,34 @@ export default function CartPage() {
                   />
                   {showLocationSuggestions && (
                     <div className="loc-suggestions">
+                      {/* Explicit Custom Location Option */}
+                      <div
+                        className="loc-suggestion-item"
+                        style={{
+                          background: "#EFF6FF",
+                          borderBottom: "1.5px solid #DBEAFE",
+                          color: "#0135FB",
+                          fontWeight: 800,
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 8,
+                          padding: "10px 14px",
+                          cursor: "pointer"
+                        }}
+                        onMouseDown={() => {
+                          setShowLocationSuggestions(false);
+                        }}
+                      >
+                        <span style={{ fontSize: "1.1rem" }}>✍️</span>
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ fontSize: "0.75rem", color: "#0135FB", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+                            Custom Location
+                          </div>
+                          <div style={{ fontSize: "0.85rem", color: "#0F172A", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                            {location.trim() ? `Use Custom: "${location.trim()}"` : "Type any room / hostel / building above"}
+                          </div>
+                        </div>
+                      </div>
                       {locationSuggestions.map(sugg => {
                         const q = location.toLowerCase();
                         const idx = sugg.toLowerCase().indexOf(q);
@@ -885,7 +997,7 @@ export default function CartPage() {
                     fontWeight: 700,
                   }}>
                     <CheckCircle size={17} color="#22C55E" />
-                    <span>Grocery minimum order reached (₹{grocerySubtotal.toFixed(0)} / ₹{minGroceryOrderValue})! Ready for checkout.</span>
+                    <span>{hasCoffeeOrMojito ? "☕ Coffee/Mojito in cart: Grocery minimum order unlocked (no min limit applied)!" : `Grocery minimum order reached (₹${grocerySubtotal.toFixed(0)} / ₹${minGroceryOrderValue})! Ready for checkout.`}</span>
                   </div>
                 )}
               </div>

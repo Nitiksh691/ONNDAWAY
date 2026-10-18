@@ -120,18 +120,21 @@ const _POST = async (req: NextRequest) => {
   if (minGrocery > 0) {
     let grocerySubtotal = 0;
     let hasGrocery = false;
+    let hasCoffeeOrMojito = false;
     for (const cartItem of normalizedItems) {
       const dbItem = dbItems.find((d: any) => d._id.toString() === cartItem.item.id);
       if (!dbItem) continue;
       const cat = (dbItem.category || "").toLowerCase();
       const itemName = (dbItem.name || "").toLowerCase();
       const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
-      if (!isExempt) {
+      if (isExempt) {
+        hasCoffeeOrMojito = true;
+      } else {
         hasGrocery = true;
         grocerySubtotal += (cartItem.unitPrice || dbItem.price) * cartItem.quantity;
       }
     }
-    if (hasGrocery && grocerySubtotal < minGrocery) {
+    if (hasGrocery && !hasCoffeeOrMojito && grocerySubtotal < minGrocery) {
       return NextResponse.json(
         { error: `Minimum order value for grocery items is ₹${minGrocery}. Add ₹${(minGrocery - grocerySubtotal).toFixed(0)} more groceries to place your order.` },
         { status: 400 }

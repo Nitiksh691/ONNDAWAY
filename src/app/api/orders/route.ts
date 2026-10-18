@@ -108,6 +108,7 @@ const _POST = async (req: NextRequest) => {
   let serverSubtotal = 0;
   let grocerySubtotal = 0;
   let hasGroceryItems = false;
+  let hasCoffeeOrMojito = false;
 
   for (const cartItem of normalizedItems) {
     const dbItem = (dbItemsCOD as Record<string, unknown>[]).find((d: Record<string, unknown>) => (d._id as { toString(): string }).toString() === cartItem.item.id);
@@ -137,7 +138,9 @@ const _POST = async (req: NextRequest) => {
     const cat = ((dbItem.category as string) || "").toLowerCase();
     const itemName = ((dbItem.name as string) || "").toLowerCase();
     const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
-    if (!isExempt) {
+    if (isExempt) {
+      hasCoffeeOrMojito = true;
+    } else {
       hasGroceryItems = true;
       grocerySubtotal += lineTotal;
     }
@@ -154,7 +157,7 @@ const _POST = async (req: NextRequest) => {
 
   // Enforce minimum grocery order value if configured
   const minGrocery = settings?.minGroceryOrderValue || 0;
-  if (minGrocery > 0 && hasGroceryItems && grocerySubtotal < minGrocery) {
+  if (minGrocery > 0 && hasGroceryItems && !hasCoffeeOrMojito && grocerySubtotal < minGrocery) {
     return NextResponse.json(
       { error: `Minimum order value for grocery items is ₹${minGrocery}. Add ₹${(minGrocery - grocerySubtotal).toFixed(0)} more groceries to place your order.` },
       { status: 400 }

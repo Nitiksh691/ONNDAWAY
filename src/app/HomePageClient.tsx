@@ -39,7 +39,7 @@ function HSliderSection({
 }) {
   if (items.length === 0) return null;
   return (
-    <section style={{ marginBottom: 36, overflow: "hidden" }}>
+    <section style={{ marginBottom: 18, overflow: "hidden" }}>
       <style>{`
         @keyframes nudge-left {
           0%, 100% { transform: translateX(0); }
@@ -51,13 +51,13 @@ function HSliderSection({
       `}</style>
       <div style={{
         display: "flex", alignItems: "center", justifyContent: "space-between",
-        marginBottom: 14, padding: "0 2px",
+        marginBottom: 8, padding: "0 2px",
       }}>
         <div>
           <h2 style={{
-            fontFamily: "'Outfit', sans-serif", fontSize: "1.1rem", fontWeight: 900,
+            fontFamily: "'Outfit', sans-serif", fontSize: "1.05rem", fontWeight: 900,
             color: "var(--text-dark)", textTransform: "uppercase", letterSpacing: "0.4px",
-            marginBottom: 2,
+            margin: 0,
           }}>
             {emoji} {title}
           </h2>
@@ -74,12 +74,12 @@ function HSliderSection({
       <div
         className="nudge-anim"
         style={{
-          display: "flex", gap: 14, overflowX: "auto",
-          paddingBottom: 10, WebkitOverflowScrolling: "touch",
+          display: "flex", gap: 12, overflowX: "auto",
+          paddingBottom: 4, WebkitOverflowScrolling: "touch",
           scrollbarWidth: "none", msOverflowStyle: "none",
         }}>
         {items.map(item => (
-          <div key={item.id} style={{ flexShrink: 0, width: 154 }}>
+          <div key={item.id} style={{ flexShrink: 0, width: 142 }}>
             <FoodCard
               item={item}
               layout="vertical"
@@ -778,35 +778,15 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
           </div>
 
           <div className="otw-container" style={{ position: "relative", zIndex: 2, padding: "0" }}>
-            {/* Top row: Campus badge & orders shortcut */}
+            {/* Top row: Orders shortcut */}
             <div style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 10,
-              gap: 8,
+              justifyContent: "flex-end",
+              marginBottom: 8,
               position: "relative",
               zIndex: 2,
             }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ fontSize: "1.05rem" }}>⚡</span>
-                <span style={{
-                  background: "rgba(255,255,255,0.2)",
-                  border: "1px solid rgba(255,255,255,0.32)",
-                  borderRadius: 999,
-                  padding: "3px 10px",
-                  fontSize: "0.7rem",
-                  fontWeight: 800,
-                  color: "#FFFFFF",
-                  letterSpacing: "0.4px",
-                  textTransform: "uppercase",
-                  display: "inline-flex",
-                  alignItems: "center",
-                  gap: 5
-                }}>
-                  <span>Campus Express</span> • <span>🛵 In Minutes</span>
-                </span>
-              </div>
               <Link
                 href="/orders"
                 style={{
@@ -845,84 +825,42 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
               </h1>
             </div>
 
-            {/* Search Input + View Toggle Row inside blue region */}
-            <div style={{ display: "flex", alignItems: "center", gap: 8, position: "relative", zIndex: 2 }}>
-              <div style={{ position: "relative", flex: 1 }}>
-                <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#64748B", pointerEvents: "none" }} />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="Search meals, snacks, coffee..."
-                  style={{
-                    width: "100%",
-                    padding: "10px 36px 10px 38px",
-                    borderRadius: 12,
-                    border: "none",
-                    fontSize: "0.88rem",
-                    fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
-                    fontWeight: 600,
-                    outline: "none",
-                    background: "#FFFFFF",
-                    color: "#0F172A",
-                    boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
-                    boxSizing: "border-box",
-                  }}
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery("")}
-                    style={{
-                      position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
-                      background: "#E2E8F0", border: "none", borderRadius: 999,
-                      width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
-                      cursor: "pointer", fontSize: "0.7rem", color: "#475569", fontWeight: 900
-                    }}
-                  >
-                    ✕
-                  </button>
-                )}
-              </div>
-
-              {/* Grid / List Layout toggle */}
-              <div style={{
-                display: "flex", gap: 2,
-                background: "rgba(255,255,255,0.18)",
-                backdropFilter: "blur(8px)",
-                padding: "3px",
-                borderRadius: 10,
-                border: "1px solid rgba(255,255,255,0.28)",
-                flexShrink: 0
-              }}>
+            {/* Search Input Row inside blue region (Full width) */}
+            <div style={{ position: "relative", width: "100%", zIndex: 2 }}>
+              <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#64748B", pointerEvents: "none" }} />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={e => setSearchQuery(e.target.value)}
+                placeholder="Search meals, snacks, coffee..."
+                style={{
+                  width: "100%",
+                  padding: "10px 36px 10px 38px",
+                  borderRadius: 12,
+                  border: "none",
+                  fontSize: "0.88rem",
+                  fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+                  fontWeight: 600,
+                  outline: "none",
+                  background: "#FFFFFF",
+                  color: "#0F172A",
+                  boxShadow: "0 4px 14px rgba(0,0,0,0.12)",
+                  boxSizing: "border-box",
+                }}
+              />
+              {searchQuery && (
                 <button
-                  title="Grid view"
-                  onClick={() => setLayoutMode("grid")}
+                  onClick={() => setSearchQuery("")}
                   style={{
-                    width: 32, height: 30, borderRadius: 8, border: "none",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", transition: "all 0.15s",
-                    background: layoutMode === "grid" ? "#FFFFFF" : "transparent",
-                    color: layoutMode === "grid" ? "#0135FB" : "#FFFFFF",
-                    boxShadow: layoutMode === "grid" ? "0 2px 6px rgba(0,0,0,0.15)" : "none"
+                    position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)",
+                    background: "#E2E8F0", border: "none", borderRadius: 999,
+                    width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center",
+                    cursor: "pointer", fontSize: "0.7rem", color: "#475569", fontWeight: 900
                   }}
                 >
-                  <LayoutGrid size={15} />
+                  ✕
                 </button>
-                <button
-                  title="List view"
-                  onClick={() => setLayoutMode("list")}
-                  style={{
-                    width: 32, height: 30, borderRadius: 8, border: "none",
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    cursor: "pointer", transition: "all 0.15s",
-                    background: layoutMode === "list" ? "#FFFFFF" : "transparent",
-                    color: layoutMode === "list" ? "#0135FB" : "#FFFFFF",
-                    boxShadow: layoutMode === "list" ? "0 2px 6px rgba(0,0,0,0.15)" : "none"
-                  }}
-                >
-                  <List size={15} />
-                </button>
-              </div>
+              )}
             </div>
 
             {/* Category Pills horizontally scrollable inside blue region */}
@@ -1168,7 +1106,7 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
           )}
 
           {/* ── POPULAR (Horizontal Slider) ── */}
-          <div style={{ marginTop: "40px" }}>
+          <div style={{ marginTop: "16px" }}>
             {!deferredSearch && selectedCategory === "all" && (
               <HSliderSection
                 title="Popular Right Now"
@@ -1183,11 +1121,11 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
 
           {/* ── MUNCHIES SECTION (only when no search/filter active) ── */}
           {!deferredSearch && selectedCategory === "all" && munchiesItems.length > 0 && (
-            <div style={{ marginTop: 48 }}>
+            <div style={{ marginTop: 20 }}>
               {/* Section header */}
               <div style={{
                 display: "flex", alignItems: "center", justifyContent: "space-between",
-                marginBottom: 20, paddingTop: 20,
+                marginBottom: 10, paddingTop: 12,
                 borderTop: "2px solid rgba(1,53,251,0.08)",
               }}>
                 <div>

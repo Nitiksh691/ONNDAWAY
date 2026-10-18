@@ -8,6 +8,8 @@ import {
 import toast from "react-hot-toast";
 import {
   playVendorOrderSound,
+  startVendorAlarmLoop,
+  stopVendorAlarmLoop,
   unlockAudio,
   requestNotificationPermission,
   triggerBrowserNotification,
@@ -347,7 +349,7 @@ function OrdersTab({ session }: { session: VendorSession }) {
           setNewOrderAlert(newest);
 
           if (soundEnabled) {
-            playVendorOrderSound();
+            startVendorAlarmLoop();
           }
 
           toast.success(
@@ -377,6 +379,7 @@ function OrdersTab({ session }: { session: VendorSession }) {
   }, [load]);
 
   const handlePack = async (orderId: string) => {
+    stopVendorAlarmLoop();
     setPackingId(orderId);
     try {
       await fetch("/api/vendor/orders", {
@@ -450,7 +453,34 @@ function OrdersTab({ session }: { session: VendorSession }) {
           </button>
         </div>
 
-        <div>
+      {/* iPhone Notification & Sound Tip Banner */}
+      {!notifGranted && (
+        <div style={{
+          background: "#FFFBEB", border: "1.5px solid #FCD34D",
+          borderRadius: 12, padding: "10px 14px", marginBottom: 14,
+          display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10,
+          fontSize: "0.78rem", color: "#92400E"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ fontSize: "1.2rem" }}>📱</span>
+            <div>
+              <strong>iPhone Audio &amp; Alert Tip:</strong> Tap <em>Test</em> to unlock loud alarms on iOS. For background alerts when screen is locked, tap Safari Share ⎋ → <em>Add to Home Screen</em>.
+            </div>
+          </div>
+          <button
+            onClick={handleTestSound}
+            style={{
+              background: "#D97706", color: "#fff", border: "none",
+              padding: "6px 12px", borderRadius: 8, fontWeight: 800,
+              fontSize: "0.74rem", cursor: "pointer", flexShrink: 0
+            }}
+          >
+            🔊 Unlock Alarm
+          </button>
+        </div>
+      )}
+
+      <div>
           {!notifGranted ? (
             <button
               onClick={handleEnableNotifications}
@@ -502,7 +532,7 @@ function OrdersTab({ session }: { session: VendorSession }) {
             </div>
           </div>
           <button
-            onClick={() => setNewOrderAlert(null)}
+            onClick={() => { stopVendorAlarmLoop(); setNewOrderAlert(null); }}
             style={{
               background: "rgba(255,255,255,0.25)",
               border: "none", color: "#FFFFFF",

@@ -370,27 +370,27 @@ const FoodCard = ({
         onClick={go}
         style={{
           background: "#fff",
-          borderRadius: compact ? 12 : 20,
+          borderRadius: compact ? 10 : 14,
           display: "flex",
           flexDirection: "column",
           height: "100%",
           cursor: "pointer",
           position: "relative",
           border: "1px solid rgba(0,0,0,0.07)",
-          boxShadow: compact ? "0 2px 6px rgba(0,0,0,0.04)" : "0 2px 12px rgba(0,0,0,0.06)",
+          boxShadow: compact ? "0 2px 6px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.05)",
           overflow: "hidden",
         }}
       >
-        {/* Image Area (Vertically Squeezed) */}
+        {/* Image Area (Compact 1:1 Square Aspect Ratio) */}
         <div style={{
           position: "relative",
-          aspectRatio: compact ? "1.25 / 1" : "4 / 5",
+          aspectRatio: compact ? "1.25 / 1" : "1 / 1",
           background: bg,
-          borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0",
+          borderRadius: compact ? "10px 10px 0 0" : "14px 14px 0 0",
           borderBottom: "1px solid rgba(0,0,0,0.04)",
           flexShrink: 0
         }}>
-          <div style={{ position: "absolute", inset: 0, borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0", overflow: "hidden" }}>
+          <div style={{ position: "absolute", inset: 0, borderRadius: compact ? "10px 10px 0 0" : "14px 14px 0 0", overflow: "hidden" }}>
             {!imgError ? (
               <Image
                 src={item.image}
@@ -404,45 +404,45 @@ const FoodCard = ({
                 priority={priority}
               />
             ) : (
-              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: compact ? "1.6rem" : "2.5rem" }}>
+              <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: compact ? "1.6rem" : "2.2rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
               </div>
             )}
           </div>
 
           {item.isPopular && (
-            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: compact ? "0.5rem" : "0.55rem", fontWeight: 800, padding: compact ? "2px 5px" : "4px 6px", borderRadius: compact ? "8px 0 6px 0" : "12px 0 8px 0", textTransform: "uppercase" }}>
+            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: compact ? "0.5rem" : "0.55rem", fontWeight: 800, padding: compact ? "2px 5px" : "3px 6px", borderRadius: compact ? "6px 0 6px 0" : "8px 0 6px 0", textTransform: "uppercase" }}>
               Bestseller
             </div>
           )}
           {item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: compact ? "0.75rem" : "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, color: "#fff", fontSize: compact ? "0.75rem" : "0.95rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
               Launching<br/>Soon
             </div>
           )}
           {!item.available && !item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: compact ? "12px 12px 0 0" : "20px 20px 0 0", color: "#fff", fontSize: compact ? "0.75rem" : "1.1rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
+            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: compact ? "10px 10px 0 0" : "14px 14px 0 0", color: "#fff", fontSize: compact ? "0.75rem" : "0.95rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
               NOT<br/>AVAILABLE
             </div>
           )}
 
-          {/* ADD Button (Inside image corner when compact to save vertical space) */}
-          <div style={{ position: "absolute", bottom: compact ? 4 : -12, right: compact ? 4 : 12, zIndex: 10 }} onClick={e => e.stopPropagation()}>
+          {/* ADD Button (Inside image corner to save vertical height) */}
+          <div style={{ position: "absolute", bottom: 6, right: 6, zIndex: 10 }} onClick={e => e.stopPropagation()}>
             {(cartItem && !item.isLaunchingSoon) ? (
               <div style={{
                 display: "flex", alignItems: "center", background: "var(--primary)", color: "#fff",
-                borderRadius: compact ? 6 : 8, height: compact ? 24 : 32, padding: "0 2px",
+                borderRadius: 7, height: 26, padding: "0 2px",
                 boxShadow: "0 2px 6px rgba(1,53,251,0.35)"
               }}>
                 <button
                   onClick={() => onUpdateQuantity && onUpdateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}
-                  style={{ width: compact ? 18 : 26, height: compact ? 22 : 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
-                ><Minus size={compact ? 10 : 14}/></button>
-                <span style={{ fontWeight: 800, fontSize: compact ? "0.74rem" : "0.85rem", minWidth: compact ? 12 : 20, textAlign: "center" }}>{cartItem.quantity}</span>
+                  style={{ width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+                ><Minus size={11}/></button>
+                <span style={{ fontWeight: 800, fontSize: "0.78rem", minWidth: 14, textAlign: "center" }}>{cartItem.quantity}</span>
                 <button
                   onClick={triggerAdd}
-                  style={{ width: compact ? 18 : 26, height: compact ? 22 : 28, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
-                ><Plus size={compact ? 10 : 14}/></button>
+                  style={{ width: 22, height: 24, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", background: "none", border: "none", cursor: "pointer" }}
+                ><Plus size={11}/></button>
               </div>
             ) : (
               <button
@@ -452,51 +452,45 @@ const FoodCard = ({
                   background: "#fff",
                   color: (item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#94A3B8",
                   border: `1.5px solid ${(item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#E2E8F0"}`,
-                  borderRadius: compact ? 6 : 8, height: compact ? 24 : 32,
-                  padding: compact ? "0 6px" : ((item.available && !item.isLaunchingSoon) ? "0 18px" : "0 12px"),
+                  borderRadius: 7, height: 26,
+                  padding: (item.available && !item.isLaunchingSoon) ? "0 12px" : "0 8px",
                   fontWeight: 900,
-                  fontSize: compact ? "0.72rem" : ((item.available && !item.isLaunchingSoon) ? "0.85rem" : "0.75rem"),
+                  fontSize: (item.available && !item.isLaunchingSoon) ? "0.78rem" : "0.7rem",
                   boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
                   cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed",
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 2,
                 }}
               >
-                {item.isLaunchingSoon ? (compact ? "SOON" : "LAUNCHING") : (item.available ? (compact ? <Plus size={12} strokeWidth={3} /> : "ADD") : (compact ? "OFF" : "NO STOCK"))}
+                {item.isLaunchingSoon ? "SOON" : (item.available ? "ADD" : "OFF")}
               </button>
             )}
           </div>
         </div>
 
-        {/* Card Body (Tight Squeezed Padding) */}
-        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: compact ? "6px 6px 8px 6px" : "20px 12px 14px 12px" }}>
+        {/* Card Body (Compact Tight Padding) */}
+        <div style={{ display: "flex", flexDirection: "column", flex: 1, padding: compact ? "6px 6px 8px 6px" : "8px 10px 10px 10px" }}>
           {/* Price Row (Blue theme) */}
-          <div style={{ display: "flex", alignItems: "center", gap: compact ? 4 : 6, marginBottom: compact ? 2 : 4, flexWrap: "wrap" }}>
-            <div style={{ background: "var(--primary)", color: "#fff", fontWeight: 800, fontSize: compact ? "0.72rem" : "0.8rem", padding: compact ? "1px 5px" : "2px 6px", borderRadius: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 4, marginBottom: 2, flexWrap: "wrap" }}>
+            <div style={{ background: "var(--primary)", color: "#fff", fontWeight: 800, fontSize: "0.76rem", padding: "1px 5px", borderRadius: 4 }}>
               ₹{item.price}
             </div>
             {item.originalPrice && item.originalPrice > item.price && (
-              <div style={{ color: "#94A3B8", fontSize: compact ? "0.66rem" : "0.75rem", textDecoration: "line-through", fontWeight: 600 }}>
+              <div style={{ color: "#94A3B8", fontSize: "0.7rem", textDecoration: "line-through", fontWeight: 600 }}>
                 ₹{item.originalPrice}
               </div>
             )}
-            {compact && item.originalPrice && item.originalPrice > item.price && (
+            {item.originalPrice && item.originalPrice > item.price && (
               <div style={{ color: "var(--primary)", fontSize: "0.62rem", fontWeight: 800 }}>
                 ₹{item.originalPrice - item.price} OFF
               </div>
             )}
           </div>
 
-          {!compact && item.originalPrice && item.originalPrice > item.price && (
-            <div style={{ color: "var(--primary)", fontSize: "0.65rem", fontWeight: 800, marginBottom: 6 }}>
-              ₹{item.originalPrice - item.price} OFF
-            </div>
-          )}
-
           <div style={{
-            fontSize: compact ? "0.74rem" : "0.85rem", fontWeight: 700, color: "#0F172A", lineHeight: 1.2, marginBottom: compact ? 2 : 4,
+            fontSize: compact ? "0.74rem" : "0.82rem", fontWeight: 700, color: "#0F172A", lineHeight: 1.2, marginBottom: compact ? 2 : 3,
             display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden",
             height: compact ? 28 : undefined,
-            marginTop: (!item.originalPrice || item.originalPrice <= item.price) ? (compact ? "0px" : "4px") : "0px"
+            marginTop: 2
           }}>
             {item.brand ? <span style={{ fontWeight: 800, color: "#0F172A" }}>{item.brand} </span> : null}
             {item.name}
@@ -533,6 +527,8 @@ const FoodCard = ({
               </span>
             </div>
           )}
+
+
         </div>
       </div>
     </>
