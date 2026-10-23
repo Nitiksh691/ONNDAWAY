@@ -291,13 +291,33 @@ function MunchiesSection({
         }
       `}</style>
 
+      {/* Dedicated full banner image if provided (never awkwardly cut off in a tiny header) */}
+      {hasBgImage && (
+        <div style={{
+          width: "100%",
+          height: "clamp(120px, 28vw, 160px)",
+          borderRadius: 18,
+          overflow: "hidden",
+          position: "relative",
+          marginBottom: 10,
+          boxShadow: "0 4px 16px rgba(0,0,0,0.08)",
+          border: "1px solid rgba(0,0,0,0.06)",
+        }}>
+          <Image
+            src={config.bannerImage}
+            alt={config.title || "Munchies & Snacks"}
+            fill
+            sizes="(max-width: 768px) 100vw, 900px"
+            style={{ objectFit: "cover" }}
+          />
+        </div>
+      )}
+
       {/* ── Header card (Refined Midnight & Indigo) ── */}
       <div style={{
-        background: hasBgImage
-          ? `url(${config.bannerImage}) center/cover no-repeat`
-          : "linear-gradient(135deg, #080E24 0%, #0F1D4A 55%, #1B3175 100%)",
+        background: "linear-gradient(135deg, #090E22 0%, #151D42 50%, #202E68 100%)",
         borderRadius: "18px 18px 0 0",
-        padding: "12px 18px",
+        padding: "13px 18px",
         color: "white",
         position: "relative",
         overflow: "hidden",
@@ -309,19 +329,14 @@ function MunchiesSection({
         justifyContent: "space-between",
       }}>
         {/* ambient glows */}
-        {!hasBgImage && (
-          <>
-            <div style={{ position: "absolute", top: -30, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,180,0,0.1)", filter: "blur(30px)", pointerEvents: "none" }} />
-            <div style={{ position: "absolute", bottom: -25, right: 30, width: 120, height: 120, borderRadius: "50%", background: "rgba(1,53,251,0.25)", filter: "blur(25px)", pointerEvents: "none" }} />
-          </>
-        )}
-        {hasBgImage && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.45)", borderRadius: "18px 18px 0 0" }} />}
+        <div style={{ position: "absolute", top: -30, left: -20, width: 140, height: 140, borderRadius: "50%", background: "rgba(255,180,0,0.12)", filter: "blur(30px)", pointerEvents: "none" }} />
+        <div style={{ position: "absolute", bottom: -25, right: 30, width: 120, height: 120, borderRadius: "50%", background: "rgba(1,53,251,0.28)", filter: "blur(25px)", pointerEvents: "none" }} />
 
         <div style={{ position: "relative", zIndex: 2 }}>
-          <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase", opacity: 0.85, marginBottom: 2 }}>
+          <div style={{ fontSize: "0.68rem", fontWeight: 800, letterSpacing: "1.2px", textTransform: "uppercase", color: "#FDE68A", marginBottom: 2 }}>
             🍿 {config.subtitle || "Instant Cravings"}
           </div>
-          <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.1rem, 3.8vw, 1.35rem)", fontWeight: 900, lineHeight: 1.15, textShadow: "0 2px 6px rgba(0,0,0,0.25)" }}>
+          <div style={{ fontFamily: "'Outfit', sans-serif", fontSize: "clamp(1.1rem, 3.8vw, 1.35rem)", fontWeight: 900, lineHeight: 1.15 }}>
             {config.title || "Munchies & Snacks"}
           </div>
         </div>
@@ -329,8 +344,8 @@ function MunchiesSection({
         <Link href={config.link || "/menu?world=munchies"} style={{
           position: "relative", zIndex: 2, flexShrink: 0,
           background: "rgba(255,255,255,0.18)", backdropFilter: "blur(8px)",
-          borderRadius: 999, padding: "5px 14px",
-          fontSize: "0.72rem", fontWeight: 800, color: "white", textDecoration: "none",
+          borderRadius: 999, padding: "6px 14px",
+          fontSize: "0.74rem", fontWeight: 800, color: "white", textDecoration: "none",
           border: "1px solid rgba(255,255,255,0.3)", whiteSpace: "nowrap",
           display: "flex", alignItems: "center", gap: 3,
           boxShadow: "0 2px 6px rgba(0,0,0,0.1)"
@@ -778,12 +793,12 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
           </div>
 
           <div className="otw-container" style={{ position: "relative", zIndex: 2, padding: "0" }}>
-            {/* Top row: Orders shortcut */}
+            {/* Top row: Orders shortcut on left (prevents collision with logo watermark on right) */}
             <div style={{
               display: "flex",
               alignItems: "center",
-              justifyContent: "flex-end",
-              marginBottom: 8,
+              justifyContent: "space-between",
+              marginBottom: 10,
               position: "relative",
               zIndex: 2,
             }}>
@@ -793,20 +808,33 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 5,
-                  padding: "5px 13px",
+                  padding: "6px 14px",
                   borderRadius: 999,
-                  background: "rgba(255,255,255,0.2)",
-                  border: "1px solid rgba(255,255,255,0.34)",
+                  background: "rgba(255,255,255,0.22)",
+                  border: "1px solid rgba(255,255,255,0.36)",
                   color: "#FFFFFF",
-                  fontSize: "0.76rem",
+                  fontSize: "0.78rem",
                   fontWeight: 800,
                   textDecoration: "none",
                   backdropFilter: "blur(6px)",
-                  transition: "background 0.15s",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
                 }}
               >
-                📦 Orders
+                📦 My Orders
               </Link>
+              <div style={{
+                fontSize: "0.7rem",
+                fontWeight: 800,
+                color: "#FFFFFF",
+                background: "rgba(255,255,255,0.14)",
+                padding: "3px 10px",
+                borderRadius: 999,
+                border: "1px solid rgba(255,255,255,0.2)",
+                letterSpacing: "0.4px",
+                textTransform: "uppercase",
+              }}>
+                ⚡ In Minutes
+              </div>
             </div>
 
             {/* Big Headline */}
@@ -817,11 +845,12 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
                 fontWeight: 900,
                 color: "#FFFFFF",
                 lineHeight: 1.02,
-                letterSpacing: "-0.04em",
+                letterSpacing: "-0.03em",
                 margin: 0,
+                textTransform: "uppercase",
                 textShadow: "0 2px 12px rgba(0,0,0,0.18)",
               }}>
-                Onn da way,<br />always.
+                ONN DA WAY,<br />ALWAYS.
               </h1>
             </div>
 

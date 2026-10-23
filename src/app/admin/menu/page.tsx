@@ -3,7 +3,7 @@ import { useState, useMemo } from "react";
 import Image from "next/image";
 import { useEffect } from "react";
 import { MenuItem } from "@/lib/types";
-import { Plus, Edit2, Trash2, Search, Image as ImageIcon, ChevronDown, ChevronUp, Tag } from "lucide-react";
+import { Plus, Edit2, Trash2, Search, Image as ImageIcon, ChevronDown, ChevronUp, Tag, CheckCircle2, XCircle, AlertTriangle, Store } from "lucide-react";
 import toast from "react-hot-toast";
 
 
@@ -16,6 +16,8 @@ export default function AdminMenuPage() {
   const [loading, setLoading] = useState(true);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [adminWorld, setAdminWorld] = useState<"food" | "munchies">("food");
+  const [approvalFilter, setApprovalFilter] = useState<"all" | "pending" | "approved" | "rejected" | "vendor">("all");
+  const [approvingId, setApprovingId] = useState<string | null>(null);
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
@@ -46,7 +48,7 @@ export default function AdminMenuPage() {
       .then(data => {
         if (Array.isArray(data)) setVendorsList(data);
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   const handleOpenEdit = (item: MenuItem | null) => {
@@ -78,7 +80,7 @@ export default function AdminMenuPage() {
         try {
           const res = await fetch("/api/upload", {
             method: "POST",
-            headers: { 
+            headers: {
               "Content-Type": "application/json",
               "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
             },
@@ -111,7 +113,7 @@ export default function AdminMenuPage() {
 
       const res = await fetch(url, {
         method,
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
         },
@@ -131,10 +133,35 @@ export default function AdminMenuPage() {
     }
   };
 
+  const handleApprovalAction = async (itemId: string, action: "approve" | "reject") => {
+    setApprovingId(itemId);
+    try {
+      const res = await fetch("/api/admin/menu/approve", {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || "",
+        },
+        body: JSON.stringify({ itemId, action }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(action === "approve" ? "Item approved & live on menu! 🎉" : "Item rejected.");
+        fetchMenu();
+      } else {
+        toast.error(data.error || "Failed to update status");
+      }
+    } catch {
+      toast.error("Network error updating status");
+    } finally {
+      setApprovingId(null);
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (confirm("Are you sure you want to delete this item?")) {
       try {
-        const res = await fetch(`/api/menu/${id}`, { 
+        const res = await fetch(`/api/menu/${id}`, {
           method: "DELETE",
           headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
         });
@@ -150,10 +177,24 @@ export default function AdminMenuPage() {
     }
   };
 
-  // Filter by world and search
+  // Approval stats
+  const pendingCount = items.filter(i => i.approvalStatus === "pending").length;
+  const vendorCount = items.filter(i => i.isConsignment).length;
+
+  // Filter by world, search, and approvalFilter
   const filtered = items
     .filter(i => (i.world || "food") === adminWorld)
-    .filter(i => i.name.toLowerCase().includes(search.toLowerCase()));
+    .filter(i => {
+      if (approvalFilter === "pending") return i.approvalStatus === "pending";
+      if (approvalFilter === "approved") return !i.approvalStatus || i.approvalStatus === "approved";
+      if (approvalFilter === "rejected") return i.approvalStatus === "rejected";
+      if (approvalFilter === "vendor") return i.isConsignment;
+      return true;
+    })
+    .filter(i => {
+      const q = search.toLowerCase();
+      return i.name.toLowerCase().includes(q) || (i.vendorName || "").toLowerCase().includes(q) || (i.category || "").toLowerCase().includes(q);
+    });
 
   return (
     <div>
@@ -167,32 +208,101 @@ export default function AdminMenuPage() {
         </button>
       </div>
 
-      {/* ── World Flip Toggle ── */}
-      <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 12, padding: 4, gap: 4, marginBottom: 24, maxWidth: 460 }}>
-        <button
-          onClick={() => setAdminWorld("food")}
-          style={{
-            flex: 1, padding: "12px 16px", borderRadius: 9, border: "none", cursor: "pointer",
-            fontFamily: "inherit", fontWeight: 700, fontSize: "0.9rem", transition: "all 0.18s",
-            background: adminWorld === "food" ? "#FFFFFF" : "transparent",
-            color: adminWorld === "food" ? "#0F172A" : "#94A3B8",
-            boxShadow: adminWorld === "food" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
-          }}
-        >
-          ☕ Coffee &amp; Food
-        </button>
-        <button
-          onClick={() => setAdminWorld("munchies")}
-          style={{
-            flex: 1, padding: "12px 16px", borderRadius: 9, border: "none", cursor: "pointer",
-            fontFamily: "inherit", fontWeight: 700, fontSize: "0.9rem", transition: "all 0.18s",
-            background: adminWorld === "munchies" ? "#FFFFFF" : "transparent",
-            color: adminWorld === "munchies" ? "#0F172A" : "#94A3B8",
-            boxShadow: adminWorld === "munchies" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
-          }}
-        >
-          🛒 Grocery &amp; Munchies
-        </button>
+      {/* ── Pending Items Review Alert ── */}
+      {pendingCount > 0 && (
+        <div style={{
+          background: "linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%)",
+          border: "2px solid #F59E0B",
+          borderRadius: 14,
+          padding: "14px 18px",
+          marginBottom: 20,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          flexWrap: "wrap",
+          gap: 12,
+          boxShadow: "0 4px 14px rgba(245,158,11,0.15)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <span style={{ fontSize: "1.6rem" }}>⏳</span>
+            <div>
+              <div style={{ fontWeight: 900, color: "#92400E", fontSize: "0.98rem" }}>
+                {pendingCount} Vendor Item{pendingCount > 1 ? "s" : ""} Awaiting Your Approval!
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#B45309", marginTop: 2 }}>
+                These items were uploaded by partner vendors and are currently hidden from customers until you approve them.
+              </div>
+            </div>
+          </div>
+          <button
+            onClick={() => setApprovalFilter("pending")}
+            style={{
+              background: "#92400E", color: "white", border: "none",
+              padding: "8px 16px", borderRadius: 8, fontWeight: 800, fontSize: "0.82rem",
+              cursor: "pointer", display: "flex", alignItems: "center", gap: 6
+            }}
+          >
+            Review Pending Items ({pendingCount}) →
+          </button>
+        </div>
+      )}
+
+      {/* ── World & Approval Filters Bar ── */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 12, marginBottom: 20 }}>
+        {/* World Toggle */}
+        <div style={{ display: "flex", background: "#F1F5F9", borderRadius: 12, padding: 4, gap: 4, minWidth: 320 }}>
+          <button
+            onClick={() => setAdminWorld("food")}
+            style={{
+              flex: 1, padding: "10px 16px", borderRadius: 9, border: "none", cursor: "pointer",
+              fontFamily: "inherit", fontWeight: 700, fontSize: "0.88rem", transition: "all 0.18s",
+              background: adminWorld === "food" ? "#FFFFFF" : "transparent",
+              color: adminWorld === "food" ? "#0F172A" : "#94A3B8",
+              boxShadow: adminWorld === "food" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
+            }}
+          >
+            ☕ Coffee &amp; Food
+          </button>
+          <button
+            onClick={() => setAdminWorld("munchies")}
+            style={{
+              flex: 1, padding: "10px 16px", borderRadius: 9, border: "none", cursor: "pointer",
+              fontFamily: "inherit", fontWeight: 700, fontSize: "0.88rem", transition: "all 0.18s",
+              background: adminWorld === "munchies" ? "#FFFFFF" : "transparent",
+              color: adminWorld === "munchies" ? "#0F172A" : "#94A3B8",
+              boxShadow: adminWorld === "munchies" ? "0 1px 6px rgba(0,0,0,0.1)" : "none",
+            }}
+          >
+            🛒 Grocery &amp; Munchies
+          </button>
+        </div>
+
+        {/* Approval Status Filter Chips */}
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+          {([
+            { key: "all" as const, label: "All Items", isAlert: false },
+            { key: "pending" as const, label: `⏳ Pending (${pendingCount})`, isAlert: pendingCount > 0 },
+            { key: "approved" as const, label: "✅ Live / Approved", isAlert: false },
+            { key: "rejected" as const, label: "❌ Rejected", isAlert: false },
+            { key: "vendor" as const, label: `🏪 Vendor Items (${vendorCount})`, isAlert: false },
+          ]).map(tab => (
+            <button
+              key={tab.key}
+              onClick={() => setApprovalFilter(tab.key)}
+              style={{
+                padding: "8px 14px", borderRadius: 10, border: "1.5px solid",
+                borderColor: approvalFilter === tab.key ? "#0055ff" : (tab.isAlert ? "#F59E0B" : "#E2E8F0"),
+                background: approvalFilter === tab.key ? "#0055ff" : (tab.isAlert ? "#FEF3C7" : "#FFFFFF"),
+                color: approvalFilter === tab.key ? "#FFFFFF" : (tab.isAlert ? "#92400E" : "#475569"),
+                fontWeight: 800, fontSize: "0.8rem", cursor: "pointer",
+                transition: "all 0.15s",
+                boxShadow: approvalFilter === tab.key ? "0 2px 8px rgba(0,85,255,0.25)" : "none"
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       <div style={{ background: "#ffffff", border: "1px solid #e2e8f0", borderRadius: "16px", padding: "24px" }}>
@@ -269,14 +379,93 @@ export default function AdminMenuPage() {
                     )}
                   </td>
                   <td style={{ padding: "16px" }}>
-                    <span className={`otw-badge ${item.available ? 'otw-badge-green' : 'otw-badge-red'}`}>
-                      {item.available ? "In Stock" : "Sold Out"}
-                    </span>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <span className={`otw-badge ${item.available ? 'otw-badge-green' : 'otw-badge-red'}`} style={{ alignSelf: "flex-start" }}>
+                        {item.available ? "In Stock" : "Sold Out"}
+                      </span>
+                      {item.approvalStatus === "pending" && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          background: "#FEF3C7", border: "1px solid #F59E0B", color: "#B45309",
+                          fontSize: "0.72rem", fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                          alignSelf: "flex-start"
+                        }}>
+                          ⏳ Awaiting Approval
+                        </span>
+                      )}
+                      {item.approvalStatus === "rejected" && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          background: "#FEE2E2", border: "1px solid #EF4444", color: "#B91C1C",
+                          fontSize: "0.72rem", fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                          alignSelf: "flex-start"
+                        }}>
+                          ❌ Rejected
+                        </span>
+                      )}
+                      {(!item.approvalStatus || item.approvalStatus === "approved") && item.isConsignment && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          background: "#ECFDF5", border: "1px solid #10B981", color: "#047857",
+                          fontSize: "0.72rem", fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                          alignSelf: "flex-start"
+                        }}>
+                          ✅ Approved &amp; Live
+                        </span>
+                      )}
+                    </div>
                   </td>
                   <td style={{ padding: "16px", textAlign: "right" }}>
-                    <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                      <button onClick={() => handleOpenEdit(item)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #cbd5e1", background: "#e2e8f0", color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14} /></button>
-                      <button onClick={() => handleDelete(item.id)} style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
+                    <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
+                      {/* One-click Approve / Reject buttons for Admin power */}
+                      {item.approvalStatus === "pending" ? (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => handleApprovalAction(item.id, "approve")}
+                            disabled={approvingId === item.id}
+                            title="Approve item and publish live to customers"
+                            style={{
+                              background: "#10B981", color: "white", border: "none",
+                              padding: "6px 12px", borderRadius: 8, fontWeight: 800, fontSize: "0.76rem",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 4,
+                              boxShadow: "0 2px 6px rgba(16,185,129,0.3)"
+                            }}
+                          >
+                            <CheckCircle2 size={13} /> Approve
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleApprovalAction(item.id, "reject")}
+                            disabled={approvingId === item.id}
+                            title="Reject item"
+                            style={{
+                              background: "#F1F5F9", color: "#DC2626", border: "1px solid #FECACA",
+                              padding: "6px 10px", borderRadius: 8, fontWeight: 800, fontSize: "0.76rem",
+                              cursor: "pointer", display: "flex", alignItems: "center", gap: 4
+                            }}
+                          >
+                            <XCircle size={13} /> Reject
+                          </button>
+                        </>
+                      ) : item.approvalStatus === "rejected" ? (
+                        <button
+                          type="button"
+                          onClick={() => handleApprovalAction(item.id, "approve")}
+                          disabled={approvingId === item.id}
+                          title="Restore and approve this item"
+                          style={{
+                            background: "#ECFDF5", color: "#047857", border: "1px solid #A7F3D0",
+                            padding: "6px 10px", borderRadius: 8, fontWeight: 800, fontSize: "0.76rem",
+                            cursor: "pointer", display: "flex", alignItems: "center", gap: 4
+                          }}
+                        >
+                          <CheckCircle2 size={13} /> Approve
+                        </button>
+                      ) : null}
+
+                      <button onClick={() => handleOpenEdit(item)} title="Edit with full admin authority" style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #cbd5e1", background: "#e2e8f0", color: "#334155", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Edit2 size={14} /></button>
+                      <button onClick={() => handleDelete(item.id)} title="Delete item" style={{ width: 32, height: 32, borderRadius: "8px", border: "1px solid #7f1d1d", background: "#450a0a", color: "#ef4444", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><Trash2 size={14} /></button>
                     </div>
                   </td>
                 </tr>
@@ -379,6 +568,50 @@ export default function AdminMenuPage() {
                   </p>
                 </div>
 
+                {/* ── Admin Menu Authority: Approval Status ── */}
+                <div style={{
+                  background: form.approvalStatus === "rejected" ? "#FEF2F2" : (form.approvalStatus === "pending" ? "#FFFBEB" : "#F0FDF4"),
+                  border: "1.5px solid",
+                  borderColor: form.approvalStatus === "rejected" ? "#FCA5A5" : (form.approvalStatus === "pending" ? "#FCD34D" : "#86EFAC"),
+                  borderRadius: 12, padding: "14px 16px"
+                }}>
+                  <label style={{ display: "block", fontSize: "0.85rem", fontWeight: 800, color: "#0F172A", marginBottom: "8px" }}>
+                    🛡️ Menu Approval Status (Admin Power)
+                  </label>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    {(["approved", "pending", "rejected"] as const).map(st => {
+                      const isSelected = (form.approvalStatus === st) || (!form.approvalStatus && st === "approved");
+                      return (
+                        <button
+                          key={st}
+                          type="button"
+                          onClick={() => setForm({ ...form, approvalStatus: st })}
+                          style={{
+                            padding: "7px 14px", borderRadius: 8, border: "1.5px solid",
+                            borderColor: isSelected
+                              ? (st === "approved" ? "#16A34A" : st === "pending" ? "#F59E0B" : "#DC2626")
+                              : "#CBD5E1",
+                            background: isSelected
+                              ? (st === "approved" ? "#DCFCE7" : st === "pending" ? "#FEF3C7" : "#FEE2E2")
+                              : "#FFFFFF",
+                            color: isSelected
+                              ? (st === "approved" ? "#15803D" : st === "pending" ? "#B45309" : "#B91C1C")
+                              : "#64748B",
+                            fontWeight: 800, fontSize: "0.82rem", cursor: "pointer",
+                          }}
+                        >
+                          {st === "approved" ? "✅ Approved & Live" : st === "pending" ? "⏳ Pending Review" : "❌ Rejected"}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p style={{ fontSize: "0.74rem", color: "#475569", margin: "8px 0 0" }}>
+                    {form.approvalStatus === "pending" || form.approvalStatus === "rejected"
+                      ? "⚠️ While Pending or Rejected, this item is COMPLETELY HIDDEN from students & the public menu."
+                      : "✅ Approved items are visible and orderable by students on the campus menu."}
+                  </p>
+                </div>
+
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px" }}>
                   <div>
                     <label className="otw-label" style={{ display: "block", fontSize: "0.85rem", fontWeight: 700, color: "#334155", marginBottom: "8px" }}>Current Price (₹)</label>
@@ -466,7 +699,7 @@ export default function AdminMenuPage() {
                         <input type="number" className="otw-input" style={{ background: "#ffffff", border: "1px solid #cbd5e1", color: "#0f172a", borderRadius: "8px", padding: "12px 16px", width: "100%", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }} placeholder="0" value={form.sortOrder ?? 0} onChange={e => setForm({ ...form, sortOrder: Number(e.target.value) })} min="0" />
                         <p style={{ fontSize: "0.72rem", color: "#94a3b8", marginTop: "4px" }}>Lower = appears first.</p>
                       </div>
-                      
+
                       {/* Store Additions */}
                       <div style={{ gridColumn: "1 / -1", height: 1, background: "#E2E8F0", margin: "8px 0" }} />
                       <div>

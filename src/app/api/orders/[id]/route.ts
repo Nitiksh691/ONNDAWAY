@@ -60,11 +60,21 @@ export async function PATCH(req: NextRequest, props: { params: Promise<{ id: str
       }
     } else if (status === "cancelled" && currentOrder.status !== "cancelled") {
       const MenuItem = (await import("@/models/MenuItem")).default;
-      for (const item of currentOrder.items) {
+      const StoreInventory = currentOrder.storeId ? (await import("@/models/StoreInventory")).default : null;
+      
+      const stockRestorePromises = currentOrder.items.map(async (item: any) => {
         if (item.item && item.item.id) {
-          await MenuItem.updateOne({ _id: item.item.id }, { $inc: { stock: item.quantity } });
+          const p1 = MenuItem.updateOne({ _id: item.item.id }, { $inc: { stock: item.quantity } });
+          const p2 = StoreInventory
+            ? StoreInventory.updateOne(
+                { storeId: currentOrder.storeId, menuItemId: item.item.id, stock: { $ne: null } },
+                { $inc: { stock: item.quantity } }
+              )
+            : Promise.resolve();
+          return Promise.all([p1, p2]);
         }
-      }
+      });
+      await Promise.all(stockRestorePromises);
     }
 
     const updateData: any = { updatedAt: new Date() };

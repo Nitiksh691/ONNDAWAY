@@ -25,7 +25,10 @@ export default function LaunchingSoonOverlay() {
 
   useEffect(() => {
     if (shouldBlock) {
-      router.replace("/launching-soon");
+      const timer = setTimeout(() => {
+        router.replace("/launching-soon");
+      }, 0);
+      return () => clearTimeout(timer);
     }
   }, [shouldBlock, router]);
 

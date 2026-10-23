@@ -11,6 +11,7 @@ import {
   AlertCircle, Banknote, CreditCard, RefreshCw
 } from "lucide-react";
 import { getOrderMapsUrl } from "@/lib/maps";
+import DeliveryRouteMap from "@/components/DeliveryRouteMap";
 import toast from "react-hot-toast";
 
 const RIDER_QUICK_MESSAGES = [
@@ -66,24 +67,27 @@ export default function DeliveryDashboard() {
   };
 
   useEffect(() => {
+    let isMounted = true;
     fetchOrders();
-    let eventSource: EventSource;
+    let eventSource: EventSource | null = null;
     let timeoutId: NodeJS.Timeout;
     const setupSSE = () => {
+      if (!isMounted) return;
       eventSource = new EventSource("/api/orders/stream");
       eventSource.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === "order_change") fetchOrders(true);
+          if (data.type === "order_change" && isMounted) fetchOrders(true);
         } catch { /* ignore */ }
       };
       eventSource.onerror = () => {
-        eventSource.close();
-        timeoutId = setTimeout(setupSSE, 5000);
+        if (eventSource) eventSource.close();
+        if (isMounted) timeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
     return () => {
+      isMounted = false;
       if (eventSource) eventSource.close();
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -338,33 +342,20 @@ export default function DeliveryDashboard() {
                 </div>
               </div>
 
-              {/* ── ADDRESS CARD ── */}
-              <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>
-                <div style={{ fontSize: "0.65rem", fontWeight: 800, color: "#64748b", textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>📍 Delivery Address</div>
-                <div style={{ fontWeight: 900, fontSize: "1.2rem", color: "#0f172a", lineHeight: 1.35, marginBottom: selectedOrder.locationNotes ? 10 : 14 }}>
-                  {selectedOrder.location}
-                </div>
-                {selectedOrder.locationNotes && (
-                  <div style={{ background: "#fef9c3", borderRadius: 10, padding: "10px 12px", fontSize: "0.85rem", color: "#854d0e", fontWeight: 700, marginBottom: 12, display: "flex", gap: 8, alignItems: "flex-start" }}>
-                    <AlertCircle size={14} style={{ flexShrink: 0, marginTop: 1 }} />
-                    <span>{selectedOrder.locationNotes}</span>
-                  </div>
-                )}
-                <a
-                  href={getOrderMapsUrl(selectedOrder)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                    width: "100%", padding: "13px 0",
-                    background: "#0135FB", color: "#fff",
-                    borderRadius: 12, fontWeight: 800, fontSize: "0.95rem",
-                    textDecoration: "none", boxShadow: "0 4px 12px rgba(1,53,251,0.3)"
-                  }}
-                >
-                  <Navigation size={16} /> Open in Google Maps
-                </a>
-              </div>
+              {/* ── INTERACTIVE ROUTE MAP & ADDRESS ── */}
+              <DeliveryRouteMap
+                orderLocation={selectedOrder.location}
+                orderLatitude={selectedOrder.latitude}
+                orderLongitude={selectedOrder.longitude}
+                locationNotes={selectedOrder.locationNotes}
+                storeName={selectedOrder.storeName || "ONN DA WAY Hub"}
+                storeAddress={selectedOrder.storeAddress || ""}
+                storeLatitude={(selectedOrder as any).storeLatitude ?? 28.7499}
+                storeLongitude={(selectedOrder as any).storeLongitude ?? 77.1170}
+                orderId={selectedOrder.id}
+                deliveryPersonId={DELIVERY_ID}
+                isDelivering={selectedOrder.status === "out_for_delivery"}
+              />
 
               {/* ── CUSTOMER CARD ── */}
               <div style={{ background: "#fff", borderRadius: 16, padding: 16, marginBottom: 12, boxShadow: "0 1px 3px rgba(0,0,0,0.06)" }}>

@@ -24,6 +24,12 @@ export const STORAGE_KEYS = {
   activeOrderId: "otw_active_order_id",
   /** Cached user profile for demo mode */
   demoProfile: "otw_demo_profile",
+  /** Selected serving store for multi-store quick commerce */
+  servingStore: "otw_serving_store",
+  /** Selected delivery location text */
+  deliveryLocation: "otw_delivery_location",
+  /** Full location object { address, lat, lng, storeId, storeName } */
+  deliveryLocationData: "otw_delivery_location_data",
 } as const;
 
 // ── Polling Intervals (milliseconds) ────────────────────────────────────────

@@ -290,6 +290,15 @@ export default function CartPage() {
   const grandTotal = Math.max(0, cartTotal - finalDiscount + deliveryFee);
 
   const prepareOrderPayload = () => {
+    let locData: any = null;
+    let storeData: any = null;
+    try {
+      const savedData = localStorage.getItem(STORAGE_KEYS.deliveryLocationData);
+      if (savedData) locData = JSON.parse(savedData);
+      const savedStore = localStorage.getItem(STORAGE_KEYS.servingStore);
+      if (savedStore) storeData = JSON.parse(savedStore);
+    } catch { /* ignore */ }
+
     return {
       userId: phoneDigits,
       userName: name.trim(),
@@ -297,6 +306,9 @@ export default function CartPage() {
       items: normalizeCartLines(cart),
       location: location.trim(),
       locationNotes: locationNotes.trim() || null,
+      latitude: locData?.latitude ?? null,
+      longitude: locData?.longitude ?? null,
+      storeId: locData?.storeId || storeData?.id || cart.find(c => c.item.storeId)?.item.storeId || null,
       total: grandTotal,
       couponCode: appliedCoupon ? couponCode : null,
       discount: finalDiscount,
@@ -328,8 +340,8 @@ export default function CartPage() {
       });
 
       if (!res.ok) {
-        if (res.status === 409) throw new Error("One or more items are currently unavailable. Please refresh your cart.");
-        throw new Error("Failed to place order");
+        const errData = await res.json().catch(() => null);
+        throw new Error(errData?.error || "Failed to place order. Please try again.");
       }
 
       const orderResult = await res.json();

@@ -189,6 +189,18 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     const lineDetails = buildLineDetails(customizations, specialInstructions);
 
     setCart((prev) => {
+      // Multi-Store Cart Enforcement: prevent mixing items from different fulfillment stores
+      if (prev.length > 0 && item.storeId) {
+        const existingStoreItem = prev.find(c => c.item.storeId);
+        if (existingStoreItem && existingStoreItem.item.storeId && existingStoreItem.item.storeId !== item.storeId) {
+          toast.error(
+            "Your cart contains items from another store. Please complete or clear your cart to order from this store.",
+            { id: "store-mismatch", duration: 4500 }
+          );
+          return prev;
+        }
+      }
+
       const existing = prev.find(
         (c) =>
           c.item.id === item.id &&

@@ -37,6 +37,11 @@ const MenuItemSchema = new Schema({
   vendorId:      { type: Schema.Types.ObjectId, ref: "Vendor", default: null },
   /** Cached vendor display name for fast reads */
   vendorName:    { type: String, default: "" },
+  /** 'approved' = live on site, 'pending' = submitted by vendor awaiting admin review, 'rejected' = rejected by admin */
+  approvalStatus: { type: String, enum: ["approved", "pending", "rejected"], default: "approved" },
+  approvalNotes:  { type: String, default: "" },
+  /** Reference to the Store document for multi-store fulfillment */
+  storeId:        { type: Schema.Types.ObjectId, ref: "Store", default: null },
   customizationCategories: [{
     name:     { type: String, required: true },
     required: { type: Boolean, default: false },
@@ -65,6 +70,7 @@ MenuItemSchema.index({ category: 1, available: 1 });
 MenuItemSchema.index({ orderCount: -1 });
 MenuItemSchema.index({ brand: 1, available: 1 });
 MenuItemSchema.index({ world: 1, available: 1 });
+MenuItemSchema.index({ approvalStatus: 1 });
 
 export default models.MenuItem || model("MenuItem", MenuItemSchema);
 

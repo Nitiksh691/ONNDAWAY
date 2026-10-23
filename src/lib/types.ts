@@ -83,7 +83,10 @@ export interface MenuItem {
   hasTallSize?: boolean;
   isConsignment?: boolean;
   vendorId?: string | null;
+  storeId?: string | null;
   vendorName?: string;
+  approvalStatus?: "approved" | "pending" | "rejected";
+  approvalNotes?: string;
   createdAt?: string;
 }
 
@@ -97,6 +100,7 @@ export interface CartItem {
   /** Full readable summary: customizations + special notes (stored on orders). */
   lineDetails?: string;
   vendorId?: string | null;
+  storeId?: string | null;
   vendorPacked?: boolean;
   vendorPackedAt?: string | Date | null;
 }
@@ -131,6 +135,10 @@ export interface Order {
   rating?: number;
   review?: string;
   feedback?: string;
+  storeId?: string | null;
+  storeName?: string;
+  storeAddress?: string;
+  riderLocation?: { lat: number | null; lng: number | null; updatedAt: string | null } | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -214,4 +222,58 @@ export interface StoreCategory {
   active: boolean;
   sortOrder: number;
   subcategories: string[];
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  slug: string;
+  code: string;
+  address: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  location: {
+    type: "Point";
+    coordinates: [number, number]; // [lng, lat]
+  };
+  serviceRadiusKm: number;
+  serviceAreas: string[];
+  isActive: boolean;
+  isAcceptingOrders: boolean;
+  isBusy: boolean;
+  openingTime: string;
+  closingTime: string;
+  minOrderValue: number;
+  deliveryFee: number;
+  estimatedDeliveryMins: number;
+  phone: string;
+  pin?: string;
+  managerName?: string;
+  banner?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StoreInventory {
+  id: string;
+  storeId: string;
+  menuItemId: string;
+  stock: number | null;
+  reservedStock: number;
+  isAvailable: boolean;
+  price: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ServiceabilityResult {
+  isServiceable: boolean;
+  store: Store | null;
+  distanceKm?: number;
+  message: string;
+  availableStores?: { id: string; name: string; address: string; serviceAreas: string[] }[];
+  allAreas?: string[];
 }

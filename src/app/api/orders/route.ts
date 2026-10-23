@@ -62,13 +62,31 @@ const _POST = async (req: NextRequest) => {
   }
 
   const body = await req.json();
-  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, couponCode, scheduledTime } = body;
+  const { userId, userName, userPhone, items, location, locationNotes, latitude, longitude, couponCode, scheduledTime, storeId } = body;
   // NOTE: 'total' and 'discount' from the client are intentionally ignored for security.
   // We recompute them server-side from DB prices, just like the Razorpay route.
 
   if (!userId || !items || !location) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
+
+  // Multi-Store Serviceability Engine Check
+  const { checkServiceability } = await import("@/lib/serviceability");
+  const serviceResult = await checkServiceability({
+    latitude: latitude ?? null,
+    longitude: longitude ?? null,
+    areaName: location,
+    storeId: storeId || null,
+  });
+
+  if (!serviceResult.isServiceable || !serviceResult.store) {
+    return NextResponse.json(
+      { error: serviceResult.message || "Your delivery location is not currently serviceable by any open store." },
+      { status: 400 }
+    );
+  }
+
+  const assignedStore = serviceResult.store;
 
   const settings = await Settings.findOne();
   if (settings?.kitchenClosed) {
@@ -89,22 +107,49 @@ const _POST = async (req: NextRequest) => {
     }
   }
 
-  // Check availability
   const itemIds = Object.keys(requiredStock);
-  const unavailableItems = await MenuItem.find({
-    _id: { $in: itemIds },
-    available: false
-  }).select("_id").lean();
 
-  if (unavailableItems.length > 0) {
+  // Check store-specific inventory overrides first
+  const StoreInventory = (await import("@/models/StoreInventory")).default;
+  const storeInventories = await StoreInventory.find({
+    storeId: assignedStore.id,
+    menuItemId: { $in: itemIds },
+  }).lean();
+
+  const storeInvMap = new Map<string, any>();
+  storeInventories.forEach((inv: any) => {
+    storeInvMap.set(inv.menuItemId.toString(), inv);
+  });
+
+  // Check if any item is explicitly marked unavailable or out of stock at this store
+  for (const id of itemIds) {
+    const inv = storeInvMap.get(id);
+    if (inv) {
+      if (inv.isAvailable === false) {
+        return NextResponse.json(
+          { error: `An item in your cart is currently out of stock at ${assignedStore.name}`, itemId: id },
+          { status: 409 }
+        );
+      }
+      if (inv.stock != null && inv.stock - (inv.reservedStock || 0) < requiredStock[id]) {
+        return NextResponse.json(
+          { error: `Insufficient stock available at ${assignedStore.name}`, itemId: id },
+          { status: 409 }
+        );
+      }
+    }
+  }
+
+  // Base catalog lookup & availability check in a single DB query
+  const dbItemsCOD = await MenuItem.find({ _id: { $in: itemIds } }).lean();
+  const unavailableItem = (dbItemsCOD as any[]).find(i => !i.available);
+  if (unavailableItem) {
     return NextResponse.json(
-      { error: "One or more items are currently unavailable", itemId: unavailableItems[0]._id },
+      { error: "One or more items are currently unavailable", itemId: unavailableItem._id },
       { status: 409 }
     );
   }
 
-  // Re-compute total server-side from DB prices (never trust client-supplied total)
-  const dbItemsCOD = await import("@/models/MenuItem").then(m => m.default.find({ _id: { $in: itemIds } }).lean());
   let serverSubtotal = 0;
   let grocerySubtotal = 0;
   let hasGroceryItems = false;
@@ -194,6 +239,9 @@ const _POST = async (req: NextRequest) => {
       status: "placed",
       paymentMethod: "COD",
       paymentStatus: "PENDING",
+      storeId: assignedStore.id,
+      storeName: assignedStore.name,
+      storeAddress: assignedStore.address,
       scheduledTime: scheduledTime || "ASAP (~15 mins)",
       deliveryOtp: Math.floor(1000 + Math.random() * 9000).toString(),
       messages: [],

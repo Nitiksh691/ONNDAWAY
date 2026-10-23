@@ -24,6 +24,7 @@ import {
   Volume2,
   VolumeX,
   BellRing,
+  Bike,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { STORAGE_KEYS } from "@/lib/constants";
@@ -38,9 +39,11 @@ import {
 const ADMIN_LINKS = [
   { href: "/admin", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { href: "/admin/analytics", label: "Analytics", icon: <LayoutDashboard size={18} /> },
+  { href: "/admin/stores", label: "Store Hubs", icon: <Store size={18} /> },
   { href: "/admin/menu", label: "Menu Management", icon: <Coffee size={18} /> },
   { href: "/admin/vendors", label: "Vendors & Consignment", icon: <Store size={18} /> },
   { href: "/admin/orders", label: "Live Orders", icon: <ShoppingBag size={18} /> },
+  { href: "/admin/riders", label: "Delivery Riders", icon: <Bike size={18} /> },
   { href: "/admin/customers", label: "App Customers", icon: <Users size={18} /> },
   { href: "/admin/interns", label: "Interns", icon: <ClipboardList size={18} /> },
   { href: "/admin/expenses", label: "Expenses", icon: <DollarSign size={18} /> },
