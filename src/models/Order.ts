@@ -15,6 +15,7 @@ const CartItemSchema = new Schema(
       vendorId:    { type: String, default: null },
       vendorName:  { type: String, default: null },
       isConsignment: { type: Boolean, default: false },
+      storeId:     { type: String, default: null },
     },
     quantity:             { type: Number, required: true, min: 1, default: 1 },
     specialInstructions:  { type: String, default: "" },
@@ -67,6 +68,15 @@ const OrderSchema = new Schema(
       type: [{ sender: String, text: String, timestamp: { type: Date, default: Date.now } }],
       default: [],
     },
+    // Live rider GPS — updated by rider device every ~15s while out_for_delivery
+    riderLocation: {
+      lat:       { type: Number, default: null },
+      lng:       { type: Number, default: null },
+      updatedAt: { type: Date, default: null },
+    },
+    storeId:            { type: Schema.Types.ObjectId, ref: "Store", default: null },
+    storeName:          { type: String, default: "" },
+    storeAddress:       { type: String, default: "" },
     rating:  { type: Number, min: 1, max: 5, default: null },
     review:  { type: String, default: null },
     feedback: { type: String, default: null },
@@ -82,5 +92,7 @@ OrderSchema.index({ userId: 1, status: 1 });
 OrderSchema.index({ status: 1, createdAt: -1 });
 // Compound index: delivery dashboard — assigned orders by status
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
+// Store dashboard — orders assigned to a specific store
+OrderSchema.index({ storeId: 1, status: 1, createdAt: -1 });
 
 export default models.Order || model("Order", OrderSchema);

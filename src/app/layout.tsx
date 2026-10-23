@@ -26,7 +26,7 @@ const siteUrl = process.env.NEXT_PUBLIC_APP_URL || (process.env.VERCEL_URL ? `ht
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Onn Da Way | Onndaway Coffee & Campus Food Delivery at DTU",
+    default: "Onn Da Way | Quick Commerce service at DTU",
     template: "%s | Onn Da Way",
   },
   description:
@@ -66,6 +66,11 @@ export const metadata: Metadata = {
     "student food app",
     "college food delivery",
     "quick bites college",
+    "quick commerce at dtu",
+    "quick commerce service dtu",
+    "quick commerce service",
+    "quick commerce",
+    "commerce at dtu"
   ],
   creator: "Onn Da Way",
   publisher: "Onn Da Way",

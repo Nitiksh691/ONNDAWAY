@@ -21,8 +21,11 @@ export default function WaitlistOverlay() {
     // Allowed paths: /admin and /join
     if (pathname.startsWith("/admin") || pathname === "/join" || pathname.startsWith("/api")) return;
 
-    // Redirect to join page
-    router.replace("/join");
+    // Redirect to join page after router initialization
+    const timer = setTimeout(() => {
+      router.replace("/join");
+    }, 0);
+    return () => clearTimeout(timer);
   }, [waitlistMode, checking, loading, profile, pathname, router]);
 
   return null;

@@ -9,8 +9,11 @@ const _GET = async (req: NextRequest) => {
   await dbConnect();
   try {
     const showAll = req.nextUrl.searchParams.get("all") === "true";
+    const storeId = req.nextUrl.searchParams.get("storeId");
+    const cacheKey = storeId ? `${CACHE_KEYS.MENU}:${storeId}` : CACHE_KEYS.MENU;
+
     if (!showAll) {
-      const cached = appCache.get<object[]>(CACHE_KEYS.MENU);
+      const cached = appCache.get<object[]>(cacheKey);
       if (cached) {
         const res = NextResponse.json(cached);
         res.headers.set("X-Cache", "HIT");
@@ -18,12 +21,46 @@ const _GET = async (req: NextRequest) => {
       }
     }
 
-    const query = showAll ? {} : { available: true };
+    const query = showAll ? {} : { approvalStatus: { $nin: ["pending", "rejected"] } };
     const items = await MenuItem.find(query).sort({ category: 1, name: 1 }).lean();
-    const mapped = items.map((i: any) => ({ ...i, id: i._id.toString() }));
+
+    // If storeId is provided, merge with store-specific inventory overrides
+    let storeInventoryMap = new Map<string, any>();
+    if (storeId) {
+      const StoreInventory = (await import("@/models/StoreInventory")).default;
+      const inventories = await StoreInventory.find({ storeId }).lean();
+      inventories.forEach((inv: any) => {
+        storeInventoryMap.set(inv.menuItemId.toString(), inv);
+      });
+    }
+
+    let mapped = items.map((i: any) => {
+      const itemId = i._id.toString();
+      const override = storeInventoryMap.get(itemId);
+
+      let available = i.available;
+      let price = i.price;
+      let stock = i.stock;
+
+      if (override) {
+        if (override.isAvailable !== undefined) available = override.isAvailable;
+        if (override.price != null) price = override.price;
+        if (override.stock != null) stock = override.stock;
+      }
+
+      return {
+        ...i,
+        id: itemId,
+        available,
+        price,
+        stock,
+        isStoreSpecific: !!override,
+      };
+    });
 
     if (!showAll) {
-      appCache.set(CACHE_KEYS.MENU, mapped, CACHE_TTL.MENU);
+      mapped = mapped.filter((i: any) => i.available === true);
+      appCache.set(cacheKey, mapped, CACHE_TTL.MENU);
     }
 
     const res = NextResponse.json(mapped);
@@ -80,12 +117,14 @@ const _POST = async (req: NextRequest) => {
       sizes:         sizes         || [],
       customizationCategories: customizationCategories || [],
       isConsignment: !!isConsignment,
+      approvalStatus: body.approvalStatus || "approved",
       vendorId:      vendorId      || null,
       vendorName:    vendorName    || "",
+      storeId:       body.storeId  || null,
     });
 
-    // Bust cache so next GET reflects the new item
-    appCache.invalidate(CACHE_KEYS.MENU);
+    // Bust cache so next GET reflects the new item across all store views
+    appCache.invalidatePattern(CACHE_KEYS.MENU);
 
     return NextResponse.json({ ...item.toObject(), id: item._id.toString() }, { status: 201 });
   } catch (error) {

@@ -1,9 +1,10 @@
 "use client";
+import Image from "next/image";
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Package, BarChart2, LogOut, CheckCircle, Clock, ChevronRight,
   RefreshCw, TrendingUp, ShoppingBag, IndianRupee,
-  Volume2, VolumeX, Bell, BellRing, BellOff, Sparkles
+  Volume2, VolumeX, Bell, BellRing, BellOff, Sparkles, UtensilsCrossed, Plus, Trash2, AlertCircle, ToggleLeft, ToggleRight, Camera, Upload, Image as ImageIcon
 } from "lucide-react";
 import toast from "react-hot-toast";
 import {
@@ -15,7 +16,7 @@ import {
   triggerBrowserNotification,
 } from "@/lib/orderSounds";
 
-type Tab = "orders" | "reports";
+type Tab = "orders" | "menu" | "reports";
 type Period = "7" | "30" | "90" | "all";
 
 interface VendorSession {
@@ -757,6 +758,702 @@ function ReportsTab({ session }: { session: VendorSession }) {
   );
 }
 
+
+/* ─────────────────────────── VENDOR MENU TAB ─────────────────────────── */
+function VendorMenuTab({ session }: { session: VendorSession }) {
+  const [items, setItems] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const [filter, setFilter] = useState<"all" | "approved" | "pending" | "rejected">("all");
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    e.target.value = "";
+    setUploadingImage(true);
+    try {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onloadend = async () => {
+        try {
+          const res = await fetch("/api/vendor/upload", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              image: reader.result,
+              vendorId: session.vendorId,
+            }),
+          });
+          const data = await res.json();
+          if (res.ok && data.url) {
+            setForm(f => ({ ...f, image: data.url }));
+            toast.success("Product photo uploaded! 📸");
+          } else {
+            toast.error(data.error || "Failed to upload image");
+          }
+        } catch {
+          toast.error("Error uploading image");
+        } finally {
+          setUploadingImage(false);
+        }
+      };
+    } catch {
+      toast.error("Error reading file");
+      setUploadingImage(false);
+    }
+  };
+
+  const [form, setForm] = useState({
+    name: "",
+    category: "snacks",
+    price: "",
+    originalPrice: "",
+    brand: session.businessName || session.name,
+    unit: "",
+    world: "munchies",
+    description: "",
+    image: "",
+  });
+
+  const loadMenu = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/vendor/menu?vendorId=${session.vendorId}`);
+      const data = await res.json();
+      setItems(Array.isArray(data) ? data : []);
+    } catch {
+      toast.error("Failed to load your menu");
+    } finally {
+      setLoading(false);
+    }
+  }, [session.vendorId]);
+
+  useEffect(() => {
+    loadMenu();
+  }, [loadMenu]);
+
+  const handleToggleStock = async (itemId: string, currentAvailable: boolean) => {
+    try {
+      const res = await fetch("/api/vendor/menu", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorId: session.vendorId,
+          itemId,
+          available: !currentAvailable,
+        }),
+      });
+      if (res.ok) {
+        setItems(prev => prev.map(i => i.id === itemId ? { ...i, available: !currentAvailable } : i));
+        toast.success(!currentAvailable ? "Item marked In Stock! 🟢" : "Item marked Out of Stock! ⚪");
+      } else {
+        toast.error("Failed to update stock");
+      }
+    } catch {
+      toast.error("Network error");
+    }
+  };
+
+  const handleDeleteItem = async (itemId: string, name: string) => {
+    if (!confirm(`Are you sure you want to delete "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/vendor/menu?vendorId=${session.vendorId}&id=${itemId}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        setItems(prev => prev.filter(i => i.id !== itemId));
+        toast.success("Item removed from your menu");
+      } else {
+        toast.error("Failed to delete item");
+      }
+    } catch {
+      toast.error("Network error");
+    }
+  };
+
+  const handleCreateItem = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name || !form.price || !form.category) {
+      toast.error("Name, price, and category are required");
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const res = await fetch("/api/vendor/menu", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorId: session.vendorId,
+          name: form.name,
+          category: form.category,
+          price: Number(form.price),
+          originalPrice: form.originalPrice ? Number(form.originalPrice) : null,
+          brand: form.brand || session.businessName || session.name,
+          unit: form.unit,
+          world: form.world,
+          description: form.description,
+          image: form.image || "https://images.unsplash.com/photo-1541544741938-0af808871cc0?w=500&auto=format&fit=crop&q=60",
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast.success("Item submitted! Waiting for Admin Approval ⏳", { duration: 5000 });
+        setShowAddModal(false);
+        setForm({
+          name: "",
+          category: "snacks",
+          price: "",
+          originalPrice: "",
+          brand: session.businessName || session.name,
+          unit: "",
+          world: "munchies",
+          description: "",
+          image: "",
+        });
+        loadMenu();
+      } else {
+        toast.error(data.error || "Failed to submit item");
+      }
+    } catch {
+      toast.error("Network error while submitting item");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const PRESET_IMAGES = [
+    { label: "Hot Coffee", url: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=500&auto=format&fit=crop&q=60" },
+    { label: "Cold Coffee", url: "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=500&auto=format&fit=crop&q=60" },
+    { label: "Fresh Mojito", url: "https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=500&auto=format&fit=crop&q=60" },
+    { label: "Burger", url: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=500&auto=format&fit=crop&q=60" },
+    { label: "Chips / Snack", url: "https://images.unsplash.com/photo-1566478989037-eec170784d0b?w=500&auto=format&fit=crop&q=60" },
+    { label: "Dessert / Cake", url: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=500&auto=format&fit=crop&q=60" },
+  ];
+
+  const pendingCount = items.filter(i => (i.approvalStatus || "approved") === "pending").length;
+  const approvedCount = items.filter(i => (i.approvalStatus || "approved") === "approved").length;
+  const rejectedCount = items.filter(i => i.approvalStatus === "rejected").length;
+
+  const displayedItems = items.filter(i => {
+    const status = i.approvalStatus || "approved";
+    if (filter === "approved") return status === "approved";
+    if (filter === "pending") return status === "pending";
+    if (filter === "rejected") return status === "rejected";
+    return true;
+  });
+
+  return (
+    <div>
+      {/* Header action bar */}
+      <div style={{
+        background: "white", borderRadius: 16, padding: "16px",
+        marginBottom: 16, border: "1.5px solid #E2E8F0",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+        display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12
+      }}>
+        <div>
+          <h2 style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0F172A", margin: 0 }}>
+            🍽️ My Menu &amp; Products
+          </h2>
+          <p style={{ fontSize: "0.78rem", color: "#64748B", margin: "3px 0 0" }}>
+            Add dishes or packaged items for Admin approval.
+          </p>
+        </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          style={{
+            background: "#0135FB", color: "white", border: "none",
+            borderRadius: 12, padding: "9px 16px", fontWeight: 800, fontSize: "0.84rem",
+            cursor: "pointer", display: "flex", alignItems: "center", gap: 6,
+            boxShadow: "0 4px 14px rgba(1,53,251,0.25)"
+          }}
+        >
+          <Plus size={16} /> Add Product
+        </button>
+      </div>
+
+      {/* Stats row */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8, marginBottom: 16 }}>
+        <div style={{ background: "white", padding: "10px", borderRadius: 12, border: "1px solid #E2E8F0", textAlign: "center" }}>
+          <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "#10B981" }}>{approvedCount}</div>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>Live on Site</div>
+        </div>
+        <div style={{ background: "white", padding: "10px", borderRadius: 12, border: "1px solid #E2E8F0", textAlign: "center" }}>
+          <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "#F59E0B" }}>{pendingCount}</div>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>Pending Review</div>
+        </div>
+        <div style={{ background: "white", padding: "10px", borderRadius: 12, border: "1px solid #E2E8F0", textAlign: "center" }}>
+          <div style={{ fontSize: "1.2rem", fontWeight: 900, color: "#64748B" }}>{items.length}</div>
+          <div style={{ fontSize: "0.68rem", fontWeight: 700, color: "#64748B", textTransform: "uppercase" }}>Total Items</div>
+        </div>
+      </div>
+
+      {/* Filter pills */}
+      <div style={{ display: "flex", gap: 6, marginBottom: 14, overflowX: "auto", paddingBottom: 4 }}>
+        {([
+          { key: "all", label: `All (${items.length})` },
+          { key: "approved", label: `🟢 Live (${approvedCount})` },
+          { key: "pending", label: `⏳ Pending (${pendingCount})` },
+          { key: "rejected", label: `❌ Rejected (${rejectedCount})` },
+        ] as const).map(f => (
+          <button
+            key={f.key}
+            onClick={() => setFilter(f.key)}
+            style={{
+              padding: "5px 12px", borderRadius: 999, border: "none", cursor: "pointer",
+              fontSize: "0.75rem", fontWeight: 800, whiteSpace: "nowrap",
+              background: filter === f.key ? "#0135FB" : "#FFFFFF",
+              color: filter === f.key ? "#FFFFFF" : "#64748B",
+              boxShadow: filter === f.key ? "0 2px 6px rgba(1,53,251,0.25)" : "0 1px 3px rgba(0,0,0,0.04)"
+            }}
+          >
+            {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Items list */}
+      {loading ? (
+        <div style={{ textAlign: "center", padding: "40px 0", color: "#64748B" }}>
+          Loading your menu items...
+        </div>
+      ) : displayedItems.length === 0 ? (
+        <div style={{
+          background: "white", borderRadius: 16, padding: "40px 20px", textAlign: "center",
+          border: "1.5px dashed #CBD5E1", color: "#64748B"
+        }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: 8 }}>📦</div>
+          <h3 style={{ fontSize: "1.05rem", fontWeight: 800, color: "#0F172A", margin: "0 0 6px" }}>No items found</h3>
+          <p style={{ fontSize: "0.82rem", margin: "0 0 16px" }}>
+            {filter === "all" ? "You haven't added any products yet." : `No items matching "${filter}".`}
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            style={{
+              background: "#0135FB", color: "white", border: "none",
+              borderRadius: 10, padding: "8px 16px", fontWeight: 800, fontSize: "0.82rem",
+              cursor: "pointer"
+            }}
+          >
+            Add Your First Product
+          </button>
+        </div>
+      ) : (
+        <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+          {displayedItems.map(item => {
+            const status = item.approvalStatus || "approved";
+            return (
+              <div
+                key={item.id}
+                style={{
+                  background: "white", borderRadius: 14, padding: "12px 14px",
+                  border: "1px solid #E2E8F0", boxShadow: "0 2px 6px rgba(0,0,0,0.03)",
+                  display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: 10, background: "#F1F5F9",
+                    overflow: "hidden", position: "relative", flexShrink: 0
+                  }}>
+                    {item.image ? (
+                      <img src={item.image} alt={item.name} style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    ) : (
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", fontSize: "1.4rem" }}>🍽️</div>
+                    )}
+                  </div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontWeight: 800, fontSize: "0.92rem", color: "#0F172A", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {item.name}
+                    </div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 2, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 800, color: "#0135FB", fontSize: "0.85rem" }}>₹{item.price}</span>
+                      {item.originalPrice && item.originalPrice > item.price && (
+                        <span style={{ color: "#94A3B8", textDecoration: "line-through", fontSize: "0.75rem" }}>₹{item.originalPrice}</span>
+                      )}
+                      <span style={{ fontSize: "0.72rem", background: "#F1F5F9", color: "#475569", padding: "1px 6px", borderRadius: 4, textTransform: "capitalize" }}>
+                        {item.category}
+                      </span>
+                    </div>
+
+                    {/* Status pill */}
+                    <div style={{ marginTop: 4 }}>
+                      {status === "approved" && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.68rem", fontWeight: 800, color: "#059669", background: "#ECFDF5", padding: "2px 6px", borderRadius: 4 }}>
+                          🟢 Live on Menu
+                        </span>
+                      )}
+                      {status === "pending" && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.68rem", fontWeight: 800, color: "#D97706", background: "#FEF3C7", padding: "2px 6px", borderRadius: 4 }}>
+                          ⏳ Awaiting Admin Approval
+                        </span>
+                      )}
+                      {status === "rejected" && (
+                        <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: "0.68rem", fontWeight: 800, color: "#DC2626", background: "#FEE2E2", padding: "2px 6px", borderRadius: 4 }}>
+                          ❌ Rejected {item.approvalNotes ? `(${item.approvalNotes})` : ""}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right controls: In-stock toggle & Delete */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
+                  {status === "approved" && (
+                    <button
+                      onClick={() => handleToggleStock(item.id, item.available)}
+                      style={{
+                        background: item.available ? "#EFF6FF" : "#F1F5F9",
+                        color: item.available ? "#0135FB" : "#64748B",
+                        border: "1px solid", borderColor: item.available ? "#BFDBFE" : "#E2E8F0",
+                        borderRadius: 8, padding: "5px 8px", fontSize: "0.72rem", fontWeight: 800,
+                        cursor: "pointer", display: "flex", alignItems: "center", gap: 4
+                      }}
+                      title="Toggle availability for customers"
+                    >
+                      {item.available ? "In Stock" : "Sold Out"}
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeleteItem(item.id, item.name)}
+                    style={{
+                      background: "transparent", border: "none", color: "#94A3B8",
+                      padding: 6, borderRadius: 6, cursor: "pointer"
+                    }}
+                    title="Delete item"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ── Add Item Modal ── */}
+      {showAddModal && (
+        <div style={{
+          position: "fixed", inset: 0, zIndex: 99999,
+          background: "rgba(15,23,42,0.6)", backdropFilter: "blur(6px)",
+          display: "flex", alignItems: "center", justifyContent: "center", padding: 16
+        }}>
+          <div style={{
+            background: "white", borderRadius: 20, width: "100%", maxWidth: 480,
+            maxHeight: "90vh", overflowY: "auto", padding: "20px 22px",
+            boxShadow: "0 20px 50px rgba(0,0,0,0.25)"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+              <div>
+                <h3 style={{ fontSize: "1.15rem", fontWeight: 900, color: "#0F172A", margin: 0 }}>
+                  ➕ Submit Product for Menu
+                </h3>
+                <p style={{ fontSize: "0.78rem", color: "#64748B", margin: "2px 0 0" }}>
+                  Admin will review and approve it before it goes live.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowAddModal(false)}
+                style={{ background: "#F1F5F9", border: "none", borderRadius: "50%", width: 30, height: 30, cursor: "pointer", fontWeight: 900, color: "#64748B" }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleCreateItem}>
+              {/* Product Name */}
+              <div style={{ marginBottom: 12 }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                  Product / Dish Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Masala Chips / Cold Coffee / Grilled Sandwich"
+                  value={form.name}
+                  onChange={e => setForm({ ...form, name: e.target.value })}
+                  style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                />
+              </div>
+
+              {/* Price & MRP */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    Selling Price (₹) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={1}
+                    placeholder="e.g. 79"
+                    value={form.price}
+                    onChange={e => setForm({ ...form, price: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    MRP / Original Price (₹)
+                  </label>
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="e.g. 99"
+                    value={form.originalPrice}
+                    onChange={e => setForm({ ...form, originalPrice: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              {/* Category & Section */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    Category *
+                  </label>
+                  <select
+                    value={form.category}
+                    onChange={e => setForm({ ...form, category: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.88rem", outline: "none", background: "white", boxSizing: "border-box" }}
+                  >
+                    <option value="snacks">Snacks</option>
+                    <option value="munchies">Munchies / Chips</option>
+                    <option value="drinks">Drinks / Mojitos</option>
+                    <option value="coffee">Coffee</option>
+                    <option value="meals">Meals &amp; Rolls</option>
+                    <option value="desserts">Desserts</option>
+                  </select>
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    Store World
+                  </label>
+                  <select
+                    value={form.world}
+                    onChange={e => setForm({ ...form, world: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.88rem", outline: "none", background: "white", boxSizing: "border-box" }}
+                  >
+                    <option value="munchies">🛒 Grocery / Munchies</option>
+                    <option value="food">☕ Food &amp; Kitchen</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Brand & Unit */}
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, marginBottom: 12 }}>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    Brand Name
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. Lays / Amul / Store"
+                    value={form.brand}
+                    onChange={e => setForm({ ...form, brand: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                    Unit / Size
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 50g / 250ml / 1 pc"
+                    value={form.unit}
+                    onChange={e => setForm({ ...form, unit: e.target.value })}
+                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.9rem", outline: "none", boxSizing: "border-box" }}
+                  />
+                </div>
+              </div>
+
+              {/* Product Photo Upload */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ fontSize: "0.8rem", fontWeight: 800, color: "#1E293B", display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                  <span>📸 Product Photo</span>
+                  {form.image && (
+                    <button
+                      type="button"
+                      onClick={() => setForm(f => ({ ...f, image: "" }))}
+                      style={{ background: "none", border: "none", color: "#EF4444", fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", padding: 0 }}
+                    >
+                      Remove Photo ✕
+                    </button>
+                  )}
+                </label>
+
+                {/* Upload Card / Dropzone */}
+                <label style={{
+                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+                  border: form.image ? "2px solid #0135FB" : "2px dashed #94A3B8",
+                  borderRadius: 14, padding: form.image ? "12px" : "24px 16px",
+                  background: form.image ? "#F8FAFC" : "#F8FAFC",
+                  cursor: uploadingImage ? "wait" : "pointer",
+                  transition: "all 0.2s",
+                  position: "relative",
+                  overflow: "hidden",
+                  textAlign: "center"
+                }}>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={uploadingImage}
+                    style={{ display: "none" }}
+                  />
+
+                  {uploadingImage ? (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 8, padding: "12px 0" }}>
+                      <div style={{
+                        width: 28, height: 28,
+                        border: "3px solid #E2E8F0", borderTopColor: "#0135FB",
+                        borderRadius: "50%", animation: "spin 1s linear infinite"
+                      }} />
+                      <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#0135FB" }}>
+                        Uploading photo...
+                      </div>
+                    </div>
+                  ) : form.image ? (
+                    <div style={{ width: "100%", display: "flex", alignItems: "center", gap: 14 }}>
+                      <div style={{
+                        width: 72, height: 72, borderRadius: 10, overflow: "hidden",
+                        position: "relative", flexShrink: 0, border: "1px solid #E2E8F0", background: "#FFFFFF"
+                      }}>
+                        <Image
+                          src={form.image}
+                          alt="Product preview"
+                          fill
+                          sizes="72px"
+                          style={{ objectFit: "cover" }}
+                        />
+                      </div>
+                      <div style={{ textAlign: "left", flex: 1 }}>
+                        <div style={{ fontSize: "0.82rem", fontWeight: 800, color: "#059669", display: "flex", alignItems: "center", gap: 4 }}>
+                          ✓ Photo Ready
+                        </div>
+                        <div style={{ fontSize: "0.74rem", color: "#64748B", marginTop: 2 }}>
+                          Tap anywhere on this card to replace photo
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
+                      <div style={{
+                        width: 44, height: 44, borderRadius: 12,
+                        background: "#EFF6FF", color: "#0135FB",
+                        display: "flex", alignItems: "center", justifyContent: "center",
+                        marginBottom: 4
+                      }}>
+                        <Camera size={22} />
+                      </div>
+                      <div style={{ fontWeight: 800, fontSize: "0.86rem", color: "#0F172A" }}>
+                        Tap to upload product photo
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: "#64748B" }}>
+                        Take a photo with camera or choose from gallery (JPG, PNG)
+                      </div>
+                    </div>
+                  )}
+                </label>
+
+                {/* Optional toggle for URL input or quick presets */}
+                <div style={{ marginTop: 8 }}>
+                  <button
+                    type="button"
+                    onClick={() => setShowUrlInput(v => !v)}
+                    style={{
+                      background: "none", border: "none", color: "#0135FB",
+                      fontSize: "0.72rem", fontWeight: 700, cursor: "pointer", padding: 0
+                    }}
+                  >
+                    {showUrlInput ? "Hide image link options ▴" : "Or paste an image URL / use presets ▾"}
+                  </button>
+
+                  {showUrlInput && (
+                    <div style={{ marginTop: 8, padding: 10, background: "#F1F5F9", borderRadius: 10, border: "1px solid #E2E8F0" }}>
+                      <input
+                        type="url"
+                        placeholder="https://... direct image URL"
+                        value={form.image}
+                        onChange={e => setForm({ ...form, image: e.target.value })}
+                        style={{ width: "100%", padding: "7px 10px", borderRadius: 8, border: "1px solid #CBD5E1", fontSize: "0.8rem", outline: "none", boxSizing: "border-box", background: "white" }}
+                      />
+                      <div style={{ marginTop: 6, display: "flex", gap: 4, flexWrap: "wrap", alignItems: "center" }}>
+                        <span style={{ fontSize: "0.68rem", color: "#64748B", fontWeight: 700 }}>Quick sample items:</span>
+                        {PRESET_IMAGES.map(p => (
+                          <button
+                            key={p.label}
+                            type="button"
+                            onClick={() => setForm({ ...form, image: p.url })}
+                            style={{
+                              background: "#FFFFFF", border: "1px solid #CBD5E1", borderRadius: 6,
+                              padding: "2px 6px", fontSize: "0.68rem", fontWeight: 700, cursor: "pointer",
+                              color: "#334155"
+                            }}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Description */}
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: "0.78rem", fontWeight: 800, color: "#334155", display: "block", marginBottom: 4 }}>
+                  Description (Optional)
+                </label>
+                <textarea
+                  rows={2}
+                  placeholder="Tell customers about ingredients or taste..."
+                  value={form.description}
+                  onChange={e => setForm({ ...form, description: e.target.value })}
+                  style={{ width: "100%", padding: "8px 12px", borderRadius: 10, border: "1.5px solid #CBD5E1", fontSize: "0.85rem", outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+                />
+              </div>
+
+              <div style={{ background: "#EFF6FF", border: "1px solid #BFDBFE", borderRadius: 10, padding: "8px 12px", marginBottom: 16, fontSize: "0.74rem", color: "#1D4ED8" }}>
+                🔒 <strong>Approval Note:</strong> All items submitted by vendors are held in <em>Pending Review</em> and go live on ONN DA WAY only once approved by the Admin team.
+              </div>
+
+              <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  style={{ background: "#F1F5F9", border: "none", borderRadius: 10, padding: "10px 16px", fontWeight: 700, fontSize: "0.85rem", cursor: "pointer", color: "#475569" }}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submitting}
+                  style={{
+                    background: "#0135FB", color: "white", border: "none",
+                    borderRadius: 10, padding: "10px 20px", fontWeight: 800, fontSize: "0.85rem",
+                    cursor: submitting ? "not-allowed" : "pointer",
+                    boxShadow: "0 2px 8px rgba(1,53,251,0.3)"
+                  }}
+                >
+                  {submitting ? "Submitting..." : "Submit for Approval"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ─────────────────────────── MAIN PAGE ─────────────────────────── */
 export default function VendorPortalPage() {
   const [session, setSession] = useState<VendorSession | null>(null);
@@ -833,6 +1530,7 @@ export default function VendorPortalPage() {
         }}>
           {([
             { key: "orders", label: "Orders", icon: <Package size={16} /> },
+            { key: "menu", label: "My Menu", icon: <UtensilsCrossed size={16} /> },
             { key: "reports", label: "Reports", icon: <BarChart2 size={16} /> },
           ] as const).map(t => (
             <button
@@ -854,6 +1552,7 @@ export default function VendorPortalPage() {
         </div>
 
         {tab === "orders" && <OrdersTab session={session} />}
+        {tab === "menu" && <VendorMenuTab session={session} />}
         {tab === "reports" && <ReportsTab session={session} />}
 
         <div style={{ height: 60 }} />

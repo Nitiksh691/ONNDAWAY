@@ -7,7 +7,8 @@ import { Order } from "@/lib/types";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { clearActiveOrderId, getActiveOrderId } from "@/lib/activeOrder";
 import { getOrderMapsEmbedUrl } from "@/lib/maps";
-import { CheckCircle, MapPin, Clock, MessageCircle, Navigation, Phone } from "lucide-react";
+import { CheckCircle, MapPin, Clock, MessageCircle, Navigation, Phone, Compass } from "lucide-react";
+import { calculateDistanceKm } from "@/lib/geoUtils";
 import { SUPPORT_PHONE_DISPLAY, SUPPORT_TEL, COMPANY_BLURB, COMPANY_NAME } from "@/lib/company";
 import toast from "react-hot-toast";
 import Link from "next/link";
@@ -58,6 +59,40 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
   const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
   const [feedbackLoading, setFeedbackLoading] = useState(false);
   const chatScrollRef = useRef<HTMLDivElement>(null);
+  const [riderLocation, setRiderLocation] = useState<{ lat: number; lng: number; updatedAt?: string } | null>(null);
+  const [liveDistanceKm, setLiveDistanceKm] = useState<number | null>(null);
+
+  // Poll live rider location every 10s when order is out for delivery
+  useEffect(() => {
+    if (!orderId || order?.status !== "out_for_delivery") return;
+
+    const pollRiderLocation = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}/rider-location`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data.riderLocation?.lat && data.riderLocation?.lng) {
+            setRiderLocation(data.riderLocation);
+            if (data.customerLat && data.customerLng) {
+              const dist = calculateDistanceKm(
+                data.riderLocation.lat,
+                data.riderLocation.lng,
+                data.customerLat,
+                data.customerLng
+              );
+              setLiveDistanceKm(dist);
+            }
+          }
+        }
+      } catch {
+        // Background poll fail silently
+      }
+    };
+
+    pollRiderLocation();
+    const interval = setInterval(pollRiderLocation, 10000);
+    return () => clearInterval(interval);
+  }, [orderId, order?.status]);
 
 
 
@@ -94,25 +129,28 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
     
     if (order?.status === "delivered" || order?.status === "cancelled") return;
 
+    let isMounted = true;
     let timeoutId: NodeJS.Timeout;
     const setupSSE = () => {
+      if (!isMounted) return;
       const es = new EventSource("/api/orders/stream");
       eventSourceRef.current = es;
       es.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.type === "order_change" && data.documentKey?._id === orderId) {
+          if (data.type === "order_change" && data.documentKey?._id === orderId && isMounted) {
             fetchOrder();
           }
         } catch (e) {}
       };
       es.onerror = () => {
         es.close();
-        timeoutId = setTimeout(setupSSE, 5000);
+        if (isMounted) timeoutId = setTimeout(setupSSE, 5000);
       };
     };
     setupSSE();
     return () => {
+      isMounted = false;
       if (eventSourceRef.current) eventSourceRef.current.close();
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -315,7 +353,13 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
                     Live ETA
                   </div>
                   <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#0A0F2E" }}>
-                    {isOnWay ? "~5-10 Minutes" : "Preparing..."}
+                    {isOnWay ? (
+                      liveDistanceKm != null ? (
+                        liveDistanceKm < 0.3 ? "Arriving right now! 🛵" :
+                        liveDistanceKm < 1 ? `~${Math.max(2, Math.round(liveDistanceKm * 3.5))} mins (${Math.round(liveDistanceKm * 1000)}m away)` :
+                        `~${Math.round(liveDistanceKm * 3.5)} mins (${liveDistanceKm} km away)`
+                      ) : "~5-10 Minutes"
+                    ) : "Preparing..."}
                   </div>
                 </div>
                 {order.deliveryPersonName && isOnWay && (
@@ -327,14 +371,79 @@ export default function TrackOrderPage(props: { params: Promise<{ orderId: strin
               </div>
             )}
 
-            {/* ── Map Preview ── */}
-            {mapEmbed && !isDelivered && (
-              <div style={{ ...cardStyle, overflow: "hidden", animation: "fade-up 0.45s ease" }}>
-                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", gap: 8, borderBottom: "1px solid #f3f4f6" }}>
-                  <Navigation size={15} color="#0135FB" />
-                  <span style={{ fontWeight: 700, fontSize: "0.83rem", color: "#0A0F2E" }}>Your delivery pin</span>
+            {/* ── Interactive Live Rider & Delivery Map ── */}
+            {!isDelivered && (
+              <div style={{ ...cardStyle, overflow: "hidden", animation: "fade-up 0.45s ease", border: "1.5px solid #E2E8F0" }}>
+                <div style={{ padding: "12px 16px", display: "flex", alignItems: "center", justifyContent: "space-between", borderBottom: "1px solid #f3f4f6", background: "#F8FAFC" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <Compass size={16} color="#0135FB" />
+                    <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#0A0F2E" }}>
+                      {isOnWay && riderLocation ? "🛵 Live Rider Movement" : "📍 Delivery Destination"}
+                    </span>
+                  </div>
+                  {isOnWay && (
+                    <span style={{
+                      display: "inline-flex",
+                      alignItems: "center",
+                      gap: 5,
+                      fontSize: "0.72rem",
+                      fontWeight: 800,
+                      background: riderLocation ? "#ECFDF5" : "#EFF6FF",
+                      color: riderLocation ? "#059669" : "#0135FB",
+                      padding: "3px 9px",
+                      borderRadius: 999
+                    }}>
+                      <span style={{ width: 6, height: 6, borderRadius: "50%", background: riderLocation ? "#10B981" : "#0135FB", animation: "pulse-dot 1s ease-in-out infinite" }} />
+                      {riderLocation ? (liveDistanceKm != null ? `${liveDistanceKm < 1 ? Math.round(liveDistanceKm * 1000) + "m" : liveDistanceKm + "km"} away` : "GPS Connected") : "Connecting GPS..."}
+                    </span>
+                  )}
                 </div>
-                <iframe title="Delivery location" src={mapEmbed} width="100%" height="180" style={{ border: 0, display: "block" }} loading="lazy" />
+
+                <div style={{ position: "relative", width: "100%", height: 210, background: "#E2E8F0" }}>
+                  <iframe
+                    title="Live Tracking Map"
+                    src={(() => {
+                      if (isOnWay && riderLocation?.lat && riderLocation?.lng) {
+                        const custLat = order.latitude ?? 28.7499;
+                        const custLng = order.longitude ?? 77.1170;
+                        const minLat = Math.min(custLat, riderLocation.lat) - 0.004;
+                        const maxLat = Math.max(custLat, riderLocation.lat) + 0.004;
+                        const minLng = Math.min(custLng, riderLocation.lng) - 0.005;
+                        const maxLng = Math.max(custLng, riderLocation.lng) + 0.005;
+                        return `https://www.openstreetmap.org/export/embed.html?bbox=${minLng}%2C${minLat}%2C${maxLng}%2C${maxLat}&layer=mapnik&marker=${riderLocation.lat}%2C${riderLocation.lng}`;
+                      }
+                      return mapEmbed || `https://www.openstreetmap.org/export/embed.html?bbox=77.109%2C28.744%2C77.125%2C28.756&layer=mapnik&marker=${order.latitude ?? 28.7499}%2C${order.longitude ?? 77.1170}`;
+                    })()}
+                    style={{ width: "100%", height: "100%", border: 0 }}
+                    loading="lazy"
+                  />
+                  {/* Floating Status Banner */}
+                  <div style={{
+                    position: "absolute",
+                    bottom: 10,
+                    left: 10,
+                    right: 10,
+                    background: "rgba(15, 23, 42, 0.88)",
+                    backdropFilter: "blur(4px)",
+                    borderRadius: 10,
+                    padding: "7px 12px",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    fontSize: "0.74rem",
+                  }}>
+                    <div style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", marginRight: 6 }}>
+                      <span style={{ color: "#60A5FA", fontWeight: 700 }}>To: </span>
+                      <span style={{ fontWeight: 600 }}>{order.location}</span>
+                    </div>
+                    {isOnWay && (
+                      <span style={{ color: "#4ADE80", fontWeight: 800, flexShrink: 0, fontSize: "0.7rem" }}>
+                        {riderLocation ? "● Live Rider GPS" : "Awaiting Rider"}
+                      </span>
+                    )}
+                  </div>
+                </div>
               </div>
             )}
 
