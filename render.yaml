@@ -5,14 +5,13 @@ services:
     rootDir: server
     buildCommand: npm install && npm run build
     startCommand: npm run start
+    healthCheckPath: /api/health
+    autoDeploy: true
     envVars:
       - key: NODE_ENV
         value: production
-      - key: PORT
-        value: 10000           # Render assigns its own port via $PORT, but set default
+      # PORT is auto-injected by Render — do NOT set it here
       - key: MONGO_URI
-        sync: false            # Set this in Render dashboard (secret)
+        sync: false   # Add this secret in the Render dashboard
       - key: NEXTJS_URL
-        sync: false            # e.g. https://onndaway.vercel.app
-    healthCheckPath: /api/health
-    autoDeploy: true
+        sync: false   # e.g. https://onndaway.vercel.app
