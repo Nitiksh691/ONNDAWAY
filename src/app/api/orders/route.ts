@@ -106,9 +106,7 @@ const _POST = async (req: NextRequest) => {
   // Re-compute total server-side from DB prices (never trust client-supplied total)
   const dbItemsCOD = await import("@/models/MenuItem").then(m => m.default.find({ _id: { $in: itemIds } }).lean());
   let serverSubtotal = 0;
-  let grocerySubtotal = 0;
-  let hasGroceryItems = false;
-  let hasCoffeeOrMojito = false;
+  let hasOnndawayFoodOrCoffee = false;
 
   for (const cartItem of normalizedItems) {
     const dbItem = (dbItemsCOD as Record<string, unknown>[]).find((d: Record<string, unknown>) => (d._id as { toString(): string }).toString() === cartItem.item.id);
@@ -134,37 +132,43 @@ const _POST = async (req: NextRequest) => {
     const lineTotal = unitPrice * cartItem.quantity;
     serverSubtotal += lineTotal;
 
-    // Check if item is grocery/munchies (exempt: coffee and mojito)
+    // Check if item is Onndaway food or coffee
     const cat = ((dbItem.category as string) || "").toLowerCase();
     const itemName = ((dbItem.name as string) || "").toLowerCase();
-    const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
-    if (isExempt) {
-      hasCoffeeOrMojito = true;
-    } else {
-      hasGroceryItems = true;
-      grocerySubtotal += lineTotal;
+    const world = dbItem.world as string | undefined;
+    const isConsignment = !!dbItem.isConsignment;
+
+    if (
+      cat.includes("coffee") ||
+      cat.includes("mojito") ||
+      cat.includes("beverage") ||
+      cat.includes("drink") ||
+      world === "food" ||
+      itemName.includes("coffee") ||
+      itemName.includes("mojito") ||
+      (!world && !isConsignment)
+    ) {
+      hasOnndawayFoodOrCoffee = true;
     }
   }
 
-  // Enforce minimum overall order value if configured
-  const minOrder = settings?.minOrderValue || 0;
-  if (minOrder > 0 && serverSubtotal < minOrder) {
+  // Enforce single minimum order value (default 69, exempt: food & coffee)
+  const minOrder = (settings?.minOrderValue !== undefined && settings.minOrderValue > 0) ? settings.minOrderValue : 69;
+  if (!hasOnndawayFoodOrCoffee && minOrder > 0 && serverSubtotal < minOrder) {
     return NextResponse.json(
-      { error: `Minimum order amount for delivery is ₹${minOrder}. Please add ₹${(minOrder - serverSubtotal).toFixed(0)} more to place your order.` },
+      { error: `Minimum order amount for delivery is ₹${minOrder}. Please add ₹${(minOrder - serverSubtotal).toFixed(0)} more (or add any coffee/food) to place your order.` },
       { status: 400 }
     );
   }
 
-  // Enforce minimum grocery order value if configured
-  const minGrocery = settings?.minGroceryOrderValue || 0;
-  if (minGrocery > 0 && hasGroceryItems && !hasCoffeeOrMojito && grocerySubtotal < minGrocery) {
-    return NextResponse.json(
-      { error: `Minimum order value for grocery items is ₹${minGrocery}. Add ₹${(minGrocery - grocerySubtotal).toFixed(0)} more groceries to place your order.` },
-      { status: 400 }
-    );
-  }
-
-  const deliveryFee = settings?.deliveryFee || 0;
+  // Delivery fee calculation:
+  // Onndaway food & coffee ALWAYS get free delivery!
+  // Other orders get free delivery if subtotal >= freeDelivery minAmount
+  const freeDelThreshold = settings?.homeLayout?.freeDelivery?.enabled !== false
+    ? (Number(settings?.homeLayout?.freeDelivery?.minAmount) || 199)
+    : 0;
+  const isFreeDelivery = hasOnndawayFoodOrCoffee || (freeDelThreshold > 0 && serverSubtotal >= freeDelThreshold);
+  const deliveryFee = isFreeDelivery ? 0 : (settings?.deliveryFee || 20);
   let finalDiscount = 0;
   if (couponCode) {
     const Coupon = (await import("@/models/Coupon")).default;

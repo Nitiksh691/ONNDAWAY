@@ -1,3 +1,7 @@
+packages:
+  - '.'        # Next.js app (root)
+  - 'server'   # Node.js server
+
 ignoredBuiltDependencies:
   - sharp
   - unrs-resolver

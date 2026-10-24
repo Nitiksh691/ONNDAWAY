@@ -393,7 +393,7 @@ export default function ItemPage() {
               </div>
 
               <div className="main-image-box">
-                <Image src={images[activeImageIndex]} alt={item.name} fill sizes="(max-width: 768px) 100vw, 600px" style={{ objectFit: "contain", padding: "20px" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+                <Image src={images[activeImageIndex]} alt={item.name} fill sizes="(max-width: 768px) 100vw, 600px" unoptimized={typeof images[activeImageIndex] === "string" && images[activeImageIndex].includes("cloudinary.com")} style={{ objectFit: "contain", padding: "20px" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
                 {!item.available && !item.isLaunchingSoon && (
                   <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
                     <div style={{ background: "#EF4444", color: "#fff", padding: "12px 24px", borderRadius: "12px", fontWeight: 900, letterSpacing: "1px", fontSize: "1.1rem", boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)" }}>CURRENTLY UNAVAILABLE</div>

@@ -44,7 +44,7 @@ const SettingsSchema = new Schema({
   heroSectionEnabled: { type: Boolean, default: true },
 
   // ── Minimum order value for delivery (overall cart) ──
-  minOrderValue: { type: Number, default: 0 },
+  minOrderValue: { type: Number, default: 69 },
 
   // ── Minimum order value for groceries (exempts coffee/mojitos) ──
   minGroceryOrderValue: { type: Number, default: 0 },

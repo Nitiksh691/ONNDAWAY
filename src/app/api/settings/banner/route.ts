@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     const settings = await Settings.findOneAndUpdate(
       {},
       { $set: updateFields },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: "after" }
     );
 
     return NextResponse.json({
