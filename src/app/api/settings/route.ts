@@ -11,9 +11,13 @@ const _GET = async () => {
     const cached = appCache.get<object>(CACHE_KEYS.SETTINGS);
     if (cached) return NextResponse.json(cached);
 
-    let settings = await Settings.findOne().lean();
+    let settings: any = await Settings.findOne().lean();
     if (!settings) {
-      settings = await Settings.create({ deliveryFee: 20 });
+      settings = await Settings.create({ deliveryFee: 20, minOrderValue: 69 });
+    } else if (settings.minOrderValue === undefined || settings.minOrderValue === 0) {
+      await Settings.updateOne({ _id: settings._id }, { $set: { minOrderValue: 69, minGroceryOrderValue: 0 } });
+      settings.minOrderValue = 69;
+      settings.minGroceryOrderValue = 0;
     }
     appCache.set(CACHE_KEYS.SETTINGS, settings, CACHE_TTL.SETTINGS);
     return NextResponse.json(settings);
@@ -47,33 +51,39 @@ const _POST = async (req: NextRequest) => {
       homeLayout,
     } = body;
 
-    let settings = await Settings.findOne();
-    if (settings) {
-      if (deliveryFee !== undefined) settings.deliveryFee = deliveryFee;
-      if (maintenanceMode !== undefined) settings.maintenanceMode = maintenanceMode;
-      if (maintenancePhone !== undefined) settings.maintenancePhone = maintenancePhone;
-      if (maintenanceMessage !== undefined) settings.maintenanceMessage = maintenanceMessage;
-      if (kitchenClosed !== undefined) settings.kitchenClosed = kitchenClosed;
-      if (kitchenOpenTime !== undefined) settings.kitchenOpenTime = kitchenOpenTime;
-      if (waitlistMode !== undefined) settings.waitlistMode = waitlistMode;
-      if (launchingSoonMode !== undefined) settings.launchingSoonMode = launchingSoonMode;
-      if (onlinePaymentEnabled !== undefined) settings.onlinePaymentEnabled = onlinePaymentEnabled;
-      if (codEnabled !== undefined) settings.codEnabled = codEnabled;
-      if (ordersPaused !== undefined) settings.ordersPaused = ordersPaused;
-      if (heroSectionEnabled !== undefined) settings.heroSectionEnabled = heroSectionEnabled;
-      if (minOrderValue !== undefined) settings.minOrderValue = minOrderValue;
-      if (minGroceryOrderValue !== undefined) settings.minGroceryOrderValue = minGroceryOrderValue;
-      if (homeLayout !== undefined) settings.homeLayout = homeLayout;
-      settings.updatedAt = new Date();
-      await settings.save();
-    } else {
-      settings = await Settings.create({ deliveryFee, maintenanceMode, maintenancePhone, maintenanceMessage, kitchenClosed, kitchenOpenTime, waitlistMode, launchingSoonMode, onlinePaymentEnabled, codEnabled, ordersPaused, heroSectionEnabled, minOrderValue, minGroceryOrderValue, homeLayout });
+    // Build update object — only include defined fields
+    const update: Record<string, unknown> = { updatedAt: new Date() };
+    if (deliveryFee !== undefined) update.deliveryFee = deliveryFee;
+    if (maintenanceMode !== undefined) update.maintenanceMode = maintenanceMode;
+    if (maintenancePhone !== undefined) update.maintenancePhone = maintenancePhone;
+    if (maintenanceMessage !== undefined) update.maintenanceMessage = maintenanceMessage;
+    if (kitchenClosed !== undefined) update.kitchenClosed = kitchenClosed;
+    if (kitchenOpenTime !== undefined) update.kitchenOpenTime = kitchenOpenTime;
+    if (waitlistMode !== undefined) update.waitlistMode = waitlistMode;
+    if (launchingSoonMode !== undefined) update.launchingSoonMode = launchingSoonMode;
+    if (onlinePaymentEnabled !== undefined) update.onlinePaymentEnabled = onlinePaymentEnabled;
+    if (codEnabled !== undefined) update.codEnabled = codEnabled;
+    if (ordersPaused !== undefined) update.ordersPaused = ordersPaused;
+    if (heroSectionEnabled !== undefined) update.heroSectionEnabled = heroSectionEnabled;
+    if (minOrderValue !== undefined) {
+      update.minOrderValue = minOrderValue;
+      update.minGroceryOrderValue = 0;
     }
+    if (homeLayout !== undefined) update.homeLayout = homeLayout;
+
+    // Single atomic op — much faster than findOne+save, avoids 30s timeout
+    const settings = await Settings.findOneAndUpdate(
+      {},
+      { $set: update },
+      { upsert: true, returnDocument: "after", lean: true, maxTimeMS: 8000 }
+    );
+
     // Bust both caches so all clients get fresh data immediately
     appCache.invalidate(CACHE_KEYS.SETTINGS);
     appCache.invalidate("settings_status");
     return NextResponse.json(settings);
   } catch (error) {
+    console.error("Settings save error:", error);
     return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
   }
 };

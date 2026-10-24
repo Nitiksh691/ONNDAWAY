@@ -1,0 +1,7 @@
+# services/
+# Place business logic here — keep controllers thin.
+# Controllers call services, services talk to models/DB.
+#
+# Example:
+#   rider.service.ts   → getRiderLocation(), updateRiderLocation()
+#   order.service.ts   → assignOrder(), trackOrder()

@@ -6,7 +6,7 @@ import { useApp } from "@/lib/context";
 import { setActiveOrderId, getActiveOrderId } from "@/lib/activeOrder";
 import { STORAGE_KEYS } from "@/lib/constants";
 import { normalizeCartLines } from "@/lib/orderLine";
-import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle } from "lucide-react";
+import { Minus, Plus, Trash2, MapPin, Tag, ArrowRight, ArrowLeft, CheckCircle, Sparkles } from "lucide-react";
 import toast from "react-hot-toast";
 import Link from "next/link";
 import RazorpayButton from "@/components/RazorpayButton";
@@ -98,8 +98,8 @@ export default function CartPage() {
   const [placedOrderId, setPlacedOrderId] = useState<string | null>(null);
   const [placing, setPlacing] = useState(false);
   const [deliveryFee, setDeliveryFee] = useState(20);
-  const [minOrderValue, setMinOrderValue] = useState(0);
-  const [minGroceryOrderValue, setMinGroceryOrderValue] = useState(0);
+  const [minOrderValue, setMinOrderValue] = useState(69);
+  const [freeDeliveryConfig, setFreeDeliveryConfig] = useState<{ enabled: boolean; minAmount: number } | null>(null);
   const [onlinePaymentEnabled, setOnlinePaymentEnabled] = useState(true);
   const [codEnabled, setCodEnabled] = useState(false);
   const [paymentFailures, setPaymentFailures] = useState(0);
@@ -196,7 +196,12 @@ export default function CartPage() {
           if (data.onlinePaymentEnabled !== undefined) setOnlinePaymentEnabled(data.onlinePaymentEnabled);
           if (data.codEnabled !== undefined) setCodEnabled(data.codEnabled);
           if (data.minOrderValue !== undefined) setMinOrderValue(data.minOrderValue);
-          if (data.minGroceryOrderValue !== undefined) setMinGroceryOrderValue(data.minGroceryOrderValue);
+          if (data.homeLayout?.freeDelivery) {
+            setFreeDeliveryConfig({
+              enabled: data.homeLayout.freeDelivery.enabled !== false,
+              minAmount: Number(data.homeLayout.freeDelivery.minAmount) || 199,
+            });
+          }
         }
       })
       .catch(err => console.error("Failed to load settings:", err));
@@ -224,37 +229,43 @@ export default function CartPage() {
     return diffHours > 0 && diffHours <= 3;
   };
 
-  // Check minimum overall order value
-  const isMinOrderMet = minOrderValue <= 0 || cartTotal >= minOrderValue;
-  const minOrderShortfall = minOrderValue > 0 && cartTotal < minOrderValue
-    ? minOrderValue - cartTotal
-    : 0;
-  const minOrderPct = minOrderValue > 0 ? Math.min(100, Math.round((cartTotal / minOrderValue) * 100)) : 100;
-
-  // Check if cart contains any coffee or mojito
-  const hasCoffeeOrMojito = cart.some(c => {
+  // Check if cart contains any Onndaway food, coffee, or beverages (100% exempt from minimum order & gets free delivery!)
+  const hasOnndawayFoodOrCoffee = cart.some(c => {
     const cat = (c.item?.category || "").toLowerCase();
     const itemName = (c.item?.name || "").toLowerCase();
-    return cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
+    const world = c.item?.world;
+    return (
+      cat.includes("coffee") ||
+      cat.includes("mojito") ||
+      cat.includes("beverage") ||
+      cat.includes("drink") ||
+      world === "food" ||
+      itemName.includes("coffee") ||
+      itemName.includes("mojito") ||
+      (!world && !c.item?.isConsignment)
+    );
   });
 
-  // Check minimum grocery order value (exempt if coffee or mojito in cart)
-  const groceryItems = cart.filter(c => {
-    const cat = (c.item?.category || "").toLowerCase();
-    const itemName = (c.item?.name || "").toLowerCase();
-    const isExempt = cat.includes("coffee") || cat.includes("mojito") || itemName.includes("coffee") || itemName.includes("mojito");
-    return !isExempt;
-  });
-
-  const grocerySubtotal = groceryItems.reduce((acc, c) => acc + (c.unitPrice ?? c.item?.price ?? 0) * c.quantity, 0);
-  const hasGroceryItems = groceryItems.length > 0;
-  // If cart has any coffee or mojito, NO minimum grocery order limit applies!
-  const isGroceryMinMet = hasCoffeeOrMojito || minGroceryOrderValue <= 0 || !hasGroceryItems || grocerySubtotal >= minGroceryOrderValue;
-  const groceryShortfall = !hasCoffeeOrMojito && minGroceryOrderValue > 0 && hasGroceryItems && grocerySubtotal < minGroceryOrderValue
-    ? minGroceryOrderValue - grocerySubtotal
+  // Unified single minimum order value:
+  // If cart contains Onndaway food or coffee, the minimum order limit is completely WAIVED!
+  const targetMinOrder = hasOnndawayFoodOrCoffee ? 0 : (minOrderValue || 69);
+  const isMinOrderMet = targetMinOrder <= 0 || cartTotal >= targetMinOrder;
+  const minOrderShortfall = !hasOnndawayFoodOrCoffee && targetMinOrder > 0 && cartTotal < targetMinOrder
+    ? targetMinOrder - cartTotal
     : 0;
+  const minOrderPct = targetMinOrder > 0 ? Math.min(100, Math.round((cartTotal / targetMinOrder) * 100)) : 100;
 
-  const canPlace = cart.length > 0 && location.trim().length > 0 && isPhoneValid && name.trim().length > 0 && isTimeValid() && isGroceryMinMet && isMinOrderMet;
+  // Free delivery check:
+  // Onndaway food & coffee ALWAYS get free delivery!
+  // Non-food items get free delivery if cart total >= free delivery min amount (e.g. ₹199)
+  const isFreeDeliveryEligible = hasOnndawayFoodOrCoffee || (
+    freeDeliveryConfig?.enabled !== false &&
+    freeDeliveryConfig?.minAmount !== undefined &&
+    cartTotal >= freeDeliveryConfig.minAmount
+  );
+  const effectiveDeliveryFee = isFreeDeliveryEligible ? 0 : deliveryFee;
+
+  const canPlace = cart.length > 0 && location.trim().length > 0 && isPhoneValid && name.trim().length > 0 && isTimeValid() && isMinOrderMet;
 
   const handleApplyCoupon = async () => {
     const code = couponCode.toUpperCase();
@@ -287,7 +298,7 @@ export default function CartPage() {
   const finalDiscount = appliedCoupon
     ? appliedCoupon.type === "percentage" ? (cartTotal * appliedCoupon.discount) / 100 : appliedCoupon.discount
     : 0;
-  const grandTotal = Math.max(0, cartTotal - finalDiscount + deliveryFee);
+  const grandTotal = Math.max(0, cartTotal - finalDiscount + effectiveDeliveryFee);
 
   const prepareOrderPayload = () => {
     let locData: any = null;
@@ -838,9 +849,29 @@ export default function CartPage() {
                 <span style={{ color: "#6B7280" }}>Item Total</span>
                 <span style={{ fontWeight: 600, color: "#0A0F2E" }}>₹{cartTotal}</span>
               </div>
-              <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                 <span style={{ color: "#6B7280" }}>Delivery Fee</span>
-                <span style={{ fontWeight: 600, color: "#0A0F2E" }}>₹{deliveryFee}</span>
+                {effectiveDeliveryFee === 0 ? (
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    {deliveryFee > 0 && (
+                      <span style={{ textDecoration: "line-through", color: "#9CA3AF", fontSize: "0.85rem" }}>
+                        ₹{deliveryFee}
+                      </span>
+                    )}
+                    <span style={{
+                      fontWeight: 800,
+                      color: "#16A34A",
+                      background: "#DCFCE7",
+                      padding: "2px 8px",
+                      borderRadius: 6,
+                      fontSize: "0.78rem"
+                    }}>
+                      {hasOnndawayFoodOrCoffee ? "FREE (Food & Coffee)" : "FREE"}
+                    </span>
+                  </div>
+                ) : (
+                  <span style={{ fontWeight: 600, color: "#0A0F2E" }}>₹{deliveryFee}</span>
+                )}
               </div>
               {appliedCoupon && (
                 <div style={{ display: "flex", justifyContent: "space-between", color: "#22C55E" }}>
@@ -855,8 +886,54 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* ── MINIMUM ORDER AMOUNT FOR DELIVERY (ANIMATED PROGRESS & SIGN) ── */}
-            {minOrderValue > 0 && (
+            {/* ── UNIFIED MINIMUM ORDER & FREE DELIVERY BAR (ABOVE PAYMENT) ── */}
+            {hasOnndawayFoodOrCoffee ? (
+              <div style={{
+                marginTop: "16px",
+                background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)",
+                border: "1.5px solid rgba(52, 211, 153, 0.45)",
+                borderRadius: 16,
+                padding: "14px 18px",
+                boxShadow: "0 6px 20px rgba(5, 150, 105, 0.22)",
+                display: "flex",
+                flexDirection: "column",
+                gap: 8,
+              }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                  <span style={{ color: "#34D399", display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: "0.86rem" }}>
+                    <Sparkles size={16} color="#34D399" style={{ flexShrink: 0 }} />
+                    <span>FREE DELIVERY &amp; NO MIN ORDER ON FOOD &amp; COFFEE!</span>
+                  </span>
+                  <span style={{
+                    background: "rgba(52, 211, 153, 0.2)", color: "#34D399",
+                    padding: "3px 9px", borderRadius: 999,
+                    fontWeight: 900, fontSize: "0.72rem", flexShrink: 0
+                  }}>
+                    ☕ Special Unlocked
+                  </span>
+                </div>
+
+                {/* Bold 10px neon progress rail */}
+                <div style={{
+                  height: 10,
+                  borderRadius: 99,
+                  background: "rgba(255, 255, 255, 0.15)",
+                  overflow: "hidden",
+                  width: "100%",
+                }}>
+                  <div style={{
+                    height: "100%",
+                    width: "100%",
+                    borderRadius: 99,
+                    background: "linear-gradient(90deg, #10B981, #34D399, #6EE7B7)",
+                    boxShadow: "0 0 12px rgba(52,211,153,0.9), 0 0 4px rgba(110,231,183,0.5)",
+                  }} />
+                </div>
+                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
+                  Enjoy ₹0 delivery fee and zero minimum order requirements on this order!
+                </div>
+              </div>
+            ) : targetMinOrder > 0 ? (
               <div style={{ marginTop: "16px" }}>
                 {!isMinOrderMet ? (
                   <div style={{
@@ -868,25 +945,15 @@ export default function CartPage() {
                     position: "relative",
                     overflow: "hidden"
                   }}>
-                    <style>{`
-                      @keyframes pulseBar {
-                        0%, 100% { opacity: 1; }
-                        50% { opacity: 0.82; }
-                      }
-                      @keyframes bounceScooter {
-                        0%, 100% { transform: translateY(0); }
-                        50% { transform: translateY(-3px); }
-                      }
-                    `}</style>
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
                       <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                        <span style={{ fontSize: "1.4rem", display: "inline-block", animation: "bounceScooter 1.4s ease-in-out infinite" }}>🛵</span>
+                        <span style={{ fontSize: "1.3rem" }}>🛵</span>
                         <div>
                           <div style={{ fontWeight: 900, fontSize: "0.92rem", color: "#1E3A8A", textTransform: "uppercase", letterSpacing: "0.3px" }}>
-                            Min. Order for Delivery: ₹{minOrderValue}
+                            Min. Order for Delivery: ₹{targetMinOrder}
                           </div>
                           <div style={{ fontSize: "0.78rem", color: "#1D4ED8", fontWeight: 700 }}>
-                            Current cart: ₹{cartTotal.toFixed(0)} of ₹{minOrderValue}
+                            Current cart: ₹{cartTotal.toFixed(0)} of ₹{targetMinOrder}
                           </div>
                         </div>
                       </div>
@@ -908,13 +975,12 @@ export default function CartPage() {
                         borderRadius: 999,
                         transition: "width 0.4s ease-in-out",
                         boxShadow: "0 0 10px rgba(37, 99, 235, 0.6)",
-                        animation: "pulseBar 2s infinite ease-in-out"
                       }} />
                     </div>
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 8 }}>
                       <span style={{ fontSize: "0.82rem", color: "#1E40AF", fontWeight: 800 }}>
-                        ⚡ Add ₹{minOrderShortfall.toFixed(0)} more to complete order
+                        ⚡ Add ₹{minOrderShortfall.toFixed(0)} more or add any coffee/food
                       </span>
                       <Link href="/menu" style={{
                         fontSize: "0.78rem", fontWeight: 800, color: "#FFFFFF",
@@ -927,96 +993,53 @@ export default function CartPage() {
                   </div>
                 ) : (
                   <div style={{
-                    background: "#F0FDF4",
-                    border: "1.5px solid #86EFAC",
-                    borderRadius: 14,
-                    padding: "12px 16px",
+                    background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)",
+                    border: "1.5px solid rgba(52, 211, 153, 0.45)",
+                    borderRadius: 16,
+                    padding: "14px 18px",
+                    boxShadow: "0 6px 20px rgba(5, 150, 105, 0.22)",
                     display: "flex",
-                    alignItems: "center",
-                    gap: 10,
-                    color: "#166534",
-                    fontSize: "0.85rem",
-                    fontWeight: 800,
-                    boxShadow: "0 2px 8px rgba(34,197,94,0.12)"
+                    flexDirection: "column",
+                    gap: 8,
                   }}>
-                    <CheckCircle size={20} color="#16A34A" />
-                    <div>
-                      <div>Minimum order requirement met (₹{cartTotal.toFixed(0)} / ₹{minOrderValue})!</div>
-                      <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#15803D" }}>Ready for campus delivery.</div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* ── MINIMUM GROCERY ORDER PROGRESS & ANIMATION ── */}
-            {minGroceryOrderValue > 0 && hasGroceryItems && (
-              <div style={{ marginTop: "16px" }}>
-                {!isGroceryMinMet ? (
-                  <div style={{
-                    background: "linear-gradient(135deg, #FFFBEB 0%, #FEF3C7 100%)",
-                    border: "1.5px solid #FCD34D",
-                    borderRadius: 14,
-                    padding: "14px 16px",
-                    boxShadow: "0 4px 14px rgba(245,158,11,0.12)",
-                  }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                        <span style={{ fontSize: "1.1rem" }}>🛒</span>
-                        <span style={{ fontWeight: 800, fontSize: "0.85rem", color: "#92400E" }}>
-                          Min. Grocery Order: ₹{minGroceryOrderValue}
-                        </span>
-                      </div>
-                      <span style={{ fontWeight: 900, fontSize: "0.82rem", color: "#B45309" }}>
-                        ₹{grocerySubtotal.toFixed(0)} / ₹{minGroceryOrderValue}
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                      <span style={{ color: "#34D399", display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: "0.86rem" }}>
+                        <Sparkles size={16} color="#34D399" style={{ flexShrink: 0 }} />
+                        <span>MINIMUM ORDER REQUIREMENT MET! 🎉</span>
+                      </span>
+                      <span style={{
+                        background: "rgba(52, 211, 153, 0.2)", color: "#34D399",
+                        padding: "3px 9px", borderRadius: 999,
+                        fontWeight: 900, fontSize: "0.72rem", flexShrink: 0
+                      }}>
+                        ₹{cartTotal.toFixed(0)} / ₹{targetMinOrder}
                       </span>
                     </div>
-
-                    {/* Animated Progress Bar */}
-                    <div style={{ width: "100%", height: 8, background: "#FDE68A", borderRadius: 999, overflow: "hidden" }}>
+                    <div style={{
+                      height: 10,
+                      borderRadius: 99,
+                      background: "rgba(255, 255, 255, 0.15)",
+                      overflow: "hidden",
+                      width: "100%",
+                    }}>
                       <div style={{
-                        width: `${Math.min(100, (grocerySubtotal / minGroceryOrderValue) * 100)}%`,
                         height: "100%",
-                        background: "linear-gradient(90deg, #F59E0B, #EA580C)",
-                        borderRadius: 999,
-                        transition: "width 0.4s ease-in-out",
+                        width: "100%",
+                        borderRadius: 99,
+                        background: "linear-gradient(90deg, #10B981, #34D399, #6EE7B7)",
+                        boxShadow: "0 0 12px rgba(52,211,153,0.9)",
                       }} />
                     </div>
-
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8 }}>
-                      <span style={{ fontSize: "0.78rem", color: "#B45309", fontWeight: 700 }}>
-                        ⚡ Add ₹{groceryShortfall.toFixed(0)} more groceries to order
-                      </span>
-                      <Link href="/menu?world=munchies" style={{ fontSize: "0.78rem", fontWeight: 800, color: "#0135FB", textDecoration: "underline" }}>
-                        + Browse items →
-                      </Link>
+                    <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
+                      Minimum order requirement met! Ready for campus delivery.
                     </div>
-                    <div style={{ fontSize: "0.68rem", color: "#78350F", marginTop: 4, opacity: 0.85 }}>
-                      ☕ Coffee &amp; Mojitos are exempt and do not have any minimum order limit.
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{
-                    background: "#F0FDF4",
-                    border: "1.5px solid #BBF7D0",
-                    borderRadius: 14,
-                    padding: "10px 14px",
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 8,
-                    color: "#166534",
-                    fontSize: "0.82rem",
-                    fontWeight: 700,
-                  }}>
-                    <CheckCircle size={17} color="#22C55E" />
-                    <span>{hasCoffeeOrMojito ? "☕ Coffee/Mojito in cart: Grocery minimum order unlocked (no min limit applied)!" : `Grocery minimum order reached (₹${grocerySubtotal.toFixed(0)} / ₹${minGroceryOrderValue})! Ready for checkout.`}</span>
                   </div>
                 )}
               </div>
-            )}
+            ) : null}
 
-            {/* Minimum order requirement warning notice above payment buttons */}
-            {(!isMinOrderMet || !isGroceryMinMet) && (
+            {/* Warning notice when payment is disabled */}
+            {!isMinOrderMet && (
               <div style={{
                 marginTop: "16px",
                 padding: "12px 14px",
@@ -1032,10 +1055,7 @@ export default function CartPage() {
               }}>
                 <span style={{ fontSize: "1.1rem" }}>🚫</span>
                 <span>
-                  {!isMinOrderMet
-                    ? `Payment is disabled: Minimum order value is ₹${minOrderValue}. Please add ₹${minOrderShortfall.toFixed(0)} more to proceed.`
-                    : `Payment is disabled: Minimum grocery order value is ₹${minGroceryOrderValue}. Please add ₹${groceryShortfall.toFixed(0)} more.`
-                  }
+                  Payment is disabled: Minimum order value is ₹{targetMinOrder}. Please add ₹{minOrderShortfall.toFixed(0)} more (or add any coffee/food) to proceed.
                 </span>
               </div>
             )}

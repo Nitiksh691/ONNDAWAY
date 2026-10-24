@@ -120,7 +120,7 @@ function SizePicker({ item, onClose, onAdd }: {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             {item.image ? (
               <div style={{ width: 44, height: 44, borderRadius: 12, overflow: "hidden", position: "relative", flexShrink: 0, border: "1px solid #E2E8F0" }}>
-                <Image src={item.image} alt={item.name} fill sizes="44px" style={{ objectFit: "cover" }} />
+                <Image src={item.image} alt={item.name} fill sizes="44px" unoptimized={typeof item.image === "string" && item.image.includes("cloudinary.com")} style={{ objectFit: "cover" }} />
               </div>
             ) : (
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "#EFF6FF", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem" }}>☕</div>
@@ -292,7 +292,7 @@ const FoodCard = ({
           {/* Image */}
           <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
             {!imgError ? (
-              <Image src={item.image} alt={item.name} fill sizes="90px" style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} priority={priority} />
+              <Image src={item.image} alt={item.name} fill sizes="90px" unoptimized={typeof item.image === "string" && item.image.includes("cloudinary.com")} style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} priority={priority} />
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
@@ -397,6 +397,7 @@ const FoodCard = ({
                 alt={item.name}
                 fill
                 sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
+                unoptimized={typeof item.image === "string" && item.image.includes("cloudinary.com")}
                 style={{ objectFit: "cover" }}
                 onError={() => setImgError(true)}
                 onContextMenu={e => e.preventDefault()}

@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, SkipForward, SkipBack, Square, Music2, ListMusic, X, ChevronDown, ChevronUp } from "lucide-react";
+import { Play, Pause, SkipForward, SkipBack, Square, Music2, ListMusic, X } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { usePathname } from "next/navigation";
 import { getActiveOrderId } from "@/lib/activeOrder";
@@ -26,29 +26,43 @@ export default function MusicPlayer() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentIdx, setCurrentIdx] = useState(0);
   const [isMounted, setIsMounted] = useState(false);
-  const [isCollapsed, setIsCollapsed] = useState(false); // mobile only
   const [showList, setShowList] = useState(false);
-  const [expanded, setExpanded] = useState(false); // desktop: show full card
+  const [expanded, setExpanded] = useState(false);
   const [progress, setProgress] = useState(0);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [isDismissed, setIsDismissed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const progressRef = useRef<HTMLDivElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
 
   const handleDismiss = () => {
     audioRef.current?.pause();
     setIsPlaying(false);
     setIsDismissed(true);
+    setExpanded(false);
     window.dispatchEvent(new CustomEvent("otw:music-dismissed"));
   };
+
+  // Close popup when clicking outside (NO backdrop overlay, NO screen blur)
+  useEffect(() => {
+    if (!expanded) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (wrapRef.current && !wrapRef.current.contains(e.target as Node)) {
+        setExpanded(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("touchstart", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("touchstart", handleClickOutside);
+    };
+  }, [expanded]);
 
   useEffect(() => {
     const check = () => {
       const isDelivery = profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"));
-      if (isDelivery) {
-        setHasActiveOrder(false);
-        return;
-      }
+      if (isDelivery) { setHasActiveOrder(false); return; }
       setHasActiveOrder(!!getActiveOrderId());
     };
     check();
@@ -62,7 +76,7 @@ export default function MusicPlayer() {
 
   useEffect(() => { setIsMounted(true); }, []);
 
-  // ── Auto-play on first user interaction (browsers require a gesture) ──────────
+  // Auto-play on first user interaction
   useEffect(() => {
     if (!isMounted) return;
     const start = () => {
@@ -120,24 +134,23 @@ export default function MusicPlayer() {
   const track = TRACKS[currentIdx];
   const isCartPage = pathname === "/cart";
   const showCheckoutBar = cartCount > 0 && !isCartPage;
-
-  // ── Mobile & Desktop offset calculation ──
-  // The Track bar sits directly over the bottom bar/checkout page (compact 36px).
-  // Music player sits directly ABOVE the Track bar (Track bar is below the music layer).
   const showTrackBar = hasActiveOrder && !pathname.startsWith("/track/");
-  const mobileOffset = isCartPage
-    ? (showTrackBar ? "40px" : "0px")
+
+  // FAB bottom offset calculation:
+  // Mobile: floats cleanly above BottomNav (50px) or Cart Bar (~65px)
+  const mobileBottom = isCartPage
+    ? (showTrackBar ? 54 : 14)
     : showCheckoutBar
-      ? (showTrackBar ? "100px" : "60px") // 60px checkout bar + 40px trackbar
-      : (showTrackBar ? "90px" : "50px"); // 50px bottom nav + 40px trackbar
+      ? (showTrackBar ? 124 : 80)
+      : (showTrackBar ? 98 : 62);
 
-  const desktopBottom = showTrackBar ? "52px" : "28px";
+  const desktopBottom = showTrackBar ? 52 : 28;
 
-  const EqBars = () => (
-    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: 14 }}>
-      <span style={{ display: "inline-block", width: 2, height: 10, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite" }} />
-      <span style={{ display: "inline-block", width: 2, height: 14, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.1s" }} />
-      <span style={{ display: "inline-block", width: 2, height: 8, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.2s" }} />
+  const EqBars = ({ size = 14 }: { size?: number }) => (
+    <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: size }}>
+      <span style={{ display: "inline-block", width: size * 0.18, height: size * 0.7, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite" }} />
+      <span style={{ display: "inline-block", width: size * 0.18, height: size, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.1s" }} />
+      <span style={{ display: "inline-block", width: size * 0.18, height: size * 0.58, background: "rgba(255,255,255,0.9)", borderRadius: 1, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.2s" }} />
     </div>
   );
 
@@ -148,300 +161,235 @@ export default function MusicPlayer() {
       <style>{`
         @keyframes mp-eq { 0%,100% { transform: scaleY(0.5); } 50% { transform: scaleY(1); } }
         @keyframes mp-spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-        @keyframes mp-pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(1,53,251,0.4); } 70% { box-shadow: 0 0 0 10px rgba(1,53,251,0); } }
-        @keyframes mp-fadein { from { opacity:0; transform: scale(0.92); } to { opacity:1; transform: scale(1); } }
-
-        /* ──────────── MOBILE: bottom bar ──────────── */
-        .mp-mobile {
-          display: block;
+        @keyframes mp-pulse-ring {
+          0% { transform: scale(1); opacity: 0.65; }
+          100% { transform: scale(1.6); opacity: 0; }
         }
-        .mp-desktop {
-          display: none;
+        @keyframes mp-fadein { from { opacity:0; transform: scale(0.92) translateY(8px); } to { opacity:1; transform: scale(1) translateY(0); } }
+
+        /* ── Shared FAB container ── */
+        .mp-fab-wrap {
+          position: fixed;
+          right: 14px;
+          bottom: var(--mp-bottom-mobile, 62px);
+          z-index: 945;
+          font-family: 'Outfit','Inter',system-ui,sans-serif;
+          transition: bottom 0.28s cubic-bezier(0.4,0,0.2,1);
         }
 
         @media (min-width: 768px) {
-          .mp-mobile { display: none !important; }
-          .mp-desktop { display: block !important; }
+          .mp-fab-wrap {
+            right: 28px;
+            bottom: var(--mp-bottom-desktop, 28px) !important;
+          }
         }
 
-        /* mobile bar — sits above the Track bar */
-        .mp-bar {
-          position: fixed;
-          left: 0; right: 0;
-          z-index: 940;
-          font-family: 'Outfit','Inter',system-ui,sans-serif;
-          transition: bottom 0.25s cubic-bezier(0.4,0,0.2,1);
-        }
-        .mp-bar-inner {
-          background: rgba(1, 53, 251, 0.97);
-          backdrop-filter: blur(20px);
-          border-top: 1px solid rgba(255,255,255,0.08);
-          box-shadow: 0 -4px 24px rgba(0,0,0,0.35);
-        }
-        .mp-progress-bar {
-          height: 2px; background: rgba(255,255,255,0.1); cursor: pointer; position: relative;
-        }
-        .mp-progress-fill {
-          height: 100%; background: linear-gradient(90deg,#0135FB,#22C55E);
-          transition: width 0.5s linear; pointer-events: none;
-        }
-        .mp-controls-row {
-          display: flex; align-items: center; gap: 8px; padding: 4px 14px 6px;
-        }
-        .mp-icon-wrap {
-          width: 28px; height: 28px; border-radius: 7px;
-          background: rgba(0,0,0,0.2); display: flex; align-items: center;
-          justify-content: center; flex-shrink: 0;
-        }
-        .mp-track-name {
-          font-size: 0.78rem; font-weight: 800; color: #fff;
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; line-height: 1.2;
-        }
-        .mp-ctrl-btn {
-          background: none; border: none; color: rgba(255,255,255,0.8);
-          cursor: pointer; padding: 5px; display: flex; align-items: center;
-          justify-content: center; border-radius: 6px; flex-shrink: 0; transition: all 0.15s;
-        }
-        .mp-ctrl-btn:hover { color:#fff; background: rgba(255,255,255,0.1); }
-        .mp-play-btn {
-          width: 30px; height: 30px; border-radius: 50%; background: #fff;
-          border: none; color: #0135FB; display: flex; align-items: center;
-          justify-content: center; cursor: pointer; flex-shrink: 0;
-          box-shadow: 0 2px 12px rgba(0,0,0,0.2); transition: transform 0.15s;
-        }
-        .mp-play-btn:hover { transform: scale(1.1); }
-        .mp-mini-strip {
-          display: flex; align-items: center; gap: 8px; padding: 4px 14px; cursor: pointer; height: 36px;
-        }
-        .mp-mini-name {
-          font-size: 0.72rem; font-weight: 700; color: rgba(255,255,255,0.8);
-          white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;
-        }
-        .mp-song-list {
-          border-top: 1px solid rgba(255,255,255,0.07); max-height: 200px; overflow-y: auto;
-        }
-        .mp-song-item {
-          display: flex; align-items: center; gap: 10px; padding: 9px 14px;
-          cursor: pointer; transition: background 0.15s;
-          border-bottom: 1px solid rgba(255,255,255,0.04);
-        }
-        .mp-song-item:hover { background: rgba(255,255,255,0.07); }
-        .mp-song-item.active { background: rgba(255,255,255,0.12); }
-        .mp-song-num {
-          width: 18px; height: 18px; border-radius: 50%;
-          background: rgba(255,255,255,0.08); font-size: 0.58rem; font-weight: 800;
+        /* ── Circular vinyl button ── */
+        .mp-vinyl-btn {
+          width: 50px; height: 50px; border-radius: 50%;
+          background: linear-gradient(135deg, #0135FB 0%, #1e40af 60%, #0284c7 100%);
+          border: 2px solid rgba(255,255,255,0.3);
+          cursor: pointer;
           display: flex; align-items: center; justify-content: center;
-          color: rgba(255,255,255,0.4); flex-shrink: 0;
-        }
-        .mp-song-item.active .mp-song-num { background: rgba(255,255,255,0.2); color: #fff; }
-
-        /* ──────────── DESKTOP: floating circular widget ──────────── */
-        .mp-fab {
-          position: fixed;
-          bottom: 32px;
-          right: 28px;
-          z-index: 900;
-          font-family: 'Outfit','Inter',system-ui,sans-serif;
-        }
-        .mp-fab-btn {
-          width: 58px; height: 58px; border-radius: 50%;
-          background: linear-gradient(135deg, #0135FB, #0051FF);
-          border: none; cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
-          box-shadow: 0 6px 24px rgba(1,53,251,0.45);
-          transition: transform 0.2s, box-shadow 0.2s;
-          animation: mp-pulse 2s ease-in-out infinite;
+          box-shadow: 0 6px 20px rgba(1,53,251,0.5), 0 2px 6px rgba(0,0,0,0.25);
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s;
           position: relative;
+          overflow: visible;
+          -webkit-tap-highlight-color: transparent;
         }
-        .mp-fab-btn:hover { transform: scale(1.1); box-shadow: 0 10px 32px rgba(1,53,251,0.55); }
-        .mp-fab-card {
+        .mp-vinyl-btn:active { transform: scale(0.92); }
+        .mp-vinyl-btn:hover { transform: scale(1.08); box-shadow: 0 10px 28px rgba(1,53,251,0.65); }
+        .mp-vinyl-btn::before {
+          content: '';
+          position: absolute; inset: -4px; border-radius: 50%;
+          border: 2px solid rgba(1,53,251,0.5);
+          animation: mp-pulse-ring 1.8s ease-out infinite;
+          pointer-events: none;
+        }
+        .mp-vinyl-btn::after {
+          content: '';
+          position: absolute; inset: -8px; border-radius: 50%;
+          border: 1.5px solid rgba(1,53,251,0.25);
+          animation: mp-pulse-ring 1.8s ease-out infinite 0.5s;
+          pointer-events: none;
+        }
+        .mp-vinyl-inner {
+          width: 16px; height: 16px; border-radius: 50%;
+          background: rgba(0,0,0,0.4);
+          display: flex; align-items: center; justify-content: center;
+          border: 1.5px solid rgba(255,255,255,0.2);
+        }
+        .mp-vinyl-btn.paused::before,
+        .mp-vinyl-btn.paused::after { animation-play-state: paused; opacity: 0.25; }
+
+        /* ── Compact floating card (NO screen blur) ── */
+        .mp-panel {
           position: absolute;
-          bottom: 70px; right: 0;
-          width: 280px;
-          background: rgba(8,12,40,0.97);
-          backdrop-filter: blur(24px);
-          border-radius: 20px;
-          border: 1px solid rgba(255,255,255,0.1);
-          box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+          bottom: 60px;
+          right: 0;
+          width: 290px;
+          background: #0B1038;
+          border-radius: 18px;
+          border: 1px solid rgba(255,255,255,0.15);
+          box-shadow: 0 16px 40px rgba(0,0,0,0.5), 0 0 0 1px rgba(1,53,251,0.3);
           overflow: hidden;
           animation: mp-fadein 0.2s ease;
+          z-index: 950;
         }
-        .mp-fab-header {
-          padding: 16px 16px 10px;
-          display: flex; align-items: center; gap: 12px;
-        }
-        .mp-fab-disc {
-          width: 46px; height: 46px; border-radius: 50%;
+        .mp-disc {
+          width: 40px; height: 40px; border-radius: 50%;
           background: linear-gradient(135deg, #0135FB, #7C3AED);
           display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; position: relative;
+          flex-shrink: 0;
         }
-        .mp-fab-disc-spin {
-          animation: mp-spin 3s linear infinite;
+        .mp-disc-spin { animation: mp-spin 3s linear infinite; }
+        .mp-panel-progress {
+          height: 4px; background: rgba(255,255,255,0.1);
+          cursor: pointer; margin: 12px 14px 0; border-radius: 9999px; overflow: hidden;
         }
-        .mp-fab-close {
-          margin-left: auto; background: rgba(255,255,255,0.07);
-          border: none; color: rgba(255,255,255,0.5); cursor: pointer;
-          width: 26px; height: 26px; border-radius: 50%;
-          display: flex; align-items: center; justify-content: center;
-          transition: background 0.15s;
-        }
-        .mp-fab-close:hover { background: rgba(255,255,255,0.15); color:#fff; }
-        .mp-fab-progress {
-          height: 3px; background: rgba(255,255,255,0.08);
-          cursor: pointer; margin: 0 16px 14px; border-radius: 9999px; overflow: hidden;
-        }
-        .mp-fab-fill {
+        .mp-panel-fill {
           height: 100%; border-radius: 9999px;
-          background: linear-gradient(90deg,#0135FB,#22C55E);
+          background: linear-gradient(90deg, #0135FB, #22C55E);
           transition: width 0.5s linear; pointer-events: none;
         }
-        .mp-fab-controls {
+        .mp-panel-controls {
           display: flex; align-items: center; justify-content: center;
-          gap: 8px; padding: 0 16px 14px;
+          gap: 8px; padding: 10px 14px 12px;
         }
-        .mp-fab-ctrl {
+        .mp-panel-ctrl {
           background: rgba(255,255,255,0.07); border: none;
-          color: rgba(255,255,255,0.7); cursor: pointer; padding: 9px;
-          border-radius: 10px; display: flex; align-items: center;
+          color: rgba(255,255,255,0.7); cursor: pointer; padding: 8px;
+          border-radius: 8px; display: flex; align-items: center;
           justify-content: center; transition: all 0.15s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .mp-fab-ctrl:hover { background: rgba(255,255,255,0.15); color: #fff; }
-        .mp-fab-play {
-          width: 44px; height: 44px; border-radius: 50%;
+        .mp-panel-ctrl:hover { background: rgba(255,255,255,0.15); color: #fff; }
+        .mp-panel-ctrl:active { transform: scale(0.92); }
+        .mp-panel-play {
+          width: 40px; height: 40px; border-radius: 50%;
           background: #fff; border: none; color: #0135FB;
           display: flex; align-items: center; justify-content: center;
-          cursor: pointer; box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+          cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.3);
           transition: transform 0.15s;
+          -webkit-tap-highlight-color: transparent;
         }
-        .mp-fab-play:hover { transform: scale(1.1); }
-        .mp-fab-song-list {
-          border-top: 1px solid rgba(255,255,255,0.06);
-          max-height: 140px; overflow-y: auto;
-        }
-        .mp-fab-song-item {
-          display: flex; align-items: center; gap: 10px;
-          padding: 9px 16px; cursor: pointer; transition: background 0.15s;
+        .mp-panel-play:hover { transform: scale(1.08); }
+        .mp-panel-play:active { transform: scale(0.92); }
+        .mp-song-list { border-top: 1px solid rgba(255,255,255,0.07); max-height: 130px; overflow-y: auto; }
+        .mp-song-item {
+          display: flex; align-items: center; gap: 8px;
+          padding: 8px 14px; cursor: pointer; transition: background 0.15s;
           border-bottom: 1px solid rgba(255,255,255,0.04);
         }
-        .mp-fab-song-item:hover { background: rgba(255,255,255,0.06); }
-        .mp-fab-song-item.active { background: rgba(1,53,251,0.2); }
+        .mp-song-item:hover { background: rgba(255,255,255,0.06); }
+        .mp-song-item.active { background: rgba(1,53,251,0.25); }
       `}</style>
 
-      {/* ────────── MOBILE BOTTOM BAR ────────── */}
-      <div className="mp-mobile mp-bar" style={{ bottom: mobileOffset }}>
-        <div className="mp-bar-inner">
-          <div ref={progressRef} className="mp-progress-bar" onClick={handleProgressClick}>
-            <div className="mp-progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-
-          {isCollapsed ? (
-            <div className="mp-mini-strip" onClick={() => setIsCollapsed(false)}>
-              <div className="mp-icon-wrap" style={{ width: 24, height: 24 }}><Music2 size={12} color="#fff" /></div>
-              {isPlaying && <EqBars />}
-              <span className="mp-mini-name">{track.name}</span>
-              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsPlaying(p => !p); }} title={isPlaying ? "Pause" : "Play"}>
-                {isPlaying ? <Pause size={13} /> : <Play size={13} fill="#fff" />}
-              </button>
-              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); setIsCollapsed(false); }} title="Expand controls">
-                <ChevronUp size={14} />
-              </button>
-              <button className="mp-ctrl-btn" onClick={e => { e.stopPropagation(); handleDismiss(); }} title="Turn off music" style={{ color: "rgba(255,255,255,0.7)" }}><X size={13} /></button>
-            </div>
-          ) : (
-            <>
-              <AnimatePresence>
-                {showList && (
-                  <motion.div className="mp-song-list"
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} style={{ overflow: "hidden" }}>
-                    <div style={{ padding: "6px 14px 2px", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "1.5px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>Playlist</div>
-                    {TRACKS.map((t, i) => (
-                      <div key={t.id} className={`mp-song-item${i === currentIdx ? " active" : ""}`} onClick={() => selectTrack(i)}>
-                        <div className="mp-song-num">{i === currentIdx && isPlaying ? <EqBars /> : i + 1}</div>
-                        <div style={{ flex: 1, minWidth: 0, fontSize: "0.82rem", fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
-                        {i === currentIdx && isPlaying && <div style={{ fontSize: "0.58rem", color: "#22C55E", fontWeight: 800 }}>NOW</div>}
-                      </div>
-                    ))}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-
-              <div className="mp-controls-row">
-                <div className="mp-icon-wrap"><Music2 size={13} color="#fff" /></div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div className="mp-track-name">{track.name}</div>
-                </div>
-                {isPlaying && <EqBars />}
-                <button className="mp-ctrl-btn" onClick={prevTrack} title="Previous"><SkipBack size={14} /></button>
-                <button className="mp-play-btn" onClick={() => setIsPlaying(p => !p)} title={isPlaying ? "Pause" : "Play"}>
-                  {isPlaying ? <Pause size={14} /> : <Play size={14} fill="#0135FB" />}
-                </button>
-                <button className="mp-ctrl-btn" onClick={nextTrack} title="Next"><SkipForward size={14} /></button>
-                <button className="mp-ctrl-btn" onClick={stopTrack} title="Stop"><Square size={12} /></button>
-                <button className="mp-ctrl-btn" onClick={() => setShowList(p => !p)} style={{ color: showList ? "#22C55E" : undefined }} title="Playlist"><ListMusic size={14} /></button>
-                <button className="mp-ctrl-btn" onClick={() => { setIsCollapsed(true); setShowList(false); }} title="Minimize"><ChevronDown size={14} /></button>
-                <button className="mp-ctrl-btn" onClick={handleDismiss} title="Turn off music" style={{ color: "rgba(255,255,255,0.7)" }}><X size={14} /></button>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* ────────── DESKTOP FLOATING CIRCULAR ────────── */}
-      <div className="mp-desktop mp-fab" style={{ bottom: desktopBottom }}>
-        {/* Expanded card */}
+      {/* Single floating FAB with non-modal popup (NO background blur) */}
+      <div
+        ref={wrapRef}
+        className="mp-fab-wrap"
+        style={{
+          ["--mp-bottom-mobile" as any]: `${mobileBottom}px`,
+          ["--mp-bottom-desktop" as any]: `${desktopBottom}px`,
+        }}
+      >
+        {/* Expanded panel */}
         <AnimatePresence>
           {expanded && (
-            <motion.div className="mp-fab-card"
-              initial={{ opacity: 0, y: 12, scale: 0.95 }}
+            <motion.div
+              className="mp-panel"
+              initial={{ opacity: 0, y: 10, scale: 0.94 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 12, scale: 0.95 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}>
-
+              exit={{ opacity: 0, y: 10, scale: 0.94 }}
+              transition={{ duration: 0.16, ease: "easeOut" }}
+            >
               {/* Header */}
-              <div className="mp-fab-header">
-                <div className={`mp-fab-disc${isPlaying ? " mp-fab-disc-spin" : ""}`}>
-                  <Music2 size={20} color="#fff" style={{ position: "absolute" }} />
+              <div style={{ padding: "12px 14px 0", display: "flex", alignItems: "center", gap: 10 }}>
+                <div className={`mp-disc${isPlaying ? " mp-disc-spin" : ""}`}>
+                  <Music2 size={18} color="#fff" />
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: "0.95rem", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{track.name}</div>
-                  <div style={{ fontSize: "0.7rem", color: "rgba(255,255,255,0.4)", fontWeight: 600 }}>{track.artist}</div>
+                  <div style={{ fontWeight: 900, fontSize: "0.88rem", color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {track.name}
+                  </div>
+                  <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.45)", fontWeight: 600 }}>
+                    {track.artist}
+                  </div>
                 </div>
-                {isPlaying && <EqBars />}
-                <button className="mp-fab-close" onClick={() => setExpanded(false)}><X size={13} /></button>
+                {isPlaying && <EqBars size={12} />}
+                <button
+                  style={{
+                    background: "rgba(255,255,255,0.08)", border: "none",
+                    color: "rgba(255,255,255,0.6)", cursor: "pointer",
+                    width: 26, height: 26, borderRadius: "50%",
+                    display: "flex", alignItems: "center", justifyContent: "center"
+                  }}
+                  onClick={() => setExpanded(false)}
+                  aria-label="Close music player"
+                >
+                  <X size={13} />
+                </button>
               </div>
 
               {/* Progress */}
-              <div ref={progressRef} className="mp-fab-progress" onClick={handleProgressClick}>
-                <div className="mp-fab-fill" style={{ width: `${progress}%` }} />
+              <div ref={progressRef} className="mp-panel-progress" onClick={handleProgressClick}>
+                <div className="mp-panel-fill" style={{ width: `${progress}%` }} />
               </div>
 
               {/* Controls */}
-              <div className="mp-fab-controls">
-                <button className="mp-fab-ctrl" onClick={prevTrack} title="Previous"><SkipBack size={16} /></button>
-                <button className="mp-fab-play" onClick={() => setIsPlaying(p => !p)}>
-                  {isPlaying ? <Pause size={18} /> : <Play size={18} fill="#0135FB" />}
+              <div className="mp-panel-controls">
+                <button className="mp-panel-ctrl" onClick={prevTrack} title="Previous" aria-label="Previous track">
+                  <SkipBack size={15} />
                 </button>
-                <button className="mp-fab-ctrl" onClick={nextTrack} title="Next"><SkipForward size={16} /></button>
-                <button className="mp-fab-ctrl" onClick={stopTrack} title="Stop"><Square size={14} /></button>
-                <button className="mp-fab-ctrl" onClick={() => setShowList(p => !p)} style={{ color: showList ? "#22C55E" : undefined }} title="Playlist"><ListMusic size={16} /></button>
+                <button className="mp-panel-play" onClick={() => setIsPlaying(p => !p)} aria-label={isPlaying ? "Pause" : "Play"}>
+                  {isPlaying ? <Pause size={17} /> : <Play size={17} fill="#0135FB" />}
+                </button>
+                <button className="mp-panel-ctrl" onClick={nextTrack} title="Next" aria-label="Next track">
+                  <SkipForward size={15} />
+                </button>
+                <button className="mp-panel-ctrl" onClick={stopTrack} title="Stop" aria-label="Stop playback">
+                  <Square size={13} />
+                </button>
+                <button
+                  className="mp-panel-ctrl"
+                  onClick={() => setShowList(p => !p)}
+                  style={{ color: showList ? "#22C55E" : undefined }}
+                  title="Playlist"
+                  aria-label="Toggle playlist"
+                >
+                  <ListMusic size={15} />
+                </button>
+                <button
+                  className="mp-panel-ctrl"
+                  onClick={handleDismiss}
+                  title="Turn off"
+                  aria-label="Turn off music"
+                  style={{ color: "rgba(255,100,100,0.85)" }}
+                >
+                  <X size={14} />
+                </button>
               </div>
 
               {/* Song list */}
               <AnimatePresence>
                 {showList && (
-                  <motion.div className="mp-fab-song-list"
-                    initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }} style={{ overflow: "hidden" }}>
-                    <div style={{ padding: "6px 16px 2px", fontSize: "0.58rem", fontWeight: 800, letterSpacing: "1.5px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>Playlist</div>
+                  <motion.div
+                    className="mp-song-list"
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: "auto", opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.16 }}
+                    style={{ overflow: "hidden" }}
+                  >
+                    <div style={{ padding: "6px 14px 2px", fontSize: "0.55rem", fontWeight: 800, letterSpacing: "1.5px", color: "rgba(255,255,255,0.3)", textTransform: "uppercase" }}>Playlist</div>
                     {TRACKS.map((t, i) => (
-                      <div key={t.id} className={`mp-fab-song-item${i === currentIdx ? " active" : ""}`} onClick={() => selectTrack(i)}>
-                        <div style={{ width: 18, height: 18, borderRadius: "50%", background: i === currentIdx ? "#0135FB" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.58rem", fontWeight: 800, color: i === currentIdx ? "#fff" : "rgba(255,255,255,0.4)", flexShrink: 0 }}>
+                      <div key={t.id} className={`mp-song-item${i === currentIdx ? " active" : ""}`} onClick={() => selectTrack(i)}>
+                        <div style={{ width: 16, height: 16, borderRadius: "50%", background: i === currentIdx ? "#0135FB" : "rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "0.55rem", fontWeight: 800, color: i === currentIdx ? "#fff" : "rgba(255,255,255,0.4)", flexShrink: 0 }}>
                           {i === currentIdx && isPlaying ? "▶" : i + 1}
                         </div>
-                        <div style={{ flex: 1, minWidth: 0, fontSize: "0.85rem", fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
-                        {i === currentIdx && isPlaying && <div style={{ fontSize: "0.6rem", color: "#22C55E", fontWeight: 800 }}>NOW</div>}
+                        <div style={{ flex: 1, minWidth: 0, fontSize: "0.82rem", fontWeight: 700, color: "#fff", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{t.name}</div>
+                        {i === currentIdx && isPlaying && <div style={{ fontSize: "0.58rem", color: "#22C55E", fontWeight: 800 }}>NOW</div>}
                       </div>
                     ))}
                   </motion.div>
@@ -451,16 +399,19 @@ export default function MusicPlayer() {
           )}
         </AnimatePresence>
 
-        {/* FAB circular button */}
-        <button className="mp-fab-btn" onClick={() => setExpanded(p => !p)} title="Music Player" aria-label="Toggle music player">
+        {/* The vinyl FAB button */}
+        <button
+          className={`mp-vinyl-btn${isPlaying ? "" : " paused"}`}
+          onClick={() => setExpanded(p => !p)}
+          title="Music Player"
+          aria-label="Toggle music player"
+        >
           {isPlaying ? (
-            <div style={{ display: "flex", alignItems: "flex-end", gap: 3, height: 22 }}>
-              <span style={{ display: "inline-block", width: 3, height: 14, background: "#fff", borderRadius: 2, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite" }} />
-              <span style={{ display: "inline-block", width: 3, height: 22, background: "#fff", borderRadius: 2, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.1s" }} />
-              <span style={{ display: "inline-block", width: 3, height: 16, background: "#fff", borderRadius: 2, transformOrigin: "bottom", animation: "mp-eq 0.6s ease-in-out infinite 0.2s" }} />
-            </div>
+            <EqBars size={18} />
           ) : (
-            <Music2 size={24} color="#fff" />
+            <div className="mp-vinyl-inner">
+              <Music2 size={11} color="rgba(255,255,255,0.9)" />
+            </div>
           )}
         </button>
       </div>

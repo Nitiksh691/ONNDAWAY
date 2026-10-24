@@ -1,0 +1,8 @@
+# models/
+# Place Mongoose model files here.
+# These can be shared with or mirror the models in the Next.js app (src/models/).
+#
+# Example:
+#   Order.model.ts
+#   Rider.model.ts
+#   Store.model.ts

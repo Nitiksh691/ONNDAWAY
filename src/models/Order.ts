@@ -86,11 +86,16 @@ const OrderSchema = new Schema(
 );
 
 // ── Indexes ────────────────────────────────────────────────────────────────────
-// Compound index: most common query pattern (user order history filtered by status)
+// Index for sorting all orders by latest (admin dashboard / general queries)
+OrderSchema.index({ createdAt: -1 });
+// Compound index: user order history sorted by time
+OrderSchema.index({ userId: 1, createdAt: -1 });
+// Compound index: user order history filtered by status
 OrderSchema.index({ userId: 1, status: 1 });
 // Compound index: admin dashboard — latest orders by status
 OrderSchema.index({ status: 1, createdAt: -1 });
-// Compound index: delivery dashboard — assigned orders by status
+// Compound index: delivery dashboard — assigned orders by time & status
+OrderSchema.index({ deliveryPersonId: 1, createdAt: -1 });
 OrderSchema.index({ deliveryPersonId: 1, status: 1 });
 // Store dashboard — orders assigned to a specific store
 OrderSchema.index({ storeId: 1, status: 1, createdAt: -1 });

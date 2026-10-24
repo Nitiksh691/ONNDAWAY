@@ -29,9 +29,7 @@ const WaitlistSchema = new Schema({
   createdAt:   { type: Date, default: Date.now },
 });
 
-// Indexes for admin search & duplicate prevention
-WaitlistSchema.index({ email: 1 }, { unique: true });
-WaitlistSchema.index({ phoneNumber: 1 }, { unique: true });
+// Index for sorting entries by time
 WaitlistSchema.index({ createdAt: -1 });
 
 export default models.Waitlist || model("Waitlist", WaitlistSchema);

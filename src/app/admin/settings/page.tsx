@@ -133,8 +133,7 @@ export default function AdminSettingsPage() {
   const [geoLng, setGeoLng] = useState<string>("77.2090");
   const [geoRadiusKm, setGeoRadiusKm] = useState<string>("1.0");
   const [heroSectionEnabled, setHeroSectionEnabled] = useState<boolean>(true);
-  const [minOrderValue, setMinOrderValue] = useState<number>(0);
-  const [minGroceryOrderValue, setMinGroceryOrderValue] = useState<number>(0);
+  const [minOrderValue, setMinOrderValue] = useState<number>(69);
 
   const [menuItemsList, setMenuItemsList] = useState<any[]>([]);
 
@@ -221,7 +220,6 @@ export default function AdminSettingsPage() {
           if (data.geoRadiusKm !== undefined) setGeoRadiusKm(data.geoRadiusKm);
           if (data.heroSectionEnabled !== undefined) setHeroSectionEnabled(data.heroSectionEnabled);
           if (data.minOrderValue !== undefined) setMinOrderValue(data.minOrderValue);
-          if (data.minGroceryOrderValue !== undefined) setMinGroceryOrderValue(data.minGroceryOrderValue);
           if (data.homeLayout) setHomeLayout(prev => ({ ...prev, ...data.homeLayout }));
         }
         setLoading(false);
@@ -250,7 +248,7 @@ export default function AdminSettingsPage() {
       geoRadiusKm,
       heroSectionEnabled,
       minOrderValue,
-      minGroceryOrderValue,
+      minGroceryOrderValue: 0,
       homeLayout,
     };
     
@@ -321,7 +319,7 @@ export default function AdminSettingsPage() {
 
           <div style={{ marginBottom: "24px", padding: "16px", background: "#EFF6FF", borderRadius: "12px", border: "1.5px solid #BFDBFE" }}>
             <label className="otw-label" style={{ display: "block", marginBottom: "6px", fontWeight: 800, color: "#1E40AF" }}>
-              ⚡ Minimum Order Amount for Delivery (₹)
+              ⚡ Minimum Order Value for Delivery (₹)
             </label>
             <input 
               type="number" 
@@ -332,24 +330,7 @@ export default function AdminSettingsPage() {
               style={{ maxWidth: "200px" }}
             />
             <p style={{ fontSize: "0.82rem", color: "#1D4ED8", marginTop: "8px", margin: "8px 0 0" }}>
-              Minimum overall cart subtotal required to place an order. If cart is below this amount, payment is <strong>disabled</strong> and customers see an animated progress bar urging them to add items. Set to 0 to allow any order amount.
-            </p>
-          </div>
-
-          <div style={{ marginBottom: "24px", padding: "16px", background: "#F0FDF4", borderRadius: "12px", border: "1px solid #BBF7D0" }}>
-            <label className="otw-label" style={{ display: "block", marginBottom: "6px", fontWeight: 800, color: "#166534" }}>
-              🛒 Minimum Grocery Order Value (₹)
-            </label>
-            <input 
-              type="number" 
-              className="otw-input" 
-              value={minGroceryOrderValue} 
-              onChange={e => setMinGroceryOrderValue(Number(e.target.value))} 
-              min="0"
-              style={{ maxWidth: "200px" }}
-            />
-            <p style={{ fontSize: "0.82rem", color: "#15803D", marginTop: "8px", margin: "8px 0 0" }}>
-              Minimum subtotal required specifically for grocery / munchies items. <strong>Coffee and mojito/beverages are completely exempt</strong> from this limit. Set to 0 to disable.
+              Minimum subtotal required to place an order. <strong>Onndaway food, coffee, and beverages are 100% exempt with free delivery</strong> (customers can order coffee &amp; food with ₹0 delivery charge and zero minimum order limits). Set to 0 to allow any order amount.
             </p>
           </div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: onlinePaymentEnabled ? "#F0FDF4" : "#FEF2F2", borderRadius: "12px", border: onlinePaymentEnabled ? "1px solid #BBF7D0" : "1px solid #FCA5A5", marginBottom: "12px" }}>
