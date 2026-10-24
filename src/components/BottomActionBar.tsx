@@ -2,13 +2,13 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import { ShoppingBag, ArrowRight, Package, Plus, Minus, X, Trash2, Navigation } from "lucide-react";
+import { ShoppingBag, ArrowRight, Package, Plus, Minus, X, Trash2, Navigation, Sparkles } from "lucide-react";
 import { useApp } from "@/lib/context";
 import { useState, useEffect, useRef } from "react";
-import { fetchActiveOrder, getActiveOrderId, clearActiveOrderId } from "@/lib/activeOrder";
+import { fetchActiveOrder } from "@/lib/activeOrder";
 import type { Order } from "@/lib/types";
 
-/** Sticky bottom cart bar + slide-up mini-cart drawer */
+/** Sticky bottom cart bar + slide-up mini-cart drawer with sleek bottom progress bar */
 export default function BottomActionBar() {
   const { cartCount, cartTotal, cart, updateQuantity, removeFromCart, profile } = useApp();
   const pathname = usePathname();
@@ -16,26 +16,77 @@ export default function BottomActionBar() {
   const [activeOrder, setActiveOrder] = useState<Order | null>(null);
   const [hasActiveOrder, setHasActiveOrder] = useState(false);
   const [drawerOpen, setDrawerOpen] = useState(false);
-  const [minOrderValue, setMinOrderValue] = useState(0);
+  const [minOrderValue, setMinOrderValue] = useState(69);
+  const [freeDelivery, setFreeDelivery] = useState<{ enabled: boolean; minAmount: number } | null>(null);
   const drawerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     fetch("/api/settings")
       .then(r => r.json())
       .then(d => {
-        if (d && d.minOrderValue !== undefined) setMinOrderValue(d.minOrderValue);
+        if (d) {
+          if (d.minOrderValue !== undefined) setMinOrderValue(Number(d.minOrderValue) || 0);
+          if (d.homeLayout?.freeDelivery) {
+            setFreeDelivery({
+              enabled: d.homeLayout.freeDelivery.enabled !== false,
+              minAmount: Number(d.homeLayout.freeDelivery.minAmount) || 199,
+            });
+          }
+        }
       })
       .catch(() => {});
   }, []);
 
+  // Track active order & only subscribe to SSE when user actually has an active order
   useEffect(() => {
     let cancelled = false;
+    let es: EventSource | null = null;
+    let retryTimer: NodeJS.Timeout | null = null;
+
+    const stopSSE = () => {
+      if (es) {
+        es.close();
+        es = null;
+      }
+      if (retryTimer) {
+        clearTimeout(retryTimer);
+        retryTimer = null;
+      }
+    };
+
+    const startSSE = () => {
+      if (cancelled || es) return;
+      const streamUrl = process.env.NEXT_PUBLIC_NODE_SERVER_URL
+        ? `${process.env.NEXT_PUBLIC_NODE_SERVER_URL}/api/orders/stream`
+        : "/api/orders/stream";
+
+      try {
+        es = new EventSource(streamUrl);
+        es.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === "order_change") check();
+          } catch { }
+        };
+        es.onerror = () => {
+          es?.close();
+          es = null;
+          if (!cancelled) {
+            retryTimer = setTimeout(startSSE, 8000);
+          }
+        };
+      } catch {
+        // ignore
+      }
+    };
+
     const check = async () => {
       // If delivery partner, don't show customer tracking
       const isDelivery = profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"));
       if (isDelivery) {
         setHasActiveOrder(false);
         setActiveOrder(null);
+        stopSSE();
         return;
       }
 
@@ -44,9 +95,12 @@ export default function BottomActionBar() {
         if (active && active.status !== "delivered" && active.status !== "cancelled") {
           setHasActiveOrder(true);
           setActiveOrder(active);
+          // Only establish real-time SSE when user has an active pending order
+          startSSE();
         } else {
           setHasActiveOrder(false);
           setActiveOrder(null);
+          stopSSE();
         }
       }
     };
@@ -55,28 +109,9 @@ export default function BottomActionBar() {
     window.addEventListener("otw:active-order", check);
     window.addEventListener("storage", check);
 
-    // Real-time SSE updates: when driver marks delivered, track bar vanishes immediately
-    let es: EventSource | null = null;
-    let timer: NodeJS.Timeout;
-    const setupSSE = () => {
-      es = new EventSource("/api/orders/stream");
-      es.onmessage = (event) => {
-        try {
-          const data = JSON.parse(event.data);
-          if (data.type === "order_change") check();
-        } catch { }
-      };
-      es.onerror = () => {
-        es?.close();
-        timer = setTimeout(setupSSE, 5000);
-      };
-    };
-    setupSSE();
-
     return () => {
       cancelled = true;
-      es?.close();
-      clearTimeout(timer);
+      stopSSE();
       window.removeEventListener("otw:active-order", check);
       window.removeEventListener("storage", check);
     };
@@ -210,6 +245,39 @@ export default function BottomActionBar() {
     );
   }
 
+  // Check if cart contains any Onndaway food or coffee (exempt from minimum order & gets free delivery!)
+  const hasOnndawayFoodOrCoffee = cart.some(c => {
+    const cat = (c.item?.category || "").toLowerCase();
+    const itemName = (c.item?.name || "").toLowerCase();
+    const world = c.item?.world;
+    return (
+      cat.includes("coffee") ||
+      cat.includes("mojito") ||
+      cat.includes("beverage") ||
+      cat.includes("drink") ||
+      world === "food" ||
+      itemName.includes("coffee") ||
+      itemName.includes("mojito") ||
+      (!world && !c.item?.isConsignment)
+    );
+  });
+
+  // Only ONE minimum order value (minOrderValue), waived completely if food or coffee is in cart:
+  const activeMinOrder = hasOnndawayFoodOrCoffee ? 0 : (minOrderValue || 69);
+  const isMinOrderPending = activeMinOrder > 0 && cartTotal < activeMinOrder;
+  const minOrderRemaining = Math.max(0, activeMinOrder - cartTotal);
+  const minOrderPct = activeMinOrder > 0 ? Math.min(100, Math.round((cartTotal / activeMinOrder) * 100)) : 100;
+
+  // Free delivery progress
+  const freeDelThreshold = freeDelivery?.enabled ? (freeDelivery.minAmount || 199) : 0;
+  const isFreeDeliveryUnlocked = hasOnndawayFoodOrCoffee || (freeDelThreshold > 0 && cartTotal >= freeDelThreshold);
+  const freeDeliveryRemaining = Math.max(0, freeDelThreshold - cartTotal);
+  const freeDeliveryPct = hasOnndawayFoodOrCoffee ? 100 : (freeDelThreshold > 0 ? Math.min(100, Math.round((cartTotal / freeDelThreshold) * 100)) : 100);
+
+  // Only show progress section on BottomActionBar if user still has a pending minimum order (₹69).
+  // Food & Coffee exemption / Free delivery unlocked bar is shown prominently on the Cart page above payment instead!
+  const showProgressSection = isMinOrderPending;
+
   return (
     <>
       {TrackBar}
@@ -231,7 +299,7 @@ export default function BottomActionBar() {
         ref={drawerRef}
         style={{
           position: "fixed",
-          left: 0, right: 0, bottom: drawerOpen ? 64 : -500,
+          left: 0, right: 0, bottom: drawerOpen ? 76 : -500,
           maxHeight: "70vh",
           background: "#fff",
           borderRadius: "20px 20px 0 0",
@@ -253,90 +321,122 @@ export default function BottomActionBar() {
           flexShrink: 0,
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <ShoppingBag size={18} color="#0135FB" />
             <span style={{ fontWeight: 800, fontSize: "1rem", color: "#0F172A" }}>
               Your Cart
             </span>
             <span style={{
-              background: "#0135FB", color: "#fff",
-              borderRadius: "99px", fontSize: "0.7rem",
-              fontWeight: 800, padding: "2px 8px", marginLeft: 4,
+              background: "#EEF2FF", color: "#0135FB",
+              fontSize: "0.75rem", fontWeight: 700,
+              padding: "2px 8px", borderRadius: 20,
             }}>
-              {cartCount} item{cartCount > 1 ? "s" : ""}
+              {cartCount} {cartCount === 1 ? "item" : "items"}
             </span>
           </div>
           <button
             onClick={() => setDrawerOpen(false)}
-            style={{ background: "#F8FAFC", border: "none", borderRadius: "50%", width: 32, height: 32, display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
+            style={{
+              background: "#F1F5F9", border: "none", borderRadius: "50%",
+              width: 28, height: 28, display: "flex", alignItems: "center",
+              justifyContent: "center", cursor: "pointer", color: "#64748B",
+            }}
           >
-            <X size={16} color="#64748B" />
+            <X size={15} />
           </button>
         </div>
 
-        {/* Items list */}
-        <div style={{ overflowY: "auto", flex: 1, padding: "8px 0" }}>
-          {cart.map((cartItem) => {
-            const price = (cartItem.unitPrice ?? cartItem.item.price) * cartItem.quantity;
+        {/* Drawer items list */}
+        <div style={{
+          overflowY: "auto", flex: 1, padding: "8px 20px",
+          display: "flex", flexDirection: "column", gap: 12,
+        }}>
+          {cart.map(cartItem => {
+            const hasCustomizations = cartItem.selectedCustomizations && cartItem.selectedCustomizations.length > 0;
+            const customPrice = (cartItem.selectedCustomizations || []).reduce((sum, c) => sum + (c.price || 0), 0);
+            const effectivePrice = (cartItem.item.price || 0) + customPrice;
+            const lineTotal = effectivePrice * cartItem.quantity;
+
             return (
-              <div key={cartItem.cartItemId} style={{
-                display: "flex", alignItems: "center", gap: 12,
-                padding: "10px 20px",
-                borderBottom: "1px solid #F8FAFC",
-              }}>
+              <div
+                key={cartItem.cartItemId}
+                style={{
+                  display: "flex", alignItems: "center", gap: 12,
+                  padding: "8px 0", borderBottom: "1px solid #F8FAFC",
+                }}
+              >
                 {/* Image */}
-                <div style={{ position: "relative", width: 52, height: 52, borderRadius: 10, overflow: "hidden", flexShrink: 0, background: "#F1F5F9" }}>
+                <div style={{
+                  width: 48, height: 48, borderRadius: 10,
+                  overflow: "hidden", position: "relative",
+                  background: "#F1F5F9", flexShrink: 0,
+                }}>
                   {cartItem.item.image ? (
                     <Image
                       src={cartItem.item.image}
                       alt={cartItem.item.name}
                       fill
-                      sizes="52px"
+                      sizes="48px"
+                      unoptimized={typeof cartItem.item.image === "string" && cartItem.item.image.includes("cloudinary.com")}
                       style={{ objectFit: "cover" }}
-                      onContextMenu={e => e.preventDefault()}
-                      onDragStart={e => e.preventDefault()}
                     />
                   ) : (
-                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.4rem" }}>
-                      {cartItem.item.category === "coffee" ? "☕" : cartItem.item.category === "snacks" ? "🍟" : "🍽️"}
+                    <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.2rem" }}>
+                      🍽️
                     </div>
                   )}
                 </div>
 
-                {/* Name + customizations */}
+                {/* Details */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 700, fontSize: "0.9rem", color: "#0F172A", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>
+                  <div style={{
+                    fontWeight: 700, fontSize: "0.85rem", color: "#0F172A",
+                    whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                  }}>
                     {cartItem.item.name}
                   </div>
-                  {cartItem.selectedCustomizations && cartItem.selectedCustomizations.length > 0 && (
-                    <div style={{ fontSize: "0.7rem", color: "#94A3B8", marginTop: 2 }}>
-                      {cartItem.selectedCustomizations.map(c => c.option).join(", ")}
+                  {hasCustomizations && (
+                    <div style={{ fontSize: "0.7rem", color: "#64748B", marginTop: 1 }}>
+                      {cartItem.selectedCustomizations?.map(c => c.option).join(", ")}
                     </div>
                   )}
-                  {cartItem.specialInstructions && (
-                    <div style={{ fontSize: "0.7rem", color: "#94A3B8", fontStyle: "italic", marginTop: 1 }}>
-                      "{cartItem.specialInstructions}"
-                    </div>
-                  )}
+                  <div style={{ fontSize: "0.8rem", fontWeight: 800, color: "#0135FB", marginTop: 2 }}>
+                    ₹{lineTotal}
+                  </div>
                 </div>
 
-                {/* Price + qty controls */}
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 6, flexShrink: 0 }}>
-                  <div style={{ fontWeight: 800, fontSize: "0.9rem", color: "#0F172A" }}>₹{price}</div>
-                  <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                    <button
-                      onClick={() => updateQuantity(cartItem.cartItemId!, cartItem.quantity - 1)}
-                      style={{ width: 26, height: 26, borderRadius: "50%", border: "1.5px solid #0135FB", background: "#fff", color: "#0135FB", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}
-                    >
-                      {cartItem.quantity === 1 ? <Trash2 size={10} /> : <Minus size={10} />}
-                    </button>
-                    <span style={{ fontWeight: 800, fontSize: "0.88rem", color: "#0F172A", minWidth: 16, textAlign: "center" }}>{cartItem.quantity}</span>
-                    <button
-                      onClick={() => updateQuantity(cartItem.cartItemId!, cartItem.quantity + 1)}
-                      style={{ width: 26, height: 26, borderRadius: "50%", border: "none", background: "#0135FB", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", boxShadow: "0 2px 8px rgba(1,53,251,0.3)" }}
-                    >
-                      <Plus size={10} />
-                    </button>
-                  </div>
+                {/* Quantity controls */}
+                <div style={{
+                  display: "flex", alignItems: "center", gap: 8,
+                  background: "#F1F5F9", borderRadius: 8, padding: "4px 8px",
+                }}>
+                  <button
+                    onClick={() => {
+                      if (cartItem.quantity === 1) {
+                        removeFromCart(cartItem.cartItemId);
+                      } else {
+                        updateQuantity(cartItem.cartItemId, cartItem.quantity - 1);
+                      }
+                    }}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: cartItem.quantity === 1 ? "#EF4444" : "#334155", padding: 0,
+                    }}
+                  >
+                    {cartItem.quantity === 1 ? <Trash2 size={13} /> : <Minus size={13} />}
+                  </button>
+                  <span style={{ fontWeight: 800, fontSize: "0.85rem", minWidth: 16, textAlign: "center", color: "#0F172A" }}>
+                    {cartItem.quantity}
+                  </span>
+                  <button
+                    onClick={() => updateQuantity(cartItem.cartItemId, cartItem.quantity + 1)}
+                    style={{
+                      background: "none", border: "none", cursor: "pointer",
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      color: "#334155", padding: 0,
+                    }}
+                  >
+                    <Plus size={13} />
+                  </button>
                 </div>
               </div>
             );
@@ -373,47 +473,41 @@ export default function BottomActionBar() {
         </div>
       </div>
 
-      {/* Bottom bar */}
+      {/* Main Bottom Bar */}
       <div className="bottom-action-bar" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
-        {minOrderValue > 0 && cartTotal < minOrderValue && (
-          <div style={{
-            background: "linear-gradient(90deg, #FEF3C7, #FDE68A)",
-            color: "#92400E",
-            padding: "5px 14px",
-            fontSize: "0.74rem",
-            fontWeight: 800,
-            textAlign: "center",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            gap: 6,
-            borderBottom: "1px solid rgba(0,0,0,0.06)",
-            width: "100%",
-          }}>
-            <span style={{ fontSize: "0.95rem" }}>🛵</span>
-            <span>Add <strong>₹{(minOrderValue - cartTotal).toFixed(0)}</strong> more to reach min. order (₹{minOrderValue})</span>
-          </div>
-        )}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", maxWidth: 1200, margin: "0 auto", width: "100%", gap: "12px", padding: "10px 16px" }}>
+        
+        {/* Top Section: Cart Summary & Actions */}
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          maxWidth: 1200,
+          margin: "0 auto",
+          width: "100%",
+          gap: "10px",
+          padding: showProgressSection ? "9px 14px" : "9px 14px max(10px, env(safe-area-inset-bottom))",
+        }}>
 
-          {/* Left side — click to open drawer */}
+          {/* Left side — click to open mini-cart drawer */}
           <button
             onClick={() => setDrawerOpen(prev => !prev)}
             style={{
-              display: "flex", alignItems: "center", gap: 10,
+              display: "flex", alignItems: "center", gap: 8,
               background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.2)",
-              borderRadius: 10, padding: "6px 12px 6px 8px",
+              borderRadius: 10, padding: "6px 10px 6px 8px",
               cursor: "pointer", transition: "background 0.15s",
+              WebkitTapHighlightColor: "transparent",
+              minWidth: 0,
             }}
             onMouseEnter={e => (e.currentTarget.style.background = "rgba(255,255,255,0.2)")}
             onMouseLeave={e => (e.currentTarget.style.background = "rgba(255,255,255,0.12)")}
           >
             <div className="bottom-action-bar__icon">
-              <ShoppingBag size={18} color="#fff" />
+              <ShoppingBag size={17} color="#fff" />
             </div>
-            <div style={{ textAlign: "left" }}>
-              <div style={{ fontSize: "0.65rem", color: "rgba(255,255,255,0.7)", fontWeight: 600, lineHeight: 1 }}>
-                {drawerOpen ? "▼ Hide" : "▲ View"} items
+            <div style={{ textAlign: "left", minWidth: 0 }}>
+              <div style={{ fontSize: "0.62rem", color: "rgba(255,255,255,0.75)", fontWeight: 700, lineHeight: 1 }}>
+                {drawerOpen ? "▼ Close" : "▲ View"}
               </div>
               <div className="bottom-action-bar__count">
                 {cartCount} item{cartCount > 1 ? "s" : ""} · ₹{cartTotal}
@@ -421,6 +515,7 @@ export default function BottomActionBar() {
             </div>
           </button>
 
+          {/* Right side actions */}
           <div className="bottom-action-bar__actions">
             {hasActiveOrder && activeOrder && (
               <Link
@@ -428,14 +523,14 @@ export default function BottomActionBar() {
                 style={{
                   background: "#059669",
                   color: "#fff",
-                  padding: "9px 12px",
+                  padding: "8px 10px",
                   borderRadius: 10,
                   fontWeight: 800,
-                  fontSize: "0.82rem",
+                  fontSize: "0.8rem",
                   textDecoration: "none",
                   display: "flex",
                   alignItems: "center",
-                  gap: 5,
+                  gap: 4,
                   whiteSpace: "nowrap",
                   boxShadow: "0 2px 8px rgba(5,150,105,0.3)"
                 }}
@@ -452,6 +547,55 @@ export default function BottomActionBar() {
             </Link>
           </div>
         </div>
+
+        {/* BOTTOM SECTION: Bold Min Order Progress Bar (only when min order not yet reached) */}
+        {showProgressSection && isMinOrderPending && (
+          <div style={{
+            width: "100%",
+            background: "rgba(0, 10, 60, 0.65)",
+            borderTop: "1px solid rgba(255, 255, 255, 0.12)",
+            padding: "8px 14px max(10px, env(safe-area-inset-bottom))",
+            display: "flex",
+            flexDirection: "column",
+            gap: 6,
+          }}>
+            {/* Label row */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+              <span style={{
+                display: "flex", alignItems: "center", gap: 5, color: "#FEF08A",
+                fontWeight: 800, fontSize: "clamp(0.7rem, 2.6vw, 0.8rem)", minWidth: 0,
+                whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis"
+              }}>
+                <span style={{ flexShrink: 0 }}>⚡</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>
+                  Add <strong style={{ color: "#FFFFFF" }}>₹{minOrderRemaining}</strong> more · min order ₹{activeMinOrder}
+                </span>
+              </span>
+              <span style={{ color: "rgba(255,255,255,0.65)", fontSize: "0.72rem", fontWeight: 700, flexShrink: 0 }}>
+                {minOrderPct}%
+              </span>
+            </div>
+
+            {/* Bold progress track — 10px tall */}
+            <div style={{
+              height: 10,
+              borderRadius: 99,
+              background: "rgba(255, 255, 255, 0.12)",
+              overflow: "hidden",
+              position: "relative",
+              width: "100%",
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${minOrderPct}%`,
+                borderRadius: 99,
+                background: "linear-gradient(90deg, #F59E0B, #FBBF24, #FDE68A)",
+                transition: "width 0.4s cubic-bezier(0.4,0,0.2,1)",
+                boxShadow: "0 0 12px rgba(251,191,36,0.8), 0 0 4px rgba(253,230,138,0.4)",
+              }} />
+            </div>
+          </div>
+        )}
       </div>
 
       <style>{`
@@ -473,7 +617,7 @@ export default function BottomActionBar() {
             bottom: 50px;
           }
           .otw-track-bar.has-cart-bar {
-            bottom: 60px;
+            bottom: 74px;
           }
           .otw-track-bar.on-cart-page {
             bottom: 0px;
@@ -485,7 +629,7 @@ export default function BottomActionBar() {
             bottom: 0px;
           }
           .otw-track-bar.has-cart-bar {
-            bottom: 56px;
+            bottom: 74px;
           }
         }
       `}</style>

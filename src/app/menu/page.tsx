@@ -173,8 +173,9 @@ function MenuContent() {
   }, []);
 
   const menu = useMemo(() => {
+    if (!Array.isArray(rawMenuItems)) return [];
     return [...rawMenuItems]
-      .filter(item => item.available)
+      .filter(item => item && item.available)
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }, [rawMenuItems]);
 

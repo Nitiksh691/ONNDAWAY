@@ -7,6 +7,10 @@ const nextConfig = {
         hostname: '**',
       },
     ],
+    minimumCacheTTL: 3600,       // cache optimized images for 1 hour, reduces repeat fetches
+    formats: ['image/webp'],      // only serve webp, skip avif to reduce processing time
+    deviceSizes: [384, 640, 750, 828, 1080, 1200],
+    imageSizes: [64, 96, 128, 256, 384],
   },
   // Allows HMR (Hot Module Replacement) to work on mobile devices on the same
   // local network. The wildcard patterns cover common private subnets (10.x,

@@ -21,6 +21,4 @@ const VendorSchema = new Schema({
   updatedAt:    { type: Date, default: Date.now },
 });
 
-VendorSchema.index({ phone: 1 });
-
 export default models.Vendor || model("Vendor", VendorSchema);

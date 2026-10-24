@@ -128,20 +128,23 @@ function DealTimer({ hours = 2, minutes = 14, seconds = 36, onExpire }: { hours?
 
 function FreeDeliveryStrip({ config }: { config: any }) {
   if (!config?.enabled) return null;
-  const heading = config.headingText ? `${config.headingText} ${config.minAmount || 199}` : `FREE DELIVERY ABOVE ₹ ${config.minAmount || 199}`;
+  const threshold = config.minAmount || 199;
+  const heading = config.headingText
+    ? `${config.headingText} ${threshold}`
+    : `FREE DELIVERY ABOVE ₹ ${threshold}`;
 
   return (
     <div style={{ width: "100%", padding: "0 12px", margin: "14px 0" }}>
       <div style={{
-        background: config.bannerImage ? `url(${config.bannerImage}) center/cover no-repeat` : (config.bgGradient || "linear-gradient(135deg, #FF6B00 0%, #FF3D00 50%, #E62E00 100%)"),
+        background: config.bannerImage
+          ? `url(${config.bannerImage}) center/cover no-repeat`
+          : (config.bgGradient || "linear-gradient(135deg, #FF6B00 0%, #FF3D00 50%, #E62E00 100%)"),
         borderRadius: 20, padding: "16px 20px", color: "white", width: "100%",
         display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12,
         boxShadow: "0 8px 24px rgba(255,61,0,0.28)", border: "1px solid rgba(255,255,255,0.25)",
-        position: "relative", overflow: "hidden"
+        position: "relative", overflow: "hidden",
       }}>
-        {/* Glow accent */}
         <div style={{ position: "absolute", top: "-50px", right: "-30px", width: 140, height: 140, borderRadius: "50%", background: "rgba(255,255,255,0.18)", filter: "blur(25px)", pointerEvents: "none" }} />
-
         <div style={{ display: "flex", alignItems: "center", gap: 10, flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: "1.4rem" }}>🛵</span>
           <div>
@@ -157,8 +160,8 @@ function FreeDeliveryStrip({ config }: { config: any }) {
         </div>
         <div style={{
           border: "2px dashed rgba(255,255,255,0.9)", borderRadius: 10, padding: "6px 14px",
-          fontSize: "0.85rem", fontWeight: 900, letterSpacing: "1px", background: "rgba(255,255,255,0.18)",
-          backdropFilter: "blur(6px)", flexShrink: 0
+          fontSize: "0.85rem", fontWeight: 900, letterSpacing: "1px",
+          background: "rgba(255,255,255,0.18)", backdropFilter: "blur(6px)", flexShrink: 0,
         }}>
           [{config.code || "FREEDEL"}]
         </div>

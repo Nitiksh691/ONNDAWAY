@@ -11,7 +11,7 @@ interface MongooseCache {
   promise: Promise<typeof mongoose> | null;
 }
 
-// Typed global cache — prevents multiple connections during hot reload in dev
+// Global cache to maintain a single persistent connection pool across Next.js requests and hot-reloads
 declare global {
   // eslint-disable-next-line no-var
   var __OTW_MONGOOSE__: MongooseCache | undefined;
@@ -20,45 +20,61 @@ declare global {
 const cached: MongooseCache = global.__OTW_MONGOOSE__ ?? { conn: null, promise: null };
 global.__OTW_MONGOOSE__ = cached;
 
-async function dbConnect(): Promise<typeof mongoose> {
-  if (cached.conn) return cached.conn;
+const MONGOOSE_OPTIONS: mongoose.ConnectOptions = {
+  maxPoolSize: process.env.NODE_ENV === "production" ? 10 : 5, // Keep small in dev to avoid Atlas M0 limits
+  minPoolSize: 1,
+  maxIdleTimeMS: 30_000,           // Clean up idle connections to avoid exhausting Atlas
+  serverSelectionTimeoutMS: 10_000, // Timeout after 10s if cluster is unreachable
+  socketTimeoutMS: 45_000,
+  connectTimeoutMS: 10_000,
+  bufferCommands: true,
+  readPreference: "primaryPreferred",
+  retryWrites: true,
+};
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI, {
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10_000, // increased from 5s for reliability
-      socketTimeoutMS: 45_000,
-      connectTimeoutMS: 10_000,
-      bufferCommands: true,             // allow queuing so idle reconnects work
-    }).then((m) => {
-      if (process.env.NODE_ENV === "development") {
-        mongoose.connection.on("connected", () => console.log("[db] connected"));
-        mongoose.connection.on("error", (e) => {
-          console.error("[db] error", e);
-          // Reset cache so next request triggers a fresh connect
+async function connectWithRetry(retries = 2): Promise<typeof mongoose> {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      if (!cached.promise) {
+        cached.promise = mongoose.connect(MONGODB_URI, MONGOOSE_OPTIONS).then((m) => {
+          cached.conn = m;
+          return m;
+        }).catch((err) => {
           cached.conn = null;
           cached.promise = null;
+          throw err;
         });
-        mongoose.connection.on("disconnected", () => {
-          console.warn("[db] disconnected — will reconnect on next request");
-          cached.conn = null;
-          cached.promise = null;
-        });
-      } else {
-        mongoose.connection.on("error", () => { cached.conn = null; cached.promise = null; });
-        mongoose.connection.on("disconnected", () => { cached.conn = null; cached.promise = null; });
       }
-      return m;
-    }).catch((err) => {
-      // Reset so next call retries
+      const conn = await cached.promise;
+      return conn;
+    } catch (err: any) {
+      cached.conn = null;
       cached.promise = null;
+
+      const isRetryable =
+        err?.name === "MongoNetworkError" ||
+        err?.name === "MongoServerSelectionError" ||
+        err?.message?.includes("SSL") ||
+        err?.message?.includes("tlsv1 alert internal error");
+
+      if (attempt < retries && isRetryable) {
+        console.warn(`[db] Connection attempt ${attempt} failed with transient error (${err?.message || err}). Retrying in 1s...`);
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        continue;
+      }
       throw err;
-    });
+    }
+  }
+  throw new Error("[db] Failed to connect to MongoDB after retries");
+}
+
+async function dbConnect(): Promise<typeof mongoose> {
+  // If connection is already healthy and active, reuse immediately with zero overhead
+  if (cached.conn && mongoose.connection.readyState === 1) {
+    return cached.conn;
   }
 
-  cached.conn = await cached.promise;
-  return cached.conn;
+  return connectWithRetry(2);
 }
 
 export default dbConnect;
-
