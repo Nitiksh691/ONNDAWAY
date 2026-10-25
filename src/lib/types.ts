@@ -75,6 +75,7 @@ export interface MenuItem {
   isBanner?: boolean;
   sortOrder?: number;
   isLaunchingSoon?: boolean;
+  searchOnly?: boolean;
   originalPrice?: number;
   section?: string;
   customizationCategories?: CustomizationCategory[];

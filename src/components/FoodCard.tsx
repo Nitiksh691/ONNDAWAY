@@ -6,6 +6,7 @@ import { Plus, Minus, X } from "lucide-react";
 import { MenuItem, SelectedCustomization } from "@/lib/types";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 const CATEGORY_BG: Record<string, string> = {
   coffee: "#E6F0FF", snacks: "#FEF3C7", meals: "#D1FAE5", drinks: "#E0F2FE", desserts: "#FCE7F3",
@@ -248,13 +249,19 @@ const FoodCard = ({
 }: FoodCardProps) => {
   const router = useRouter();
   const [imgError, setImgError] = useState(false);
+  const [imgLoaded, setImgLoaded] = useState(false);
   const [showSizePicker, setShowSizePicker] = useState(false);
   const isHorizontal = layout === "horizontal";
   const bg = CATEGORY_BG[item.category] || "#E6F0FF";
+  const optimizedImage = getOptimizedImageUrl(item.image, isHorizontal ? 200 : (compact ? 300 : 500));
 
   /* When tapping + — intercept if hasTallSize is enabled */
   const triggerAdd = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (item.isLaunchingSoon) {
+      toast("🚀 Launching soon! Teaser preview only.", { icon: "✨" });
+      return;
+    }
     if (!onAdd) return;
     if (item.hasTallSize) {
       setShowSizePicker(true);
@@ -278,34 +285,72 @@ const FoodCard = ({
           style={{
             display: "flex", alignItems: "center", gap: 12,
             background: "#fff", borderRadius: 16,
-            border: "1px solid #e2e8f0",
+            border: item.isLaunchingSoon ? "1.5px solid rgba(1, 53, 251, 0.35)" : "1px solid #e2e8f0",
             borderLeft: "4px solid #0135FB",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+            boxShadow: item.isLaunchingSoon ? "0 4px 14px rgba(1,53,251,0.08)" : "0 2px 8px rgba(0,0,0,0.04)",
             padding: "10px 14px 10px 10px",
             cursor: "pointer",
             transition: "box-shadow 0.2s, transform 0.2s",
             overflow: "hidden",
+            position: "relative",
           }}
           onMouseEnter={e => { e.currentTarget.style.boxShadow = "0 8px 24px rgba(1,53,251,0.12)"; e.currentTarget.style.transform = "translateY(-2px)"; }}
-          onMouseLeave={e => { e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = ""; }}
+          onMouseLeave={e => { e.currentTarget.style.boxShadow = item.isLaunchingSoon ? "0 4px 14px rgba(1,53,251,0.08)" : "0 2px 8px rgba(0,0,0,0.04)"; e.currentTarget.style.transform = ""; }}
         >
           {/* Image */}
           <div style={{ position: "relative", width: 90, height: 90, borderRadius: 12, overflow: "hidden", background: bg, flexShrink: 0 }}>
             {!imgError ? (
-              <Image src={item.image} alt={item.name} fill sizes="90px" unoptimized={typeof item.image === "string" && item.image.includes("cloudinary.com")} style={{ objectFit: "cover" }} onError={() => setImgError(true)} onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} priority={priority} />
+              <>
+                {!imgLoaded && (
+                  <div className="otw-img-skeleton" style={{ position: "absolute", inset: 0, zIndex: 1 }} />
+                )}
+                <Image
+                  src={optimizedImage}
+                  alt={item.name}
+                  fill
+                  sizes="90px"
+                  style={{ objectFit: "cover", opacity: imgLoaded ? 1 : 0, transition: "opacity 0.25s ease-in-out" }}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
+                  onContextMenu={e => e.preventDefault()}
+                  onDragStart={e => e.preventDefault()}
+                  priority={priority}
+                />
+              </>
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "1.8rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
               </div>
             )}
-            {item.isPopular && (
-              <span style={{ position: "absolute", bottom: 4, left: 4, background: "#F59E0B", color: "#fff", fontSize: "0.52rem", fontWeight: 800, padding: "2px 5px", borderRadius: 4, textTransform: "uppercase" }}>Best</span>
+
+            {item.isPopular && !item.isLaunchingSoon && (
+              <span style={{ position: "absolute", bottom: 4, left: 4, background: "#F59E0B", color: "#fff", fontSize: "0.52rem", fontWeight: 800, padding: "2px 5px", borderRadius: 4, textTransform: "uppercase", zIndex: 4 }}>Best</span>
             )}
+
+            {/* Opaque blue Launching Soon badge — image remains fully visible */}
             {item.isLaunchingSoon && (
-              <div style={{ position: "absolute", inset: 0, background: "rgba(16, 185, 129, 0.8)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "0.65rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", padding: "0 8px", zIndex: 5 }}>
-                Launching<br/>Soon
+              <div style={{
+                position: "absolute",
+                top: 4,
+                left: 4,
+                background: "#0135FB",
+                color: "#ffffff",
+                fontSize: "0.52rem",
+                fontWeight: 900,
+                textTransform: "uppercase",
+                padding: "2px 6px",
+                borderRadius: 4,
+                letterSpacing: "0.03em",
+                boxShadow: "0 2px 6px rgba(1, 53, 251, 0.45)",
+                zIndex: 6,
+                display: "flex",
+                alignItems: "center",
+                gap: 2
+              }}>
+                🚀 SOON
               </div>
             )}
+
             {!item.available && !item.isLaunchingSoon && (
               <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 12, color: "#fff", fontSize: "0.6rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", padding: "0 4px", zIndex: 5, backdropFilter: "blur(2px)" }}>
                 NOT<br/>AVAILABLE
@@ -348,11 +393,32 @@ const FoodCard = ({
             ) : (
               <button
                 onClick={triggerAdd}
-                disabled={!item.available || item.isLaunchingSoon}
-                style={{ width: (item.available && !item.isLaunchingSoon) ? 32 : "auto", padding: (item.available && !item.isLaunchingSoon) ? 0 : "0 8px", height: 32, borderRadius: (item.available && !item.isLaunchingSoon) ? "50%" : 8, border: "none", background: (item.available && !item.isLaunchingSoon) ? "#0135FB" : "#F1F5F9", color: (item.available && !item.isLaunchingSoon) ? "#fff" : "#94A3B8", display: "flex", alignItems: "center", justifyContent: "center", cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed", boxShadow: (item.available && !item.isLaunchingSoon) ? "0 3px 10px rgba(1,53,251,0.3)" : "none", transition: "transform 0.15s", flexShrink: 0, fontWeight: 800, fontSize: "0.65rem" }}
-                onMouseEnter={e => (item.available && !item.isLaunchingSoon) && (e.currentTarget.style.transform = "scale(1.12)")}
+                disabled={!item.available && !item.isLaunchingSoon}
+                style={{
+                  width: "auto",
+                  padding: item.isLaunchingSoon ? "0 10px" : ((item.available) ? 0 : "0 8px"),
+                  height: 32,
+                  minWidth: (item.available && !item.isLaunchingSoon) ? 32 : undefined,
+                  borderRadius: (item.available && !item.isLaunchingSoon) ? "50%" : 8,
+                  border: "none",
+                  background: item.isLaunchingSoon ? "#0135FB" : (item.available ? "#0135FB" : "#F1F5F9"),
+                  color: item.isLaunchingSoon ? "#ffffff" : (item.available ? "#fff" : "#94A3B8"),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  cursor: item.isLaunchingSoon ? "not-allowed" : (item.available ? "pointer" : "not-allowed"),
+                  boxShadow: item.isLaunchingSoon ? "0 2px 8px rgba(1,53,251,0.35)" : ((item.available) ? "0 3px 10px rgba(1,53,251,0.3)" : "none"),
+                  transition: "transform 0.15s",
+                  flexShrink: 0,
+                  fontWeight: 900,
+                  fontSize: item.isLaunchingSoon ? "0.65rem" : "0.7rem",
+                  letterSpacing: item.isLaunchingSoon ? "0.04em" : "normal"
+                }}
+                onMouseEnter={e => (!item.isLaunchingSoon && item.available) && (e.currentTarget.style.transform = "scale(1.12)")}
                 onMouseLeave={e => (e.currentTarget.style.transform = "")}
-              >{item.isLaunchingSoon ? "LAUNCHING" : (item.available ? <Plus size={14} /> : "NO STOCK")}</button>
+              >
+                {item.isLaunchingSoon ? "SOON" : (item.available ? <Plus size={14} /> : "NO STOCK")}
+              </button>
             )}
           </div>
         </div>
@@ -376,8 +442,8 @@ const FoodCard = ({
           height: "100%",
           cursor: "pointer",
           position: "relative",
-          border: "1px solid rgba(0,0,0,0.07)",
-          boxShadow: compact ? "0 2px 6px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.05)",
+          border: item.isLaunchingSoon ? "1.5px solid rgba(1, 53, 251, 0.35)" : "1px solid rgba(0,0,0,0.07)",
+          boxShadow: item.isLaunchingSoon ? "0 4px 16px rgba(1,53,251,0.08)" : (compact ? "0 2px 6px rgba(0,0,0,0.04)" : "0 2px 10px rgba(0,0,0,0.05)"),
           overflow: "hidden",
         }}
       >
@@ -392,18 +458,23 @@ const FoodCard = ({
         }}>
           <div style={{ position: "absolute", inset: 0, borderRadius: compact ? "10px 10px 0 0" : "14px 14px 0 0", overflow: "hidden" }}>
             {!imgError ? (
-              <Image
-                src={item.image}
-                alt={item.name}
-                fill
-                sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
-                unoptimized={typeof item.image === "string" && item.image.includes("cloudinary.com")}
-                style={{ objectFit: "cover" }}
-                onError={() => setImgError(true)}
-                onContextMenu={e => e.preventDefault()}
-                onDragStart={e => e.preventDefault()}
-                priority={priority}
-              />
+              <>
+                {!imgLoaded && (
+                  <div className="otw-img-skeleton" style={{ position: "absolute", inset: 0, zIndex: 1 }} />
+                )}
+                <Image
+                  src={optimizedImage}
+                  alt={item.name}
+                  fill
+                  sizes="(max-width: 480px) 50vw, (max-width: 768px) 45vw, 250px"
+                  style={{ objectFit: "cover", opacity: imgLoaded ? 1 : 0, transition: "opacity 0.25s ease-in-out" }}
+                  onLoad={() => setImgLoaded(true)}
+                  onError={() => setImgError(true)}
+                  onContextMenu={e => e.preventDefault()}
+                  onDragStart={e => e.preventDefault()}
+                  priority={priority}
+                />
+              </>
             ) : (
               <div style={{ width: "100%", height: "100%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: compact ? "1.6rem" : "2.2rem" }}>
                 {item.category === "coffee" ? "☕" : item.category === "snacks" ? "🍟" : "🍽️"}
@@ -411,16 +482,36 @@ const FoodCard = ({
             )}
           </div>
 
-          {item.isPopular && (
-            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: compact ? "0.5rem" : "0.55rem", fontWeight: 800, padding: compact ? "2px 5px" : "3px 6px", borderRadius: compact ? "6px 0 6px 0" : "8px 0 6px 0", textTransform: "uppercase" }}>
+          {item.isPopular && !item.isLaunchingSoon && (
+            <div style={{ position: "absolute", top: 0, left: 0, background: "linear-gradient(90deg, #F59E0B, #FCD34D)", color: "#fff", fontSize: compact ? "0.5rem" : "0.55rem", fontWeight: 800, padding: compact ? "2px 5px" : "3px 6px", borderRadius: compact ? "6px 0 6px 0" : "8px 0 6px 0", textTransform: "uppercase", zIndex: 4 }}>
               Bestseller
             </div>
           )}
+
+          {/* Opaque blue Launching Soon badge — image is clearly visible */}
           {item.isLaunchingSoon && (
-            <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.7)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, color: "#fff", fontSize: compact ? "0.75rem" : "0.95rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5 }}>
-              Launching<br/>Soon
+            <div style={{
+              position: "absolute",
+              top: 6,
+              left: 6,
+              background: "#0135FB",
+              color: "#fff",
+              fontSize: compact ? "0.6rem" : "0.68rem",
+              fontWeight: 900,
+              textTransform: "uppercase",
+              padding: "3px 7px",
+              borderRadius: 6,
+              letterSpacing: "0.03em",
+              boxShadow: "0 2px 8px rgba(1, 53, 251, 0.45)",
+              zIndex: 6,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}>
+              🚀 SOON
             </div>
           )}
+
           {!item.available && !item.isLaunchingSoon && (
             <div style={{ position: "absolute", inset: 0, background: "rgba(1, 53, 251, 0.75)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: compact ? "10px 10px 0 0" : "14px 14px 0 0", color: "#fff", fontSize: compact ? "0.75rem" : "0.95rem", fontWeight: 900, textTransform: "uppercase", textAlign: "center", zIndex: 5, backdropFilter: "blur(2px)" }}>
               NOT<br/>AVAILABLE
@@ -448,18 +539,19 @@ const FoodCard = ({
             ) : (
               <button
                 onClick={triggerAdd}
-                disabled={!item.available || item.isLaunchingSoon}
+                disabled={!item.available && !item.isLaunchingSoon}
                 style={{
-                  background: "#fff",
-                  color: (item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#94A3B8",
-                  border: `1.5px solid ${(item.available && !item.isLaunchingSoon) ? "var(--primary)" : "#E2E8F0"}`,
+                  background: item.isLaunchingSoon ? "#0135FB" : "#fff",
+                  color: item.isLaunchingSoon ? "#ffffff" : (item.available ? "var(--primary)" : "#94A3B8"),
+                  border: item.isLaunchingSoon ? "none" : `1.5px solid ${item.available ? "var(--primary)" : "#E2E8F0"}`,
                   borderRadius: 7, height: 26,
-                  padding: (item.available && !item.isLaunchingSoon) ? "0 12px" : "0 8px",
+                  padding: item.isLaunchingSoon ? "0 10px" : ((item.available) ? "0 12px" : "0 8px"),
                   fontWeight: 900,
                   fontSize: (item.available && !item.isLaunchingSoon) ? "0.78rem" : "0.7rem",
-                  boxShadow: "0 2px 6px rgba(0,0,0,0.15)",
-                  cursor: (item.available && !item.isLaunchingSoon) ? "pointer" : "not-allowed",
+                  boxShadow: item.isLaunchingSoon ? "0 2px 8px rgba(1,53,251,0.35)" : "0 2px 6px rgba(0,0,0,0.15)",
+                  cursor: item.isLaunchingSoon ? "not-allowed" : (item.available ? "pointer" : "not-allowed"),
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 2,
+                  letterSpacing: item.isLaunchingSoon ? "0.04em" : "normal"
                 }}
               >
                 {item.isLaunchingSoon ? "SOON" : (item.available ? "ADD" : "OFF")}

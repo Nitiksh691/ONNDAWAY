@@ -3,6 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
 import { Save, AlertTriangle, Info, Clock, Phone, MapPin } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
+import { compressImage } from "@/lib/imageUtils";
 
 function ImageUploadField({
   label,
@@ -26,33 +27,25 @@ function ImageUploadField({
     e.target.value = "";
     setUploading(true);
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        try {
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-token": sessionStorage.getItem("otw_admin_token") || "",
-            },
-            body: JSON.stringify({ image: reader.result }),
-          });
-          const data = await res.json();
-          if (res.ok && data.url) {
-            onChange(data.url);
-            toast.success("Image uploaded to Cloudinary!");
-          } else {
-            toast.error(data.error || "Failed to upload image");
-          }
-        } catch {
-          toast.error("Error uploading image");
-        } finally {
-          setUploading(false);
-        }
-      };
+      const compressed = await compressImage(file, { maxWidth: 1600, maxHeight: 1200, quality: 0.84 });
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || "",
+        },
+        body: JSON.stringify({ image: compressed }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        onChange(data.url);
+        toast.success("Image optimized and uploaded! ⚡");
+      } else {
+        toast.error(data.error || "Failed to upload image");
+      }
     } catch {
-      toast.error("Error reading file");
+      toast.error("Error uploading image");
+    } finally {
       setUploading(false);
     }
   };

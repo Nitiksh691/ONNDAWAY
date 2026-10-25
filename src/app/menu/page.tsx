@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useCallback, useRef, Suspense } from "rea
 import Image from "next/image";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { ChevronRight as ChevRight } from "lucide-react";
+import { ChevronRight as ChevRight, Search, X } from "lucide-react";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
 import { MenuItem } from "@/lib/types";
@@ -138,6 +138,8 @@ function MenuContent() {
   const [activeCategory, setActiveCategory] = useState<string>("all");
   const [activeBrand, setActiveBrand] = useState<string>("all");
   const [menuLayout, setMenuLayout] = useState<"horizontal" | "vertical">("vertical");
+  const [searchQuery, setSearchQuery] = useState("");
+  const isSearching = searchQuery.trim().length > 0;
   const [bannerSlides, setBannerSlides] = useState<any[]>([]);
   const [bannerEnabled, setBannerEnabled] = useState(true);
   const { cart, addToCart, updateQuantity } = useApp();
@@ -148,6 +150,7 @@ function MenuContent() {
     setWorld(w);
     setActiveCategory("all");
     setActiveBrand("all");
+    setSearchQuery("");
   };
 
   useEffect(() => {
@@ -170,18 +173,35 @@ function MenuContent() {
     if (cat) setActiveCategory(cat.toLowerCase());
     const w = params.get("world") as World;
     if (w === "munchies") setWorld("munchies");
+    const q = params.get("q");
+    if (q) setSearchQuery(q);
   }, []);
 
   const menu = useMemo(() => {
     if (!Array.isArray(rawMenuItems)) return [];
     return [...rawMenuItems]
-      .filter(item => item && item.available)
+      .filter(item => item && (item.available || item.isLaunchingSoon))
       .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
   }, [rawMenuItems]);
 
-  // Separate by world — items without 'world' field default to 'food'
-  const foodItems = useMemo(() => menu.filter(i => !i.world || i.world === "food"), [menu]);
-  const munchiesItems = useMemo(() => menu.filter(i => i.world === "munchies"), [menu]);
+  // Exclude searchOnly items from standard browsing
+  const foodItems = useMemo(() => menu.filter(i => (!i.world || i.world === "food") && !i.searchOnly), [menu]);
+  const munchiesItems = useMemo(() => menu.filter(i => i.world === "munchies" && !i.searchOnly), [menu]);
+
+  // Search through all items — INCLUDING searchOnly items!
+  const searchResults = useMemo(() => {
+    if (!isSearching) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return menu.filter(i => {
+      return (
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q)) ||
+        (i.category && i.category.toLowerCase().includes(q)) ||
+        (i.brand && i.brand.toLowerCase().includes(q)) ||
+        (i.tags && i.tags.some((t: string) => t.toLowerCase().includes(q)))
+      );
+    });
+  }, [menu, searchQuery, isSearching]);
 
   const activeItems = world === "food" ? foodItems : munchiesItems;
 
@@ -381,6 +401,40 @@ function MenuContent() {
         borderBottom: "1px solid #f0f0f0",
       }}>
         <div className="otw-container" style={{ padding: "10px 16px" }}>
+          {/* Search Bar Input */}
+          <div style={{ position: "relative", marginBottom: 10 }}>
+            <Search size={16} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: "#94A3B8", pointerEvents: "none" }} />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Search coffee, snacks, brands, meals..."
+              style={{
+                width: "100%",
+                padding: "9px 38px 9px 38px",
+                borderRadius: 10,
+                border: "1.5px solid #E2E8F0",
+                background: "#F8FAFC",
+                fontSize: "0.85rem",
+                fontWeight: 600,
+                outline: "none",
+                boxSizing: "border-box",
+                color: "#0F172A",
+              }}
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery("")}
+                style={{
+                  position: "absolute", right: 12, top: "50%", transform: "translateY(-50%)",
+                  background: "none", border: "none", cursor: "pointer", color: "#94A3B8"
+                }}
+              >
+                <X size={15} />
+              </button>
+            )}
+          </div>
+
           {/* World toggle */}
           <div className="world-toggle-wrap" style={{ marginBottom: 10 }}>
             <button
@@ -453,6 +507,51 @@ function MenuContent() {
                   backgroundSize: "200% 100%", animation: "shimmer 1.5s infinite"
                 }} />
               ))}
+            </div>
+          ) : isSearching ? (
+            /* ─ SEARCH RESULTS VIEW ─ */
+            <div style={{ marginBottom: 32 }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+                <div>
+                  <h2 style={{ fontSize: "1.15rem", fontWeight: 900, color: "var(--text-dark)", margin: 0 }}>
+                    Search Results for "{searchQuery}"
+                  </h2>
+                  <div style={{ fontSize: "0.8rem", color: "#64748B", marginTop: 2 }}>
+                    Found {searchResults.length} matching item{searchResults.length !== 1 ? "s" : ""}
+                  </div>
+                </div>
+                <button
+                  onClick={() => setSearchQuery("")}
+                  style={{
+                    background: "rgba(1, 53, 251, 0.08)", border: "none", color: "var(--primary)",
+                    padding: "6px 12px", borderRadius: 8, fontSize: "0.78rem", fontWeight: 800, cursor: "pointer"
+                  }}
+                >
+                  Clear Search ✕
+                </button>
+              </div>
+
+              {searchResults.length > 0 ? (
+                <div className="food-grid-filtered">
+                  {searchResults.map(item => (
+                    <div key={item.id}>
+                      <FoodCard
+                        item={item}
+                        layout="vertical"
+                        cartItem={cart.find(c => c.item.id === item.id)}
+                        onAdd={addToCart}
+                        onUpdateQuantity={updateQuantity}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ textAlign: "center", padding: "60px 20px" }}>
+                  <div style={{ fontSize: "2.8rem", marginBottom: 12 }}>🔍</div>
+                  <div style={{ fontWeight: 800, fontSize: "1.1rem", color: "#0F172A" }}>No items matching "{searchQuery}"</div>
+                  <p style={{ color: "#64748B", fontSize: "0.85rem", marginTop: 4 }}>Try searching with a different keyword</p>
+                </div>
+              )}
             </div>
           ) : world === "food" ? (
             /* ─ FOOD WORLD ─ */

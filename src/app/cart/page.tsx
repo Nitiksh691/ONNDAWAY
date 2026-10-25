@@ -246,11 +246,10 @@ export default function CartPage() {
     );
   });
 
-  // Unified single minimum order value:
-  // If cart contains Onndaway food or coffee, the minimum order limit is completely WAIVED!
-  const targetMinOrder = hasOnndawayFoodOrCoffee ? 0 : (minOrderValue || 69);
+  // Minimum order requirement (defaults to ₹69 if not configured or 0)
+  const targetMinOrder = (minOrderValue && minOrderValue > 0) ? minOrderValue : 69;
   const isMinOrderMet = targetMinOrder <= 0 || cartTotal >= targetMinOrder;
-  const minOrderShortfall = !hasOnndawayFoodOrCoffee && targetMinOrder > 0 && cartTotal < targetMinOrder
+  const minOrderShortfall = targetMinOrder > 0 && cartTotal < targetMinOrder
     ? targetMinOrder - cartTotal
     : 0;
   const minOrderPct = targetMinOrder > 0 ? Math.min(100, Math.round((cartTotal / targetMinOrder) * 100)) : 100;
@@ -886,54 +885,8 @@ export default function CartPage() {
               </div>
             </div>
 
-            {/* ── UNIFIED MINIMUM ORDER & FREE DELIVERY BAR (ABOVE PAYMENT) ── */}
-            {hasOnndawayFoodOrCoffee ? (
-              <div style={{
-                marginTop: "16px",
-                background: "linear-gradient(135deg, #064E3B 0%, #065F46 100%)",
-                border: "1.5px solid rgba(52, 211, 153, 0.45)",
-                borderRadius: 16,
-                padding: "14px 18px",
-                boxShadow: "0 6px 20px rgba(5, 150, 105, 0.22)",
-                display: "flex",
-                flexDirection: "column",
-                gap: 8,
-              }}>
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                  <span style={{ color: "#34D399", display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: "0.86rem" }}>
-                    <Sparkles size={16} color="#34D399" style={{ flexShrink: 0 }} />
-                    <span>FREE DELIVERY &amp; NO MIN ORDER ON FOOD &amp; COFFEE!</span>
-                  </span>
-                  <span style={{
-                    background: "rgba(52, 211, 153, 0.2)", color: "#34D399",
-                    padding: "3px 9px", borderRadius: 999,
-                    fontWeight: 900, fontSize: "0.72rem", flexShrink: 0
-                  }}>
-                    ☕ Special Unlocked
-                  </span>
-                </div>
-
-                {/* Bold 10px neon progress rail */}
-                <div style={{
-                  height: 10,
-                  borderRadius: 99,
-                  background: "rgba(255, 255, 255, 0.15)",
-                  overflow: "hidden",
-                  width: "100%",
-                }}>
-                  <div style={{
-                    height: "100%",
-                    width: "100%",
-                    borderRadius: 99,
-                    background: "linear-gradient(90deg, #10B981, #34D399, #6EE7B7)",
-                    boxShadow: "0 0 12px rgba(52,211,153,0.9), 0 0 4px rgba(110,231,183,0.5)",
-                  }} />
-                </div>
-                <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-                  Enjoy ₹0 delivery fee and zero minimum order requirements on this order!
-                </div>
-              </div>
-            ) : targetMinOrder > 0 ? (
+            {/* ── MINIMUM ORDER PROGRESS BAR (ABOVE PAYMENT) ── */}
+            {targetMinOrder > 0 && (
               <div style={{ marginTop: "16px" }}>
                 {!isMinOrderMet ? (
                   <div style={{
@@ -950,10 +903,10 @@ export default function CartPage() {
                         <span style={{ fontSize: "1.3rem" }}>🛵</span>
                         <div>
                           <div style={{ fontWeight: 900, fontSize: "0.92rem", color: "#1E3A8A", textTransform: "uppercase", letterSpacing: "0.3px" }}>
-                            Min. Order for Delivery: ₹{targetMinOrder}
+                            Min. ₹{targetMinOrder} to place order
                           </div>
                           <div style={{ fontSize: "0.78rem", color: "#1D4ED8", fontWeight: 700 }}>
-                            Current cart: ₹{cartTotal.toFixed(0)} of ₹{targetMinOrder}
+                            Cart: ₹{cartTotal.toFixed(0)} · Need ₹{minOrderShortfall.toFixed(0)} more
                           </div>
                         </div>
                       </div>
@@ -980,7 +933,7 @@ export default function CartPage() {
 
                     <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 8, flexWrap: "wrap", gap: 8 }}>
                       <span style={{ fontSize: "0.82rem", color: "#1E40AF", fontWeight: 800 }}>
-                        ⚡ Add ₹{minOrderShortfall.toFixed(0)} more or add any coffee/food
+                        ⚡ Add ₹{minOrderShortfall.toFixed(0)} more to unlock delivery
                       </span>
                       <Link href="/menu" style={{
                         fontSize: "0.78rem", fontWeight: 800, color: "#FFFFFF",
@@ -1005,7 +958,7 @@ export default function CartPage() {
                     <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                       <span style={{ color: "#34D399", display: "flex", alignItems: "center", gap: 6, fontWeight: 900, fontSize: "0.86rem" }}>
                         <Sparkles size={16} color="#34D399" style={{ flexShrink: 0 }} />
-                        <span>MINIMUM ORDER REQUIREMENT MET! 🎉</span>
+                        <span>MIN ORDER MET — READY TO CHECKOUT! 🎉</span>
                       </span>
                       <span style={{
                         background: "rgba(52, 211, 153, 0.2)", color: "#34D399",
@@ -1031,12 +984,12 @@ export default function CartPage() {
                       }} />
                     </div>
                     <div style={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.85)", fontWeight: 600 }}>
-                      Minimum order requirement met! Ready for campus delivery.
+                      {hasOnndawayFoodOrCoffee ? "✅ Free delivery unlocked on your food & coffee order!" : "✅ Minimum order met — ready for campus delivery!"}
                     </div>
                   </div>
                 )}
               </div>
-            ) : null}
+            )}
 
             {/* Warning notice when payment is disabled */}
             {!isMinOrderMet && (
@@ -1055,7 +1008,7 @@ export default function CartPage() {
               }}>
                 <span style={{ fontSize: "1.1rem" }}>🚫</span>
                 <span>
-                  Payment is disabled: Minimum order value is ₹{targetMinOrder}. Please add ₹{minOrderShortfall.toFixed(0)} more (or add any coffee/food) to proceed.
+                  Add ₹{minOrderShortfall.toFixed(0)} more to reach the ₹{targetMinOrder} minimum order.
                 </span>
               </div>
             )}

@@ -7,6 +7,7 @@ import { useApp } from "@/lib/context";
 import { useState, useEffect, useRef } from "react";
 import { fetchActiveOrder } from "@/lib/activeOrder";
 import type { Order } from "@/lib/types";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 /** Sticky bottom cart bar + slide-up mini-cart drawer with sleek bottom progress bar */
 export default function BottomActionBar() {
@@ -262,20 +263,19 @@ export default function BottomActionBar() {
     );
   });
 
-  // Only ONE minimum order value (minOrderValue), waived completely if food or coffee is in cart:
-  const activeMinOrder = hasOnndawayFoodOrCoffee ? 0 : (minOrderValue || 69);
+  // Minimum order: always ₹69 (or configured value) for all carts
+  const activeMinOrder = (minOrderValue && minOrderValue > 0) ? minOrderValue : 69;
   const isMinOrderPending = activeMinOrder > 0 && cartTotal < activeMinOrder;
   const minOrderRemaining = Math.max(0, activeMinOrder - cartTotal);
   const minOrderPct = activeMinOrder > 0 ? Math.min(100, Math.round((cartTotal / activeMinOrder) * 100)) : 100;
 
-  // Free delivery progress
+  // Free delivery progress (food/coffee still get free delivery!)
   const freeDelThreshold = freeDelivery?.enabled ? (freeDelivery.minAmount || 199) : 0;
   const isFreeDeliveryUnlocked = hasOnndawayFoodOrCoffee || (freeDelThreshold > 0 && cartTotal >= freeDelThreshold);
   const freeDeliveryRemaining = Math.max(0, freeDelThreshold - cartTotal);
   const freeDeliveryPct = hasOnndawayFoodOrCoffee ? 100 : (freeDelThreshold > 0 ? Math.min(100, Math.round((cartTotal / freeDelThreshold) * 100)) : 100);
 
-  // Only show progress section on BottomActionBar if user still has a pending minimum order (₹69).
-  // Food & Coffee exemption / Free delivery unlocked bar is shown prominently on the Cart page above payment instead!
+  // Show progress bar when min order not yet reached
   const showProgressSection = isMinOrderPending;
 
   return (
@@ -371,11 +371,10 @@ export default function BottomActionBar() {
                 }}>
                   {cartItem.item.image ? (
                     <Image
-                      src={cartItem.item.image}
+                      src={getOptimizedImageUrl(cartItem.item.image, 100)}
                       alt={cartItem.item.name}
                       fill
                       sizes="48px"
-                      unoptimized={typeof cartItem.item.image === "string" && cartItem.item.image.includes("cloudinary.com")}
                       style={{ objectFit: "cover" }}
                     />
                   ) : (

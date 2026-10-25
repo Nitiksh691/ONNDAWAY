@@ -9,6 +9,7 @@ import { MenuItem } from "@/lib/types";
 import toast from "react-hot-toast";
 import FoodCard from "@/components/FoodCard";
 import Footer from "@/components/Footer";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 const fetcher = (url: string) => fetch(url).then(res => res.json());
 
@@ -46,6 +47,10 @@ export default function ItemPage() {
 
   const handleAddToCart = () => {
     if (!item) return;
+    if (item.isLaunchingSoon) {
+      toast("🚀 This item is launching soon! Ordering is not available yet.", { icon: "✨" });
+      return;
+    }
     const currentPrice = selectedSize ? selectedSize.price : item.price;
 
     const customizations = [
@@ -393,7 +398,38 @@ export default function ItemPage() {
               </div>
 
               <div className="main-image-box">
-                <Image src={images[activeImageIndex]} alt={item.name} fill sizes="(max-width: 768px) 100vw, 600px" unoptimized={typeof images[activeImageIndex] === "string" && images[activeImageIndex].includes("cloudinary.com")} style={{ objectFit: "contain", padding: "20px" }} priority onContextMenu={e => e.preventDefault()} onDragStart={e => e.preventDefault()} />
+                {item.isLaunchingSoon && (
+                  <div style={{
+                    position: "absolute",
+                    top: 18,
+                    left: 18,
+                    background: "#0135FB",
+                    color: "#FFFFFF",
+                    padding: "6px 14px",
+                    borderRadius: 999,
+                    fontWeight: 900,
+                    fontSize: "0.82rem",
+                    letterSpacing: "0.04em",
+                    textTransform: "uppercase",
+                    boxShadow: "0 4px 14px rgba(1, 53, 251, 0.4)",
+                    zIndex: 10,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 6
+                  }}>
+                    🚀 Launching Soon
+                  </div>
+                )}
+                <Image
+                  src={getOptimizedImageUrl(images[activeImageIndex], 800)}
+                  alt={item.name}
+                  fill
+                  sizes="(max-width: 768px) 100vw, 600px"
+                  style={{ objectFit: "contain", padding: "20px" }}
+                  priority
+                  onContextMenu={e => e.preventDefault()}
+                  onDragStart={e => e.preventDefault()}
+                />
                 {!item.available && !item.isLaunchingSoon && (
                   <div style={{ position: "absolute", inset: 0, background: "rgba(255,255,255,0.7)", display: "flex", alignItems: "center", justifyContent: "center", backdropFilter: "blur(8px)" }}>
                     <div style={{ background: "#EF4444", color: "#fff", padding: "12px 24px", borderRadius: "12px", fontWeight: 900, letterSpacing: "1px", fontSize: "1.1rem", boxShadow: "0 8px 24px rgba(239, 68, 68, 0.3)" }}>CURRENTLY UNAVAILABLE</div>
@@ -483,7 +519,26 @@ export default function ItemPage() {
 
             {/* Desktop Actions */}
             <div className="desktop-actions-wrap desktop-only">
-              {cartItem ? (
+              {item.isLaunchingSoon ? (
+                <button
+                  className="btn-desktop-cta"
+                  disabled
+                  style={{
+                    background: "#0135FB",
+                    color: "#FFFFFF",
+                    opacity: 0.95,
+                    cursor: "not-allowed",
+                    boxShadow: "0 4px 16px rgba(1, 53, 251, 0.35)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 8,
+                    fontWeight: 900
+                  }}
+                >
+                  🚀 Launching Soon (Teaser Preview)
+                </button>
+              ) : cartItem ? (
                 <>
                   <div className="qty-control-desktop">
                     <button className="qty-btn-desk" onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={20} strokeWidth={3} /></button>
@@ -565,7 +620,21 @@ export default function ItemPage() {
 
       {/* --- MOBILE STICKY BOTTOM BAR (Cart + Quantity + Wishlist) --- */}
       <div className="mobile-sticky-bar mobile-only">
-        {cartItem ? (
+        {item.isLaunchingSoon ? (
+          <button
+            className="btn-desktop-cta"
+            disabled
+            style={{
+              margin: 0, padding: 0, height: 52, flex: 1, borderRadius: 12,
+              fontSize: "0.95rem", fontWeight: 900, background: "#0135FB", color: "#fff",
+              cursor: "not-allowed", opacity: 0.95,
+              display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
+              boxShadow: "0 4px 16px rgba(1, 53, 251, 0.35)"
+            }}
+          >
+            🚀 Launching Soon (Preview)
+          </button>
+        ) : cartItem ? (
           <>
             <div className="qty-control-desktop" style={{ flexShrink: 0, padding: 4, height: 52 }}>
               <button className="qty-btn-desk" style={{ width: 44, height: 44 }} onClick={() => updateQuantity(cartItem.cartItemId || cartItem.item.id, cartItem.quantity - 1)}><Minus size={18} strokeWidth={3} /></button>

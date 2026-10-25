@@ -26,9 +26,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Image too large (max 10MB)" }, { status: 413 });
     }
 
-    // Upload to Cloudinary
+    // Upload to Cloudinary with automatic size and quality optimization
     const result = await cloudinary.uploader.upload(image, {
       folder: "onndaway/menu",
+      transformation: [
+        { width: 1200, height: 1200, crop: "limit" },
+        { quality: "auto:good", fetch_format: "auto" }
+      ]
     });
 
     return NextResponse.json({ url: result.secure_url });

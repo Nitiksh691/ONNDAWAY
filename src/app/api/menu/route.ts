@@ -59,7 +59,7 @@ const _GET = async (req: NextRequest) => {
     });
 
     if (!showAll) {
-      mapped = mapped.filter((i: any) => i.available === true);
+      mapped = mapped.filter((i: any) => i.available === true || i.isLaunchingSoon === true);
       appCache.set(cacheKey, mapped, CACHE_TTL.MENU);
     }
 
@@ -85,7 +85,8 @@ const _POST = async (req: NextRequest) => {
       isPopular, isRecommended, section, isBanner, hasTallSize, 
       details, sizes, sortOrder, available, customizationCategories,
       brand, subcategory, unit, tags, badges, isDeal, world,
-      isConsignment, vendorId, vendorName
+      isConsignment, vendorId, vendorName,
+      isLaunchingSoon, searchOnly
     } = body;
 
     if (!name || !price || !category) {
@@ -110,6 +111,8 @@ const _POST = async (req: NextRequest) => {
       isRecommended: isRecommended || false,
       isBanner:      isBanner      || false,
       hasTallSize:   hasTallSize   || false,
+      isLaunchingSoon: !!isLaunchingSoon,
+      searchOnly:    !!searchOnly,
       section:       section       || "",
       sortOrder:     sortOrder     || 0,
       available:     available !== undefined ? available : true,

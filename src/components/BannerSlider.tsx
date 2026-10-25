@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ChevronLeft, ChevronRight } from "lucide-react";
+import { getOptimizedImageUrl } from "@/lib/imageUtils";
 
 export type BannerSlide = {
   id: string;
@@ -56,9 +57,8 @@ function BentoCell({ slides, isLarge }: { slides: BannerSlide[]; isLarge?: boole
           transition: "opacity 0.7s ease, transform 0.7s ease",
           zIndex: idx === currentSlide ? 1 : 0,
         }}>
-          <Image src={slide.image} alt={slide.text || "Banner"} fill
+          <Image src={getOptimizedImageUrl(slide.image, isLarge ? 1200 : 800)} alt={slide.text || "Banner"} fill
             sizes={isLarge ? "(max-width: 768px) 100vw, 800px" : "(max-width: 768px) 50vw, 400px"}
-            unoptimized={typeof slide.image === "string" && slide.image.includes("cloudinary.com")}
             style={{ objectFit: "cover" }} priority={idx === 0} />
           <div style={{ position: "absolute", inset: 0, zIndex: 1, background: isLarge ? "linear-gradient(0deg, rgba(0,0,0,0.85) 0%, rgba(0,0,0,0.2) 45%, rgba(0,0,0,0) 100%)" : "linear-gradient(0deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.3) 50%, rgba(0,0,0,0.1) 100%)" }} />
           <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2, padding: isLarge ? "clamp(16px, 4vw, 32px)" : "16px", display: "flex", flexDirection: "column", gap: "6px" }}>
@@ -249,7 +249,7 @@ export default function BannerSlider({
           >
             {slides.map((slide, idx) => (
               <div key={slide.id} style={{ position: "absolute", inset: 0, opacity: idx === currentSlide ? 1 : 0, transform: idx === currentSlide ? "scale(1)" : "scale(1.04)", transition: "opacity 0.7s ease, transform 0.7s ease", zIndex: idx === currentSlide ? 1 : 0 }}>
-                <Image src={slide.image} alt={slide.text || "Banner"} fill sizes="(max-width: 768px) 100vw, 1200px" unoptimized={typeof slide.image === "string" && slide.image.includes("cloudinary.com")} style={{ objectFit: "cover" }} priority={idx === 0} />
+                <Image src={getOptimizedImageUrl(slide.image, 1200)} alt={slide.text || "Banner"} fill sizes="(max-width: 768px) 100vw, 1200px" style={{ objectFit: "cover" }} priority={idx === 0} />
                 <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.2) 60%, rgba(0,0,0,0) 100%)" }} />
                 <div style={{ position: "absolute", bottom: 0, left: 0, right: 0, zIndex: 2, padding: "clamp(18px, 4vw, 40px)", display: "flex", flexDirection: "column", gap: "8px" }}>
                   {slide.text && <h3 style={{ fontFamily: "'Outfit', sans-serif", fontWeight: 900, fontSize: "clamp(1.2rem, 4vw, 2.8rem)", lineHeight: 1.05, color: "#fff", textTransform: "uppercase", letterSpacing: "-0.02em", textShadow: "0 4px 16px rgba(0,0,0,0.8)", maxWidth: "75%", margin: 0 }}>{slide.text}</h3>}
@@ -308,10 +308,9 @@ export default function BannerSlider({
               transition: "opacity 0.7s ease, transform 0.7s ease",
               zIndex: idx === currentSlide ? 1 : 0,
             }}>
-              <Image src={slide.image} alt={slide.text || "Banner"} fill
+              <Image src={getOptimizedImageUrl(slide.image, 1200)} alt={slide.text || "Banner"} fill
                 sizes="(max-width: 768px) 100vw, 1200px"
                 className="home-banner-slide-img"
-                unoptimized={typeof slide.image === "string" && slide.image.includes("cloudinary.com")}
                 style={{ objectFit: "cover" }} priority={idx === 0} />
               <div style={{ position: "absolute", inset: 0, zIndex: 1, background: "linear-gradient(90deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.25) 50%, rgba(0,0,0,0.05) 100%)" }} />
             </div>

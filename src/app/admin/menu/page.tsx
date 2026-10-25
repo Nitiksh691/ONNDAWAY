@@ -7,8 +7,8 @@ import { Plus, Edit2, Trash2, Search, Image as ImageIcon, ChevronDown, ChevronUp
 import toast from "react-hot-toast";
 
 
-// Dialog components from Radix UI
 import * as Dialog from '@radix-ui/react-dialog';
+import { compressImage } from "@/lib/imageUtils";
 
 export default function AdminMenuPage() {
   const [items, setItems] = useState<MenuItem[]>([]);
@@ -23,8 +23,9 @@ export default function AdminMenuPage() {
   const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
   const [vendorsList, setVendorsList] = useState<any[]>([]);
 
-  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", world: "food", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, image: "", customizationCategories: [], details: [], sizes: [], isConsignment: false, vendorId: null, vendorName: "" });
+  const [form, setForm] = useState<Partial<MenuItem>>({ name: "", description: "", price: 0, originalPrice: 0, section: "", category: "coffee", world: "food", available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false, isLaunchingSoon: false, searchOnly: false, image: "", customizationCategories: [], details: [], sizes: [], isConsignment: false, vendorId: null, vendorName: "" });
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingStatus, setUploadingStatus] = useState("");
 
 
   const fetchMenu = async () => {
@@ -61,6 +62,7 @@ export default function AdminMenuPage() {
         name: "", description: "", price: 0, originalPrice: 0, section: "",
         category: adminWorld === "munchies" ? "munchies" : "coffee", world: adminWorld,
         available: true, isPopular: false, isRecommended: false, isBanner: false, hasTallSize: false,
+        isLaunchingSoon: false, searchOnly: false,
         image: "", orderCount: 0, sortOrder: 0, customizationCategories: [], details: [], sizes: [],
         isConsignment: false, vendorId: null, vendorName: "",
       });
@@ -73,35 +75,33 @@ export default function AdminMenuPage() {
     if (!file) return;
     e.target.value = "";
     setUploadingImage(true);
+    setUploadingStatus("Compressing & optimizing image...");
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        try {
-          const res = await fetch("/api/upload", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
-            },
-            body: JSON.stringify({ image: reader.result }),
-          });
-          const data = await res.json();
-          if (res.ok && data.url) {
-            setForm(f => ({ ...f, image: data.url }));
-            toast.success("Image uploaded!");
-          } else {
-            toast.error(data.error || "Failed to upload image");
-          }
-        } catch {
-          toast.error("Error uploading image");
-        } finally {
-          setUploadingImage(false);
-        }
-      };
-    } catch {
-      toast.error("Error reading file");
+      // ⚡ Client-side compression: converts 5MB-15MB camera photos to ~100-200KB in ~50ms
+      const compressedBase64 = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+      setUploadingStatus("Uploading to cloud...");
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
+        },
+        body: JSON.stringify({ image: compressedBase64 }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setForm(f => ({ ...f, image: data.url }));
+        toast.success("Image optimized and uploaded! ⚡");
+      } else {
+        toast.error(data.error || "Failed to upload image");
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Error uploading image");
+    } finally {
       setUploadingImage(false);
+      setUploadingStatus("");
     }
   };
 
@@ -411,6 +411,26 @@ export default function AdminMenuPage() {
                           alignSelf: "flex-start"
                         }}>
                           ✅ Approved &amp; Live
+                        </span>
+                      )}
+                      {item.isLaunchingSoon && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          background: "#EFF6FF", border: "1px solid #3B82F6", color: "#1D4ED8",
+                          fontSize: "0.72rem", fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                          alignSelf: "flex-start"
+                        }}>
+                          🚀 Launching Soon
+                        </span>
+                      )}
+                      {item.searchOnly && (
+                        <span style={{
+                          display: "inline-flex", alignItems: "center", gap: 4,
+                          background: "#EEF2FF", border: "1px solid #818CF8", color: "#3730A3",
+                          fontSize: "0.72rem", fontWeight: 800, padding: "2px 8px", borderRadius: 999,
+                          alignSelf: "flex-start"
+                        }}>
+                          🔍 Search Only
                         </span>
                       )}
                     </div>
@@ -737,7 +757,7 @@ export default function AdminMenuPage() {
                     {uploadingImage ? (
                       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "12px" }}>
                         <div style={{ width: "30px", height: "30px", border: "3px solid var(--border)", borderTopColor: "var(--primary)", borderRadius: "50%", animation: "spin 1s linear infinite" }}></div>
-                        <div style={{ color: "var(--primary)", fontWeight: 700 }}>Uploading to Cloudinary...</div>
+                        <div style={{ color: "var(--primary)", fontWeight: 700 }}>{uploadingStatus || "Uploading to Cloudinary..."}</div>
                       </div>
                     ) : form.image ? (
                       <>
@@ -754,7 +774,7 @@ export default function AdminMenuPage() {
                           <ImageIcon size={28} color="var(--primary)" />
                         </div>
                         <div style={{ fontWeight: 800, color: "var(--text-dark)", fontSize: "1.1rem", marginBottom: "4px" }}>Click to upload image</div>
-                        <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Supports JPG, PNG, WEBP</div>
+                        <div style={{ fontSize: "0.85rem", color: "var(--text-muted)" }}>Supports JPG, PNG, WEBP (Auto-optimized)</div>
                       </>
                     )}
                   </label>
@@ -766,6 +786,24 @@ export default function AdminMenuPage() {
                     <div style={{ display: "flex", flexDirection: "column" }}>
                       <label htmlFor="avail" style={{ fontWeight: 700, cursor: "pointer", color: "var(--text-dark)" }}>Item is currently available</label>
                       <span style={{ fontSize: "0.8rem", color: "var(--text-muted)" }}>Uncheck this if the item is out of stock.</span>
+                    </div>
+                  </div>
+
+                  {/* ── Launching Soon (Teaser Mode) ── */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: form.isLaunchingSoon ? "#EFF6FF" : "#ffffff", border: form.isLaunchingSoon ? "1.5px solid #0135FB" : "1px solid #e2e8f0", borderRadius: "12px" }}>
+                    <input type="checkbox" id="launchingSoon" checked={form.isLaunchingSoon || false} onChange={e => setForm({ ...form, isLaunchingSoon: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#0135FB" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="launchingSoon" style={{ fontWeight: 800, cursor: "pointer", color: form.isLaunchingSoon ? "#0135FB" : "var(--text-dark)" }}>🚀 Mark as "Launching Soon" (Teaser)</label>
+                      <span style={{ fontSize: "0.8rem", color: form.isLaunchingSoon ? "#1E40AF" : "var(--text-muted)" }}>Shows the product photo and pricing with an opaque blue theme. Customers can see the teaser, but cannot place orders yet.</span>
+                    </div>
+                  </div>
+
+                  {/* ── Search Only (Hidden from Menu) ── */}
+                  <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "16px", background: form.searchOnly ? "#F5F3FF" : "#ffffff", border: form.searchOnly ? "1.5px solid #6366F1" : "1px solid #e2e8f0", borderRadius: "12px" }}>
+                    <input type="checkbox" id="searchOnly" checked={form.searchOnly || false} onChange={e => setForm({ ...form, searchOnly: e.target.checked })} style={{ width: 20, height: 20, cursor: "pointer", accentColor: "#6366F1" }} />
+                    <div style={{ display: "flex", flexDirection: "column" }}>
+                      <label htmlFor="searchOnly" style={{ fontWeight: 800, cursor: "pointer", color: form.searchOnly ? "#4338CA" : "var(--text-dark)" }}>🔍 Search Only (Hidden from Menu Catalog)</label>
+                      <span style={{ fontSize: "0.8rem", color: form.searchOnly ? "#4338CA" : "var(--text-muted)" }}>Hidden from category rows, browse views, and recommendations. Will ONLY show up when someone searches for it by name in the search bar.</span>
                     </div>
                   </div>
 

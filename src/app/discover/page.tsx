@@ -11,7 +11,7 @@ export default function DiscoverPage() {
 
   useEffect(() => {
     if (!loading && rawMenuItems.length > 0) {
-      const available = rawMenuItems.filter(item => item.available);
+      const available = rawMenuItems.filter(item => item.available && !item.searchOnly);
       for (let i = available.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
         [available[i], available[j]] = [available[j], available[i]];

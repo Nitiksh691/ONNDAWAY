@@ -15,6 +15,7 @@ import {
   requestNotificationPermission,
   triggerBrowserNotification,
 } from "@/lib/orderSounds";
+import { compressImage } from "@/lib/imageUtils";
 
 type Tab = "orders" | "menu" | "reports";
 type Period = "7" | "30" | "90" | "all";
@@ -775,33 +776,25 @@ function VendorMenuTab({ session }: { session: VendorSession }) {
     e.target.value = "";
     setUploadingImage(true);
     try {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onloadend = async () => {
-        try {
-          const res = await fetch("/api/vendor/upload", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              image: reader.result,
-              vendorId: session.vendorId,
-            }),
-          });
-          const data = await res.json();
-          if (res.ok && data.url) {
-            setForm(f => ({ ...f, image: data.url }));
-            toast.success("Product photo uploaded! 📸");
-          } else {
-            toast.error(data.error || "Failed to upload image");
-          }
-        } catch {
-          toast.error("Error uploading image");
-        } finally {
-          setUploadingImage(false);
-        }
-      };
+      const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.82 });
+      const res = await fetch("/api/vendor/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          image: compressed,
+          vendorId: session.vendorId,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setForm(f => ({ ...f, image: data.url }));
+        toast.success("Product photo optimized & uploaded! 📸⚡");
+      } else {
+        toast.error(data.error || "Failed to upload image");
+      }
     } catch {
-      toast.error("Error reading file");
+      toast.error("Error uploading image");
+    } finally {
       setUploadingImage(false);
     }
   };

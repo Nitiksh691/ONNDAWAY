@@ -26,6 +26,7 @@ const MenuItemSchema = new Schema({
   isBanner:      { type: Boolean, default: false },
   hasTallSize:   { type: Boolean, default: false },
   isLaunchingSoon: { type: Boolean, default: false },
+  searchOnly:    { type: Boolean, default: false },
   originalPrice: { type: Number, default: null },
   section:       { type: String, default: "" },
   sortOrder:     { type: Number, default: 0 },

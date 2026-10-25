@@ -1545,3 +1545,14 @@ section[style*="marginBottom"] h2 {
 /* Avoid pure black text globally */
 .text-black, [class*='text-black'], [style*='color: black'], [style*='color:#000'] { color: var(--text-dark) !important; }
 
+/* ── Smooth Image Skeleton Shimmer ── */
+@keyframes otw-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+.otw-img-skeleton {
+  background: linear-gradient(90deg, #F1F5F9 25%, #E2E8F0 50%, #F1F5F9 75%);
+  background-size: 200% 100%;
+  animation: otw-shimmer 1.5s infinite linear;
+}
+

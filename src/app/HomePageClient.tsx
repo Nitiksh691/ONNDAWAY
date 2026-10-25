@@ -611,7 +611,7 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
     })).filter(g => g.items.length > 0);
   }, [munchiesItems]);
 
-  const bannerItems = useMemo(() => menuItems.filter(i => i.isBanner).map(i => ({
+  const bannerItems = useMemo(() => menuItems.filter(i => i.isBanner && !i.searchOnly).map(i => ({
     id: `item-${i.id}`,
     text: i.name,
     subText: i.description || "Freshly prepared for you",
@@ -624,16 +624,30 @@ export default function HomePageClient({ initialMenu = [], initialBanner = {}, i
   const hasBanner = bannerEnabled && combinedBannerSlides.length > 0;
 
   const deferredSearch = useDeferredValue(searchQuery);
-  const filteredItems = useMemo(() => menuItems.filter(i => {
-    const matchesCategory = selectedCategory === "all" || i.category === selectedCategory;
-    const matchesSearch = i.name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
-      (i.description && i.description.toLowerCase().includes(deferredSearch.toLowerCase()));
-    return matchesCategory && matchesSearch;
-  }), [menuItems, selectedCategory, deferredSearch]);
+  const isSearching = deferredSearch.trim().length > 0;
 
-  // Popular items appear in both their category row AND the Popular slider below.
-  // Recommended items only show a badge on the card — no separate section, no exclusion.
-  const popularItems = useMemo(() => menuItems.filter(i => i.isPopular).slice(0, 10), [menuItems]);
+  const filteredItems = useMemo(() => menuItems.filter(i => {
+    // 🔍 Search-Only items are hidden from browse catalog, but show up when searching
+    if (!isSearching && i.searchOnly) return false;
+
+    if (isSearching) {
+      const q = deferredSearch.toLowerCase();
+      const matchesSearch =
+        i.name.toLowerCase().includes(q) ||
+        (i.description && i.description.toLowerCase().includes(q)) ||
+        (i.brand && i.brand.toLowerCase().includes(q)) ||
+        (i.tags && i.tags.some((t: string) => t.toLowerCase().includes(q)));
+      
+      const matchesCategory = selectedCategory === "all" || i.category === selectedCategory;
+      return matchesSearch && matchesCategory;
+    }
+
+    const matchesCategory = selectedCategory === "all" || i.category === selectedCategory;
+    return matchesCategory;
+  }), [menuItems, selectedCategory, deferredSearch, isSearching]);
+
+  // Popular items appear in both their category row AND the Popular slider below (exclude search-only items)
+  const popularItems = useMemo(() => menuItems.filter(i => i.isPopular && !i.searchOnly).slice(0, 10), [menuItems]);
 
   /* No items are excluded from the category rows — popular duplicates in slider are intentional */
   const fullMenuItems = useMemo(() => {
