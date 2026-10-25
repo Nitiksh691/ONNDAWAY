@@ -35,7 +35,7 @@ export default function BottomActionBar() {
           }
         }
       })
-      .catch(() => {});
+      .catch(() => { });
   }, []);
 
   // Track active order & only subscribe to SSE when user actually has an active order
@@ -473,8 +473,24 @@ export default function BottomActionBar() {
       </div>
 
       {/* Main Bottom Bar */}
-      <div className="bottom-action-bar" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}>
-        
+      {/* <div className="bottom-action-bar" style={{ display: "flex", flexDirection: "column", padding: 0, overflow: "hidden" }}> */}
+      <div
+        className="bottom-action-bar"
+        style={{
+          display: "flex",
+          flexDirection: "column",
+          padding: 0,
+          overflow: "visible",
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: "var(--bottom-nav-height, 0px)",
+          zIndex: 980,
+          background: "#0135FB",
+          paddingBottom: "env(safe-area-inset-bottom)",
+          boxSizing: "border-box",
+        }}
+      >
         {/* Top Section: Cart Summary & Actions */}
         <div style={{
           display: "flex",
