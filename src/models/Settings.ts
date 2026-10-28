@@ -49,6 +49,10 @@ const SettingsSchema = new Schema({
   // ── Minimum order value for groceries (exempts coffee/mojitos) ──
   minGroceryOrderValue: { type: Number, default: 0 },
 
+  // ── Email Order Notification Settings ──
+  orderEmailNotificationsEnabled: { type: Boolean, default: true },
+  orderNotificationEmail: { type: String, default: "onndawayy@gmail.com" },
+
   // Server-Driven UI (SDUI) Homepage Layout Config
   homeLayout: {
     categoryIconsBar: {

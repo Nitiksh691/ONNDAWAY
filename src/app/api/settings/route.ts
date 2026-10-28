@@ -70,6 +70,8 @@ const _POST = async (req: NextRequest) => {
       update.minGroceryOrderValue = 0;
     }
     if (homeLayout !== undefined) update.homeLayout = homeLayout;
+    if (body.orderEmailNotificationsEnabled !== undefined) update.orderEmailNotificationsEnabled = body.orderEmailNotificationsEnabled;
+    if (body.orderNotificationEmail !== undefined) update.orderNotificationEmail = body.orderNotificationEmail;
 
     // Single atomic op — much faster than findOne+save, avoids 30s timeout
     const settings = await Settings.findOneAndUpdate(

@@ -65,6 +65,13 @@ export async function POST(req: NextRequest) {
 
     const vendorDisplayName = (vendor as any).businessName || (vendor as any).name || "Vendor";
 
+    let effectiveStoreId = body.storeId || (vendor as any).storeId;
+    if (!effectiveStoreId) {
+      const Store = (await import("@/models/Store")).default;
+      const defaultStore = await Store.findOne({ isActive: true }).lean();
+      if (defaultStore) effectiveStoreId = (defaultStore as any)._id;
+    }
+
     const newItem = await MenuItem.create({
       name: name.trim(),
       description: description?.trim() || "",
@@ -77,6 +84,7 @@ export async function POST(req: NextRequest) {
       world: world === "food" ? "food" : "munchies",
       vendorId,
       vendorName: vendorDisplayName,
+      storeId: effectiveStoreId || null,
       isConsignment: true,
       available: true,
       approvalStatus: "pending", // Requires Admin Approval

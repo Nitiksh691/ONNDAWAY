@@ -16,6 +16,7 @@ const fetcher = async (url: string) => {
 export function useMenu(fallbackData?: MenuItem[]) {
   const { data, error, isLoading, mutate } = useSWR<MenuItem[]>("/api/menu", fetcher, {
     fallbackData,
+    revalidateOnMount: !fallbackData || fallbackData.length === 0,
     revalidateOnFocus: false,      // Don't re-fetch every tab switch — menu rarely changes
     revalidateOnReconnect: true,   // Do re-fetch on network reconnect
     dedupingInterval: 60000,       // Cache for 60s

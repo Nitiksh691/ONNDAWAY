@@ -219,7 +219,7 @@ export default function OrdersPage() {
                             {getStatusBadge(order.status)}
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} • {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>
                             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><MapPin size={14}/> {order.location}</span>
                           </div>
                         </div>
@@ -265,7 +265,7 @@ export default function OrdersPage() {
                             {getStatusBadge(order.status)}
                           </div>
                           <div style={{ display: "flex", alignItems: "center", gap: "16px", fontSize: "0.85rem", color: "var(--text-muted)" }}>
-                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString()} {new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><Clock size={14}/> {new Date(order.createdAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" })} • {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}</span>
                             <span style={{ display: "flex", alignItems: "center", gap: "4px" }}><MapPin size={14}/> {order.location}</span>
                           </div>
                         </div>

@@ -97,6 +97,13 @@ const _POST = async (req: NextRequest) => {
   await order.save();
   console.log(`[PAYMENT_VERIFY_SUCCESS] Order ${order._id} successfully marked as PAID`);
 
+  // Send background email notification (non-blocking)
+  import("@/lib/email").then(({ sendOrderNotificationEmail }) => {
+    sendOrderNotificationEmail({ ...order.toObject(), id: order._id.toString() }).catch((err) =>
+      console.error("Order notification email error:", err)
+    );
+  });
+
   return NextResponse.json({
     success: true,
     payment_id: razorpay_payment_id,

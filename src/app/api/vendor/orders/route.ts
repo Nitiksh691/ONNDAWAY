@@ -74,15 +74,19 @@ export async function PATCH(req: NextRequest) {
   if (!hasItems) return NextResponse.json({ error: "Not authorized" }, { status: 403 });
 
   if (action === "pack") {
-    order.vendorPackedAt = new Date();
+    const now = new Date();
     for (const it of order.items || []) {
       if (String(it.vendorId) === vendorId || String(it.item?.vendorId) === vendorId) {
         it.vendorPacked = true;
-        it.vendorPackedAt = new Date();
+        it.vendorPackedAt = now;
       }
     }
+    const allPacked = (order.items || []).every((it: any) => it.vendorPacked);
+    if (allPacked) {
+      order.vendorPackedAt = now;
+    }
     await order.save();
-    return NextResponse.json({ ok: true, vendorPackedAt: order.vendorPackedAt });
+    return NextResponse.json({ ok: true, vendorPackedAt: order.vendorPackedAt || now });
   }
 
   return NextResponse.json({ error: "Unknown action" }, { status: 400 });

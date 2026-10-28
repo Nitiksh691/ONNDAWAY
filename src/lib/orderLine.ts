@@ -30,6 +30,11 @@ export function normalizeCartLine(line: CartItem): CartItem {
     line.lineDetails ||
     buildLineDetails(customizations, specialInstructions || undefined);
 
+  const vendorId = line.vendorId || line.item.vendorId || null;
+  const storeId = line.storeId || line.item.storeId || null;
+  const vendorName = line.item.vendorName || "";
+  const isConsignment = Boolean(line.item.isConsignment || vendorId);
+
   return {
     cartItemId: line.cartItemId || `${line.item.id}-${Date.now()}-${Math.random().toString(36).substring(7)}`,
     item: {
@@ -41,12 +46,20 @@ export function normalizeCartLine(line: CartItem): CartItem {
       description: line.item.description ?? "",
       orderCount: line.item.orderCount ?? 0,
       available: line.item.available ?? true,
+      vendorId,
+      vendorName,
+      isConsignment,
+      storeId,
     },
     quantity: line.quantity || 1,
     unitPrice,
     selectedCustomizations: customizations,
     specialInstructions: specialInstructions || undefined,
     lineDetails,
+    vendorId,
+    storeId,
+    vendorPacked: line.vendorPacked ?? false,
+    vendorPackedAt: line.vendorPackedAt ?? null,
   };
 }
 

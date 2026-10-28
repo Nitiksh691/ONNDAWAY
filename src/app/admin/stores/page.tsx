@@ -136,7 +136,11 @@ export default function AdminStoresPage() {
     }
 
     setSubmitting(true);
-    const token = localStorage.getItem("otw_admin_token") || "";
+    const token =
+      (typeof window !== "undefined" &&
+        (sessionStorage.getItem("otw_admin_token") ||
+          localStorage.getItem("otw_admin_token"))) ||
+      "";
 
     const payload = {
       ...form,
@@ -182,7 +186,11 @@ export default function AdminStoresPage() {
 
   const handleDelete = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete store "${name}"?`)) return;
-    const token = localStorage.getItem("otw_admin_token") || "";
+    const token =
+      (typeof window !== "undefined" &&
+        (sessionStorage.getItem("otw_admin_token") ||
+          localStorage.getItem("otw_admin_token"))) ||
+      "";
     try {
       const res = await fetch(`/api/stores/${id}`, {
         method: "DELETE",

@@ -1,8 +1,9 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useApp } from "@/lib/context";
-import { Truck, ArrowRight, Lock, Phone, Mail } from "lucide-react";
+import { Truck, ArrowRight, Lock, Phone, Mail, ArrowLeft } from "lucide-react";
 import toast from "react-hot-toast";
 
 export default function DeliveryLogin() {
@@ -114,6 +115,22 @@ export default function DeliveryLogin() {
       {/* Right form */}
       <div style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", padding: "24px" }}>
         <div style={{ width: "100%", maxWidth: 420, padding: "36px 32px", background: "white", borderRadius: 20, boxShadow: "0 10px 40px rgba(0,0,0,0.08)", border: "1.5px solid #E2E8F0" }}>
+          <div style={{ marginBottom: 16 }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 6,
+                fontSize: "0.82rem",
+                fontWeight: 700,
+                color: "#64748B",
+                textDecoration: "none",
+              }}
+            >
+              <ArrowLeft size={16} /> Back to Store
+            </Link>
+          </div>
           <div style={{ textAlign: "center", marginBottom: "24px" }}>
             <div
               style={{

@@ -29,10 +29,20 @@ import {
   List,
   PauseCircle,
   PlayCircle,
-  Printer
+  Printer,
+  Calendar
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { printOrder, printBatchOrders, GridPreset } from "@/components/OrderPrintSlip";
+
+function formatOrderDateTime(dateStr: string) {
+  if (!dateStr) return { day: "", date: "", time: "", full: "" };
+  const d = new Date(dateStr);
+  const day = d.toLocaleDateString("en-IN", { weekday: "short" });
+  const date = d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  const time = d.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true });
+  return { day, date, time, full: `${day}, ${date} • ${time}` };
+}
 
 const fetcher = (url: string) => {
   const token = typeof window !== "undefined" ? sessionStorage.getItem("otw_admin_token") : "";
@@ -570,7 +580,7 @@ export default function AdminOrdersPage() {
                   </div>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, flexShrink: 0 }}>
                     <span style={{ fontSize: "0.75rem", color: "#64748B", display: "flex", alignItems: "center", gap: 3 }}>
-                      <Clock size={12} /> {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })}
+                      <Calendar size={11} color="#64748B" /> {formatOrderDateTime(order.createdAt).full}
                     </span>
                     <span style={{ fontWeight: 900, fontSize: "1.05rem", color: "#0F172A" }}>₹{order.total}</span>
                   </div>

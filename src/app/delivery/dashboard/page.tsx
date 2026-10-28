@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useApp } from "@/lib/context";
 import { Order } from "@/lib/types";
 import { buildLineDetails } from "@/lib/orderLine";
@@ -8,7 +9,7 @@ import {
   Truck, MapPin, Phone, User, Check, Package,
   LogOut, ArrowRight, MessageCircle, Lock,
   Navigation, Clock, ChevronRight, X,
-  AlertCircle, Banknote, CreditCard, RefreshCw
+  AlertCircle, Banknote, CreditCard, RefreshCw, Home, ArrowLeft
 } from "lucide-react";
 import { getOrderMapsUrl } from "@/lib/maps";
 import DeliveryRouteMap from "@/components/DeliveryRouteMap";
@@ -184,7 +185,25 @@ export default function DeliveryDashboard() {
               <div style={{ fontSize: "0.8rem", opacity: 0.85, fontWeight: 600 }}>{profile?.name || "Demo Partner"}</div>
             </div>
           </div>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Link
+              href="/"
+              style={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 5,
+                padding: "6px 12px",
+                borderRadius: 20,
+                background: "rgba(255,255,255,0.2)",
+                color: "#fff",
+                fontSize: "0.76rem",
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+              title="Exit Dashboard & Browse Store"
+            >
+              <Home size={14} /> Exit to Store
+            </Link>
             <button
               onClick={() => fetchOrders()}
               style={{ width: 38, height: 38, borderRadius: "50%", background: "rgba(255,255,255,0.15)", border: "none", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" }}

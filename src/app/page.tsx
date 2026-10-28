@@ -3,8 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import MenuItem from "@/models/MenuItem";
 import Settings from "@/models/Settings";
 
-export const dynamic = "force-dynamic";
-export const revalidate = 0;
+export const revalidate = 60;
 
 export default async function Page() {
   let initialMenu: any[] = [];

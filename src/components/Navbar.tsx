@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
   { href: "/orders", label: "Orders" },
+  // { href: "/admin", label: "Admin" }
 ];
 
 export default function Navbar() {
@@ -441,6 +442,42 @@ export default function Navbar() {
           height: 1px;
           background: var(--border-light, #E2E8F0);
         }
+
+
+
+      /* Admin link */
+        .nav-admin-link {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          padding: 7px 11px;
+          border-radius: 10px;
+          border: 1.5px solid var(--border-subtle, rgba(1,53,251,0.12));
+          background: var(--accent-2, #EFF6FF);
+          color: var(--primary, #0135FB);
+          cursor: pointer;
+          font-family: inherit;
+          font-weight: 700;
+          font-size: 0.76rem;
+          transition: all 0.2s;
+          white-space: nowrap;
+          text-decoration: none;
+        }
+        .nav-admin-link:hover {
+          background: var(--accent-3, #DBEAFE);
+          box-shadow: 0 2px 8px rgba(1,53,251,0.1);
+          transform: translateY(-1px);
+        }
+        @media (max-width: 480px) {
+          .nav-admin-link {
+            padding: 7px 8px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            justify-content: center;
+          }
+        }
+
       `}</style>
 
       <nav className="nav-root">
@@ -482,11 +519,11 @@ export default function Navbar() {
                 Profile
               </Link>
             )}
-            {profile?.role === "admin" && (
+            {/* {profile?.role === "admin" && (
               <Link href="/admin" className={`nav-link${pathname.startsWith("/admin") ? " active" : ""}`}>
                 Admin
               </Link>
-            )}
+            )} */}
             {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
               <Link
                 href="/delivery/dashboard"
@@ -511,6 +548,19 @@ export default function Navbar() {
                 <span className="desktop-only">Deliveries</span>
               </Link>
             )}
+
+            {/* Admin Link fro easy acces to the admin pannel */}
+            {
+              mounted && (profile?.role === "admin") && (
+                <Link
+                  href="/admin"
+                  className="nav-admin-link"
+                  title="Admin"
+                >
+                  Admin
+                </Link>
+              )}
+
 
             {/* Location Pill */}
             <button id="location-picker-btn" onClick={() => setLocationOpen(true)} className="nav-location-pill">

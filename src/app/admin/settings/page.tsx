@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
-import { Save, AlertTriangle, Info, Clock, Phone, MapPin } from "lucide-react";
+import { Save, AlertTriangle, Info, Clock, Phone, MapPin, Mail } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { compressImage } from "@/lib/imageUtils";
 
@@ -127,6 +127,8 @@ export default function AdminSettingsPage() {
   const [geoRadiusKm, setGeoRadiusKm] = useState<string>("1.0");
   const [heroSectionEnabled, setHeroSectionEnabled] = useState<boolean>(true);
   const [minOrderValue, setMinOrderValue] = useState<number>(69);
+  const [orderEmailNotificationsEnabled, setOrderEmailNotificationsEnabled] = useState<boolean>(true);
+  const [orderNotificationEmail, setOrderNotificationEmail] = useState<string>("onndawayy@gmail.com");
 
   const [menuItemsList, setMenuItemsList] = useState<any[]>([]);
 
@@ -178,7 +180,7 @@ export default function AdminSettingsPage() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  
+
   // Dialog state
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingSaveData, setPendingSaveData] = useState<any>(null);
@@ -189,7 +191,7 @@ export default function AdminSettingsPage() {
       .then(data => {
         if (Array.isArray(data)) setMenuItemsList(data);
       })
-      .catch(() => {});
+      .catch(() => { });
 
     fetch("/api/settings", {
       headers: { "x-admin-token": sessionStorage.getItem("otw_admin_token") || "" }
@@ -213,6 +215,8 @@ export default function AdminSettingsPage() {
           if (data.geoRadiusKm !== undefined) setGeoRadiusKm(data.geoRadiusKm);
           if (data.heroSectionEnabled !== undefined) setHeroSectionEnabled(data.heroSectionEnabled);
           if (data.minOrderValue !== undefined) setMinOrderValue(data.minOrderValue);
+          if (data.orderEmailNotificationsEnabled !== undefined) setOrderEmailNotificationsEnabled(data.orderEmailNotificationsEnabled);
+          if (data.orderNotificationEmail !== undefined) setOrderNotificationEmail(data.orderNotificationEmail);
           if (data.homeLayout) setHomeLayout(prev => ({ ...prev, ...data.homeLayout }));
         }
         setLoading(false);
@@ -242,9 +246,11 @@ export default function AdminSettingsPage() {
       heroSectionEnabled,
       minOrderValue,
       minGroceryOrderValue: 0,
+      orderEmailNotificationsEnabled,
+      orderNotificationEmail,
       homeLayout,
     };
-    
+
     // Only show confirmation if enabling disruptive modes
     if (maintenanceMode || kitchenClosed || waitlistMode || launchingSoonMode) {
       setPendingSaveData(dataToSave);
@@ -259,7 +265,7 @@ export default function AdminSettingsPage() {
     try {
       const res = await fetch("/api/settings", {
         method: "POST",
-        headers: { 
+        headers: {
           "Content-Type": "application/json",
           "x-admin-token": sessionStorage.getItem("otw_admin_token") || ""
         },
@@ -289,7 +295,7 @@ export default function AdminSettingsPage() {
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(340px, 1fr))", gap: "24px" }}>
-        
+
         {/* Financial Settings */}
         <div className="otw-card" style={{ padding: "32px" }}>
           <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: 800, marginBottom: "20px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
@@ -297,11 +303,11 @@ export default function AdminSettingsPage() {
           </h3>
           <div style={{ marginBottom: "24px" }}>
             <label className="otw-label" style={{ display: "block", marginBottom: "8px" }}>Delivery Fee (₹)</label>
-            <input 
-              type="number" 
-              className="otw-input" 
-              value={deliveryFee} 
-              onChange={e => setDeliveryFee(Number(e.target.value))} 
+            <input
+              type="number"
+              className="otw-input"
+              value={deliveryFee}
+              onChange={e => setDeliveryFee(Number(e.target.value))}
               min="0"
               style={{ maxWidth: "200px" }}
             />
@@ -314,11 +320,11 @@ export default function AdminSettingsPage() {
             <label className="otw-label" style={{ display: "block", marginBottom: "6px", fontWeight: 800, color: "#1E40AF" }}>
               ⚡ Minimum Order Value for Delivery (₹)
             </label>
-            <input 
-              type="number" 
-              className="otw-input" 
-              value={minOrderValue} 
-              onChange={e => setMinOrderValue(Number(e.target.value))} 
+            <input
+              type="number"
+              className="otw-input"
+              value={minOrderValue}
+              onChange={e => setMinOrderValue(Number(e.target.value))}
               min="0"
               style={{ maxWidth: "200px" }}
             />
@@ -417,7 +423,7 @@ export default function AdminSettingsPage() {
               </div>
             )}
           </div>
-          
+
           {/* Waitlist Mode Toggle */}
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: waitlistMode ? "#FEF2F2" : "#F8FAFC", borderRadius: "12px", border: waitlistMode ? "1px solid #FCA5A5" : "1px solid #E2E8F0", marginBottom: "24px", marginTop: "24px" }}>
             <div>
@@ -447,7 +453,7 @@ export default function AdminSettingsPage() {
               </div>
             </label>
           </div>
-          
+
         </div>
 
         {/* Geolocation Restriction */}
@@ -491,6 +497,58 @@ export default function AdminSettingsPage() {
               <a href="https://maps.google.com" target="_blank" rel="noreferrer" style={{ fontSize: "0.82rem", color: "#0135FB", fontWeight: 600, textDecoration: "none" }}>📍 Find your college coordinates on Google Maps →</a>
             </div>
           )}
+        </div>
+
+        {/* Email Order Notifications Card */}
+        <div className="otw-card" style={{ padding: "32px", border: orderEmailNotificationsEnabled ? "2px solid #3B82F6" : "1px solid rgba(0,0,0,0.06)", background: orderEmailNotificationsEnabled ? "#F8FAFC" : "white" }}>
+          <h3 style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "1.2rem", fontWeight: 800, marginBottom: "16px", borderBottom: "1px solid var(--border)", paddingBottom: "12px" }}>
+            <Mail size={20} color="#0135FB" /> Email Order Notifications
+          </h3>
+          <p style={{ fontSize: "0.85rem", color: "var(--text-muted)", marginBottom: "20px" }}>
+            Automatically receive an instant email notification with full order timing, customer name, phone, address, and item list every time an order is placed.
+          </p>
+
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", background: orderEmailNotificationsEnabled ? "#EFF6FF" : "#F1F5F9", borderRadius: "12px", border: orderEmailNotificationsEnabled ? "1px solid #BFDBFE" : "1px solid #E2E8F0", marginBottom: "18px" }}>
+            <div>
+              <strong style={{ display: "block", color: orderEmailNotificationsEnabled ? "#1E40AF" : "var(--text-dark)", fontSize: "0.95rem" }}>
+                Send Email on Every New Order
+              </strong>
+              <span style={{ fontSize: "0.8rem", color: orderEmailNotificationsEnabled ? "#2563EB" : "var(--text-muted)" }}>
+                {orderEmailNotificationsEnabled ? "Enabled — Notifications will be sent automatically" : "Disabled — No emails will be sent"}
+              </span>
+            </div>
+            <label style={{ display: "flex", alignItems: "center", cursor: "pointer" }}>
+              <div style={{ position: "relative" }}>
+                <input
+                  type="checkbox"
+                  checked={orderEmailNotificationsEnabled}
+                  onChange={e => setOrderEmailNotificationsEnabled(e.target.checked)}
+                  style={{ position: "absolute", width: 0, height: 0, opacity: 0 }}
+                />
+                <div style={{ width: 48, height: 26, background: orderEmailNotificationsEnabled ? "#0135FB" : "#CBD5E1", borderRadius: 999, transition: "0.3s" }}></div>
+                <div style={{ position: "absolute", left: orderEmailNotificationsEnabled ? 24 : 2, top: 2, width: 22, height: 22, background: "white", borderRadius: "50%", transition: "0.3s", boxShadow: "0 2px 4px rgba(0,0,0,0.2)" }}></div>
+              </div>
+            </label>
+          </div>
+
+          <div>
+            <label style={{ display: "block", fontSize: "0.82rem", fontWeight: 700, marginBottom: "6px", color: "#334155" }}>
+              Notification Recipient Email Address
+            </label>
+            <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+              <input
+                type="email"
+                className="otw-input"
+                style={{ padding: "10px 14px", maxWidth: "380px" }}
+                value={orderNotificationEmail}
+                onChange={e => setOrderNotificationEmail(e.target.value)}
+                placeholder="onndawayy@gmail.com"
+              />
+            </div>
+            <p style={{ fontSize: "0.78rem", color: "#64748B", marginTop: "6px" }}>
+              Default: <strong>onndawayy@gmail.com</strong>. You can change this to any email address.
+            </p>
+          </div>
         </div>
 
         {/* Server-Driven Homepage Layout (SDUI) Controls */}
@@ -924,13 +982,13 @@ export default function AdminSettingsPage() {
       </div>
 
       <div style={{ marginTop: "32px", display: "flex", justifyContent: "flex-end" }}>
-        <button 
-          onClick={handleSaveRequest} 
+        <button
+          onClick={handleSaveRequest}
           disabled={saving}
           className="otw-btn otw-btn-primary"
           style={{ display: "flex", alignItems: "center", gap: "8px", padding: "14px 32px", fontSize: "1.1rem" }}
         >
-          <Save size={20}/> {saving ? "Saving..." : "Save All Settings"}
+          <Save size={20} /> {saving ? "Saving..." : "Save All Settings"}
         </button>
       </div>
 

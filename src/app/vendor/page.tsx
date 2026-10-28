@@ -592,7 +592,7 @@ function OrdersTab({ session }: { session: VendorSession }) {
                     Order #{order.orderId || order._id?.slice(-6)}
                   </div>
                   <div style={{ fontSize: "0.75rem", color: "#64748B", marginTop: 2 }}>
-                    {new Date(order.createdAt).toLocaleString("en-IN")}
+                    📅 {new Date(order.createdAt).toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short", year: "numeric" })} • 🕒 {new Date(order.createdAt).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true })}
                   </div>
                 </div>
                 <div style={{ display: "flex", gap: 8, alignItems: "center" }}>

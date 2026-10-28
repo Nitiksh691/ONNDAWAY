@@ -251,6 +251,13 @@ const _POST = async (req: NextRequest) => {
       messages: [],
     });
 
+    // Send background email notification (non-blocking)
+    import("@/lib/email").then(({ sendOrderNotificationEmail }) => {
+      sendOrderNotificationEmail({ ...order.toObject(), id: order._id.toString() }).catch((err) =>
+        console.error("Order notification email error:", err)
+      );
+    });
+
     return NextResponse.json({ ...order.toObject(), id: order._id.toString() }, { status: 201 });
   } catch (error: unknown) {
     const e = error as { code?: number; keyPattern?: Record<string, unknown> };
