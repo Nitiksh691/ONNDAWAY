@@ -519,11 +519,11 @@ export default function Navbar() {
                 Profile
               </Link>
             )}
-            {/* {profile?.role === "admin" && (
+            {profile?.role === "admin" && (
               <Link href="/admin" className={`nav-link${pathname.startsWith("/admin") ? " active" : ""}`}>
                 Admin
               </Link>
-            )} */}
+            )}
             {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
               <Link
                 href="/delivery/dashboard"

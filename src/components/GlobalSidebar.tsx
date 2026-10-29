@@ -37,7 +37,7 @@ export default function GlobalSidebar() {
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
 
-  const minSwipeDistance = 50; 
+  const minSwipeDistance = 50;
 
   const onTouchStart = (e: React.TouchEvent) => {
     setTouchEnd(null);
@@ -431,122 +431,123 @@ export default function GlobalSidebar() {
       `}</style>
 
       {/* Mobile Overlay */}
-      <div 
-        className={`gsb-overlay ${isSidebarOpen ? 'mobile-open' : ''}`} 
-        onClick={() => setSidebarOpen(false)} 
+      <div
+        className={`gsb-overlay ${isSidebarOpen ? 'mobile-open' : ''}`}
+        onClick={() => setSidebarOpen(false)}
       />
 
       <div className={`app-sidebar-slot ${isSidebarOpen ? '' : 'desktop-closed'}`}>
-        <aside 
+        <aside
           className={`gsb-root ${isSidebarOpen ? 'mobile-open' : 'desktop-closed'}`}
           onTouchStart={onTouchStart}
           onTouchMove={onTouchMove}
           onTouchEnd={onTouchEnd}
         >
 
-        {/* Brand strip */}
-        <div className="gsb-brand">
-          <div className="gsb-brand-icon">
-            <svg width="19" height="19" viewBox="0 0 32 32" fill="none">
-              <circle cx="16" cy="5.5" r="3" fill="white"/>
-              <path d="M16 9 L13.5 17 L18.5 17 Z" fill="white"/>
-              <path d="M13.5 11 L10 15" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M18.5 11 L22 13" stroke="white" strokeWidth="2" strokeLinecap="round"/>
-              <path d="M14 17 L11 23 L9 27" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M18 17 L20 22 L22 26" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </div>
-          <div>
-            <div className="gsb-brand-text">ONN DA WAY</div>
-          </div>
-          {/* Mobile close button */}
-          <button
-            onClick={() => setSidebarOpen(false)}
-            style={{
-              marginLeft: "auto",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              color: "var(--text-muted)",
-              fontSize: "1.3rem",
-              lineHeight: 1,
-            }}
-            aria-label="Close sidebar"
-          >
-            ×
-          </button>
-        </div>
-
-        {/* SHOP GROUP */}
-        <div className="gsb-section-label">
-          <div className="gsb-section-dot" />
-          Shop
-        </div>
-        <SidebarItem href="/" icon={<Home size={17} />} label="Home" active={pathname === "/"} />
-        <SidebarItem href="/menu" icon={<UtensilsCrossed size={17} />} label="Menu" active={pathname.startsWith("/menu")} />
-        <SidebarItem href="/orders" icon={<Package size={17} />} label="My Orders" active={pathname.startsWith("/orders")} />
-        <SidebarItem href="/wishlist" icon={<Heart size={17} />} label="Wishlist" active={pathname.startsWith("/wishlist")} />
-        <SidebarItem href="/cart" icon={<ShoppingCart size={17} />} label="Cart" active={pathname.startsWith("/cart")} />
-
-        {/* ACCOUNT GROUP */}
-        <div className="gsb-section-label">
-          <div className="gsb-section-dot" />
-          Account
-        </div>
-        <SidebarItem href="/orders" icon={<MapPin size={17} />} label="Track Order" active={pathname.startsWith("/orders")} />
-        {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
-          <SidebarItem href="/delivery/dashboard" icon={<Truck size={17} />} label="Deliveries" active={pathname.startsWith("/delivery")} />
-        )}
-        <SidebarItem href="/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/offers")} />
-        <SidebarItem href="/support" icon={<HelpCircle size={17} />} label="Help & Support" active={pathname.startsWith("/support")} />
-
-        {/* ADMIN GROUP */}
-        {profile?.role === "admin" && (
-          <>
-            <div className="gsb-section-label">
-              <div className="gsb-section-dot" />
-              Admin
-              <span className="gsb-admin-badge">Panel</span>
+          {/* Brand strip */}
+          <div className="gsb-brand">
+            <div className="gsb-brand-icon">
+              <svg width="19" height="19" viewBox="0 0 32 32" fill="none">
+                <circle cx="16" cy="5.5" r="3" fill="white" />
+                <path d="M16 9 L13.5 17 L18.5 17 Z" fill="white" />
+                <path d="M13.5 11 L10 15" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <path d="M18.5 11 L22 13" stroke="white" strokeWidth="2" strokeLinecap="round" />
+                <path d="M14 17 L11 23 L9 27" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M18 17 L20 22 L22 26" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
             </div>
-            <SidebarItem href="/admin" icon={<ShieldCheck size={17} />} label="Dashboard" active={pathname === "/admin"} />
-            <SidebarItem href="/admin/menu" icon={<Box size={17} />} label="Products" active={pathname.startsWith("/admin/menu")} />
-            <SidebarItem href="/admin/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/admin/offers")} />
-            <SidebarItem href="/admin/orders" icon={<ClipboardList size={17} />} label="Orders" active={pathname.startsWith("/admin/orders")} />
-          </>
-        )}
-
-        <div className="gsb-spacer" />
-
-        {/* User Card */}
-        {mounted && user ? (
-          <div className="gsb-user-card">
-            <Link href="/profile" className="gsb-user-card-inner" style={{ textDecoration: "none" }}>
-              <div className="gsb-user-avatar">
-                {profile?.image
-                  ? <img src={profile.image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-                  : (profile?.name?.[0]?.toUpperCase() || "U")}
-              </div>
-              <div className="gsb-user-info">
-                <div className="gsb-user-name">{profile?.name || "User"}</div>
-                <div className="gsb-user-sub">{profile?.phone || profile?.college || "Campus Member"}</div>
-              </div>
-              <div className="gsb-user-more">
-                <ChevronRight size={15} />
-              </div>
-            </Link>
+            <div>
+              <div className="gsb-brand-text">ONN DA WAY</div>
+            </div>
+            {/* Mobile close button */}
+            <button
+              onClick={() => setSidebarOpen(false)}
+              style={{
+                marginLeft: "auto",
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                color: "var(--text-muted)",
+                fontSize: "1.3rem",
+                lineHeight: 1,
+              }}
+              aria-label="Close sidebar"
+            >
+              ×
+            </button>
           </div>
-        ) : mounted ? (
-          <button onClick={() => setShowAuthModal(true)} className="gsb-login-btn">
-            <User size={17} /> Log In to Continue
-          </button>
-        ) : null}
-      </aside>
+
+          {/* SHOP GROUP */}
+          <div className="gsb-section-label">
+            <div className="gsb-section-dot" />
+            Shop
+          </div>
+          <SidebarItem href="/" icon={<Home size={17} />} label="Home" active={pathname === "/"} />
+          <SidebarItem href="/menu" icon={<UtensilsCrossed size={17} />} label="Menu" active={pathname.startsWith("/menu")} />
+          <SidebarItem href="/orders" icon={<Package size={17} />} label="My Orders" active={pathname.startsWith("/orders")} />
+          <SidebarItem href="/wishlist" icon={<Heart size={17} />} label="Wishlist" active={pathname.startsWith("/wishlist")} />
+          <SidebarItem href="/cart" icon={<ShoppingCart size={17} />} label="Cart" active={pathname.startsWith("/cart")} />
+
+          {/* ACCOUNT GROUP */}
+          <div className="gsb-section-label">
+            <div className="gsb-section-dot" />
+            Account
+          </div>
+          <SidebarItem href="/orders" icon={<MapPin size={17} />} label="Track Order" active={pathname.startsWith("/orders")} />
+          {mounted && (profile?.role === "delivery" || (typeof window !== "undefined" && !!localStorage.getItem("otw_delivery_id"))) && (
+            <SidebarItem href="/delivery/dashboard" icon={<Truck size={17} />} label="Deliveries" active={pathname.startsWith("/delivery")} />
+          )}
+          <SidebarItem href="/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/offers")} />
+          <SidebarItem href="/support" icon={<HelpCircle size={17} />} label="Help & Support" active={pathname.startsWith("/support")} />
+
+          {/* ADMIN GROUP */}
+          {profile?.role === "admin" && (
+            <>
+              <div className="gsb-section-label">
+                <div className="gsb-section-dot" />
+                Admin
+                <span className="gsb-admin-badge">Panel</span>
+              </div>
+              <SidebarItem href="/admin" icon={<ShieldCheck size={17} />} label="Dashboard" active={pathname === "/admin"} />
+              <SidebarItem href="/admin/menu" icon={<Box size={17} />} label="Products" active={pathname.startsWith("/admin/menu")} />
+              <SidebarItem href="/admin/offers" icon={<Tag size={17} />} label="Offers" active={pathname.startsWith("/admin/offers")} />
+              <SidebarItem href="/admin/orders" icon={<ClipboardList size={17} />} label="Orders" active={pathname.startsWith("/admin/orders")} />
+
+            </>
+          )}
+
+          <div className="gsb-spacer" />
+
+          {/* User Card */}
+          {mounted && user ? (
+            <div className="gsb-user-card">
+              <Link href="/profile" className="gsb-user-card-inner" style={{ textDecoration: "none" }}>
+                <div className="gsb-user-avatar">
+                  {profile?.image
+                    ? <img src={profile.image} alt="Profile" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                    : (profile?.name?.[0]?.toUpperCase() || "U")}
+                </div>
+                <div className="gsb-user-info">
+                  <div className="gsb-user-name">{profile?.name || "User"}</div>
+                  <div className="gsb-user-sub">{profile?.phone || profile?.college || "Campus Member"}</div>
+                </div>
+                <div className="gsb-user-more">
+                  <ChevronRight size={15} />
+                </div>
+              </Link>
+            </div>
+          ) : mounted ? (
+            <button onClick={() => setShowAuthModal(true)} className="gsb-login-btn">
+              <User size={17} /> Log In to Continue
+            </button>
+          ) : null}
+        </aside>
       </div>
       {showAuthModal && (
         <AuthModal
