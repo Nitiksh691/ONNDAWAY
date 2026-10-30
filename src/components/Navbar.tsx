@@ -14,7 +14,6 @@ const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/menu", label: "Menu" },
   { href: "/orders", label: "Orders" },
-  // { href: "/admin", label: "Admin" }
 ];
 
 export default function Navbar() {
@@ -519,7 +518,7 @@ export default function Navbar() {
                 Profile
               </Link>
             )}
-            {profile?.role === "admin" && (
+            {mounted && profile?.role === "admin" && (
               <Link href="/admin" className={`nav-link${pathname.startsWith("/admin") ? " active" : ""}`}>
                 Admin
               </Link>
